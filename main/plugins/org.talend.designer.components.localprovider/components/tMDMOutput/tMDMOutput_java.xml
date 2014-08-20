@@ -63,6 +63,7 @@
 			NAME="IS_VIRTUAL_COMPONENT"
 			FIELD="CHECK"
 			NUM_ROW="12"
+			REQUIRED="true"
 	    >
 			<DEFAULT>true</DEFAULT>
 	    </PARAMETER>
