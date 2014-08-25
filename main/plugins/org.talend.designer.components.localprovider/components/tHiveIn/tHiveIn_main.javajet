@@ -42,9 +42,9 @@ imports="
 		String reduceMemory = ElementParameterParser.getValue(node,"__MAPREDUCE_REDUCE_MEMORY_MB__");
 		String amMemory = ElementParameterParser.getValue(node,"__YARN_APP_MAPREDUCE_AM_RESOURCE_MB__");
 %>
-		bw_<%=cid%>.write("SET mapreduce.map.memory.mb=" + <%=mapMemory%>);
-		bw_<%=cid%>.write("SET mapreduce.reduce.memory.mb=" + <%=reduceMemory%>);
-		bw_<%=cid%>.write("SET yarn.app.mapreduce.am.resource.mb=" + <%=amMemory%>);
+		bw_<%=cid%>.write("SET mapreduce.map.memory.mb=" + <%=mapMemory%> + ";");
+		bw_<%=cid%>.write("SET mapreduce.reduce.memory.mb=" + <%=reduceMemory%> + ";");
+		bw_<%=cid%>.write("SET yarn.app.mapreduce.am.resource.mb=" + <%=amMemory%> + ";");
 <%
 	}
 	
@@ -52,14 +52,14 @@ imports="
 	if(advProps!=null) {
 		for(Map<String, String> item : advProps){
 %>
-			bw_<%=cid%>.write("SET "+<%=item.get("PROPERTY")%>+"="+<%=item.get("VALUE")%>);
+			bw_<%=cid%>.write("SET "+<%=item.get("PROPERTY")%>+"="+<%=item.get("VALUE")%> + ";");
 <%
 		}
 	}
 %>
 	String dbname_<%=cid%> = <%=dbname%>;
 	if(dbname_<%=cid%>!=null && !"".equals(dbname_<%=cid%>.trim()) && !"default".equals(dbname_<%=cid%>.trim())) {
-		bw_<%=cid%>.write("use " + dbname_<%=cid%>);
+		bw_<%=cid%>.write("use " + dbname_<%=cid%> + ";");
 	}
 	
 	
@@ -113,7 +113,7 @@ imports="
 	// End of parquet format handling.
 %>
 
-	bw_<%=cid%>.write(<%=dbquery%>);
+	bw_<%=cid%>.write(<%=dbquery%> + ";");
 	globalMap.put("<%=cid.replaceAll("tHiveIn", "tHiveInput")%>_QUERY", <%=dbquery%>);
 	
 	bw_<%=cid%>.close();
@@ -121,8 +121,8 @@ imports="
 			instance_<%=cid%>.setLibJars(libjars_<%=cid%>.toString().substring(0, libjars_<%=cid%>.length()-1));
 	}
 	instance_<%=cid%>.sendFiles();
-	instance_<%=cid%>.callWS(null);
-	int exitCode_<%=cid%> = instance_<%=cid%>.waitFor();
+	instance_<%=cid%>.callWS(null, true);
+	int exitCode_<%=cid%> = instance_<%=cid%>.execute();
 	if(exitCode_<%=cid%> > 0) {
 		
 <%
