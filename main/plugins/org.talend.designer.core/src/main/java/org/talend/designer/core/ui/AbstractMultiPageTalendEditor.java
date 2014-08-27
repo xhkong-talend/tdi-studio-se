@@ -1322,7 +1322,7 @@ public abstract class AbstractMultiPageTalendEditor extends MultiPageEditorPart 
 
         IElementParameter param = node.getElementParameter("IS_VIRTUAL_COMPONENT"); //$NON-NLS-1$
         if (param != null) { // now only available for tUniqRow.
-            return (Boolean) param.getValue();
+            return (Boolean) param.getValue() && param.isRequired(node.getElementParameters());
         }
 
         if (node.getUniqueName().startsWith("tMap")) { //$NON-NLS-1$

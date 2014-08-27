@@ -1,1 +1,35 @@
-<%@ include file="../templates/DB/Close/AbstractDBClose.javajet"%>
+<%@ jet 
+imports="
+    org.talend.core.model.process.INode 
+    org.talend.core.model.process.ElementParameterParser 
+    org.talend.designer.codegen.config.CodeGeneratorArgument
+" 
+%>
+<%@ include file="../../Log4j/Log4jDBConnUtil.javajet"%>
+<%
+    CodeGeneratorArgument codeGenArgument = (CodeGeneratorArgument) argument;
+    INode node = (INode)codeGenArgument.getArgument();
+
+    String cid = node.getUniqueName();
+
+    String connection = ElementParameterParser.getValue(node,"__CONNECTION__");
+	 boolean isExecutedThroughWebHCat = false;
+	 for (INode pNode : node.getProcess().getNodesOfType("tHiveConnection")) {
+	 	if(connection!=null && connection.equals(pNode.getUniqueName())) {
+			isExecutedThroughWebHCat = "MICROSOFT_HD_INSIGHT".equals(ElementParameterParser.getValue(pNode, "__DISTRIBUTION__"));
+		}
+	 }
+
+    String conn = "conn_" + connection;
+	log4jCodeGenerateUtil.infoComponentStart(node);
+	if(!isExecutedThroughWebHCat) {
+%>
+		java.sql.Connection conn_<%=cid%> = (java.sql.Connection)globalMap.get("<%=conn%>");
+		if(conn_<%=cid%> != null && !conn_<%=cid%>.isClosed())
+		{
+			<%log4jCodeGenerateUtil.close();%>
+		}
+<%
+	}
+%>
+<%log4jCodeGenerateUtil.infoComponentEnd(node);%>
