@@ -35,35 +35,36 @@ imports="
 %>
 
 	<%@ include file="@{org.talend.designer.components.localprovider}/components/templates/Hive/GetAzureConnection.javajet"%>
-<%	
-	boolean setMemory = "true".equals(ElementParameterParser.getValue(node, "__SET_MEMORY__"));
-	if(setMemory) {
-		String mapMemory = ElementParameterParser.getValue(node,"__MAPREDUCE_MAP_MEMORY_MB__");
-		String reduceMemory = ElementParameterParser.getValue(node,"__MAPREDUCE_REDUCE_MEMORY_MB__");
-		String amMemory = ElementParameterParser.getValue(node,"__YARN_APP_MAPREDUCE_AM_RESOURCE_MB__");
-%>
-		bw_<%=cid%>.write("SET mapreduce.map.memory.mb=" + <%=mapMemory%> + ";");
-		bw_<%=cid%>.write("SET mapreduce.reduce.memory.mb=" + <%=reduceMemory%> + ";");
-		bw_<%=cid%>.write("SET yarn.app.mapreduce.am.resource.mb=" + <%=amMemory%> + ";");
 <%
-	}
-	
-	List<Map<String, String>> advProps = (List<Map<String,String>>)ElementParameterParser.getObjectValue(node, "__ADVANCED_PROPERTIES__");
-	if(advProps!=null) {
-		for(Map<String, String> item : advProps){
+	if("false".equals(useExistingConn)) { // This variable is declared and initialized in the GetAzureConnection.javajet	
+		boolean setMemory = "true".equals(ElementParameterParser.getValue(node, "__SET_MEMORY__"));
+		if(setMemory) {
+			String mapMemory = ElementParameterParser.getValue(node,"__MAPREDUCE_MAP_MEMORY_MB__");
+			String reduceMemory = ElementParameterParser.getValue(node,"__MAPREDUCE_REDUCE_MEMORY_MB__");
+			String amMemory = ElementParameterParser.getValue(node,"__YARN_APP_MAPREDUCE_AM_RESOURCE_MB__");
 %>
-			bw_<%=cid%>.write("SET "+<%=item.get("PROPERTY")%>+"="+<%=item.get("VALUE")%> + ";");
+			bw_<%=cid%>.write("SET mapreduce.map.memory.mb=" + <%=mapMemory%> + ";");
+			bw_<%=cid%>.write("SET mapreduce.reduce.memory.mb=" + <%=reduceMemory%> + ";");
+			bw_<%=cid%>.write("SET yarn.app.mapreduce.am.resource.mb=" + <%=amMemory%> + ";");
 <%
 		}
-	}
+	
+		List<Map<String, String>> advProps = (List<Map<String,String>>)ElementParameterParser.getObjectValue(node, "__ADVANCED_PROPERTIES__");
+		if(advProps!=null) {
+			for(Map<String, String> item : advProps){
 %>
-	String dbname_<%=cid%> = <%=dbname%>;
-	if(dbname_<%=cid%>!=null && !"".equals(dbname_<%=cid%>.trim()) && !"default".equals(dbname_<%=cid%>.trim())) {
-		bw_<%=cid%>.write("use " + dbname_<%=cid%> + ";");
+				bw_<%=cid%>.write("SET "+<%=item.get("PROPERTY")%>+"="+<%=item.get("VALUE")%> + ";");
+<%
+			}
+		}
+%>
+		String dbname_<%=cid%> = <%=dbname%>;
+		if(dbname_<%=cid%>!=null && !"".equals(dbname_<%=cid%>.trim()) && !"default".equals(dbname_<%=cid%>.trim())) {
+			bw_<%=cid%>.write("use " + dbname_<%=cid%> + ";");
+		}
+<%
 	}
 	
-	
-<%
 	// Register jars to handle the parquet format.
 						
 	java.util.List<String> jarsToRegister = null;
@@ -130,6 +131,15 @@ imports="
 %>
 			throw new Exception("The Hive job failed. Please read the logs for more details");
 <%
+		} else {
+%>
+			System.err.println("The Hive job failed. Please read the logs for more details");
+<%
+			if(isLog4jEnabled) {
+%>
+				log.error("<%=cid%> - " + e.getMessage());
+<%
+			}
 		}
 %>
 	}
