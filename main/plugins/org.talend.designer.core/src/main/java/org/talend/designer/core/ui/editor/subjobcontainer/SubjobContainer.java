@@ -79,6 +79,7 @@ public class SubjobContainer extends Element implements ISubjobContainer {
         param.setReadOnly(false);
         param.setRequired(false);
         param.setShow(false);
+        param.setDefaultValue(param.getValue());
         addElementParameter(param);
 
         param = new ElementParameter(this);
@@ -91,6 +92,7 @@ public class SubjobContainer extends Element implements ISubjobContainer {
         param.setReadOnly(false);
         param.setRequired(false);
         param.setShow(true);
+        param.setDefaultValue(param.getValue());
         addElementParameter(param);
 
         // Unique name of the the start linked with this subjob.
@@ -104,6 +106,7 @@ public class SubjobContainer extends Element implements ISubjobContainer {
         param.setReadOnly(false);
         param.setRequired(false);
         param.setShow(false);
+        param.setDefaultValue(param.getValue());
         addElementParameter(param);
 
         // Name of the subjob (title)
@@ -117,6 +120,7 @@ public class SubjobContainer extends Element implements ISubjobContainer {
         param.setReadOnly(false);
         param.setRequired(false);
         param.setShowIf(EParameterName.SHOW_SUBJOB_TITLE.getName() + " == 'true'"); //$NON-NLS-1$
+        param.setDefaultValue(param.getValue());
         addElementParameter(param);
 
         param = new ElementParameter(this);
@@ -129,6 +133,7 @@ public class SubjobContainer extends Element implements ISubjobContainer {
         param.setReadOnly(false);
         param.setRequired(false);
         param.setShowIf(EParameterName.SHOW_SUBJOB_TITLE.getName() + " == 'true'"); //$NON-NLS-1$
+        param.setDefaultValue(param.getValue());
         addElementParameter(param);
 
         param = new ElementParameter(this);
@@ -141,6 +146,7 @@ public class SubjobContainer extends Element implements ISubjobContainer {
         param.setReadOnly(false);
         param.setRequired(false);
         param.setShow(true);
+        param.setDefaultValue(param.getValue());
         addElementParameter(param);
 
         param = new ElementParameter(this);
@@ -153,6 +159,7 @@ public class SubjobContainer extends Element implements ISubjobContainer {
         param.setReadOnly(true);
         param.setRequired(false);
         param.setShow(false);
+        param.setDefaultValue(param.getValue());
         addElementParameter(param);
 
         param = new ElementParameter(this);
@@ -164,6 +171,7 @@ public class SubjobContainer extends Element implements ISubjobContainer {
         param.setNumRow(5);
         param.setRequired(false);
         param.setShow(false);
+        param.setDefaultValue(param.getValue());
         addElementParameter(param);
     }
 

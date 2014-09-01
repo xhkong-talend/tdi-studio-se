@@ -41,7 +41,7 @@ import org.talend.core.model.metadata.builder.connection.Query;
 import org.talend.core.model.metadata.builder.connection.SAPFunctionUnit;
 import org.talend.core.model.metadata.builder.connection.SAPIDocUnit;
 import org.talend.core.model.metadata.builder.connection.ValidationRulesConnection;
-import org.talend.core.model.metadata.builder.connection.impl.XmlFileConnectionImpl;
+import org.talend.core.model.metadata.builder.connection.XmlFileConnection;
 import org.talend.core.model.metadata.designerproperties.RepositoryToComponentProperty;
 import org.talend.core.model.process.EConnectionType;
 import org.talend.core.model.process.EParameterFieldType;
@@ -57,6 +57,7 @@ import org.talend.core.model.process.node.IExternalMapTable;
 import org.talend.core.model.properties.ConnectionItem;
 import org.talend.core.model.properties.DatabaseConnectionItem;
 import org.talend.core.model.properties.Item;
+import org.talend.core.model.properties.XmlFileConnectionItem;
 import org.talend.core.model.repository.ERepositoryObjectType;
 import org.talend.core.model.repository.IRepositoryViewObject;
 import org.talend.core.model.update.EUpdateItemType;
@@ -86,7 +87,7 @@ import org.talend.repository.model.ProjectNodeHelper;
 
 /**
  * ggu class global comment. Detailled comment
- * 
+ *
  */
 public class UpdateNodeParameterCommand extends Command {
 
@@ -254,20 +255,44 @@ public class UpdateNodeParameterCommand extends Command {
             // added by wzhang for bug 9302
             boolean isXsdPath = false;
             Object parameter = result.getParameter();
-            if (parameter instanceof XmlFileConnectionImpl) {
-                String filePath = ((XmlFileConnectionImpl) parameter).getXmlFilePath();
-                if (filePath != null) {
-                    if (XmlUtil.isXSDFile(filePath)) {
-                        isXsdPath = true;
+            IElementParameter curPropertyParam = null;
+            String parentParamName = "PROPERTY"; //$NON-NLS-1$
+            ConnectionItem connectionItem = null;
+            if (parameter instanceof ConnectionItem) {
+                if (parameter instanceof XmlFileConnectionItem) {
+                    String filePath = ((XmlFileConnection) ((XmlFileConnectionItem) parameter).getConnection()).getXmlFilePath();
+                    if (filePath != null) {
+                        if (XmlUtil.isXSDFile(filePath)) {
+                            isXsdPath = true;
+                        }
+                    }
+                }
+                connectionItem = (ConnectionItem) result.getParameter();
+                for (IElementParameter param : node.getElementParameters()) {
+                    if (param.getFieldType() == EParameterFieldType.PROPERTY_TYPE
+                            && param.getChildParameters().get(EParameterName.REPOSITORY_PROPERTY_TYPE.getName()).getValue()
+                                    .equals(connectionItem.getProperty().getId())) {
+                        curPropertyParam = param;
+                        parentParamName = curPropertyParam.getName();
+                        break;
                     }
                 }
             }
 
             if (result.getResultType() == EUpdateResult.UPDATE) {
+
                 // upgrade from repository
-                if (result.isChecked()) {
+                if (result.isChecked() && connectionItem != null) {
                     for (IElementParameter param : node.getElementParameters()) {
                         String repositoryValue = param.getRepositoryValue();
+                        if (param.getRepositoryValue() == null
+                                || (curPropertyParam != null && param.getRepositoryProperty() != null && !param
+                                        .getRepositoryProperty().equals(curPropertyParam.getName()))) {
+                            continue;
+                        }
+                        if (param.getFieldType() == EParameterFieldType.PROPERTY_TYPE) {
+                            continue;
+                        }
                         if ((repositoryValue != null)
                                 && (param.isShow(node.getElementParameters())
                                         || (node instanceof INode && ((INode) node).getComponent().getName()
@@ -284,8 +309,7 @@ public class UpdateNodeParameterCommand extends Command {
                             if (!node.getMetadataList().isEmpty()) {
                                 table = node.getMetadataList().get(0);
                             }
-                            Object objectValue = RepositoryToComponentProperty.getValue(
-                                    (org.talend.core.model.metadata.builder.connection.Connection) result.getParameter(),
+                            Object objectValue = RepositoryToComponentProperty.getValue(connectionItem.getConnection(),
                                     repositoryValue, table);
                             if (objectValue == null || "".equals(objectValue)) {
                                 if (GlobalServiceRegister.getDefault().isServiceRegistered(IESBService.class)) {
@@ -351,8 +375,8 @@ public class UpdateNodeParameterCommand extends Command {
                             if (GlobalServiceRegister.getDefault().isServiceRegistered(IJsonFileService.class)) {
                                 IJsonFileService jsonService = (IJsonFileService) GlobalServiceRegister.getDefault().getService(
                                         IJsonFileService.class);
-                                boolean paramChanged = jsonService.changeFilePathFromRepository(result.getParameter(), param,
-                                        node, objectValue);
+                                boolean paramChanged = jsonService.changeFilePathFromRepository(connectionItem.getConnection(),
+                                        param, node, objectValue);
                                 if (paramChanged) {
                                     continue;
                                 }
@@ -429,13 +453,11 @@ public class UpdateNodeParameterCommand extends Command {
                                 }
                             } else if (param.getFieldType().equals(EParameterFieldType.TABLE)
                                     && UpdatesConstants.XML_MAPPING.equals(repositoryValue)) {
-                                RepositoryToComponentProperty.getTableXMLMappingValue(
-                                        (org.talend.core.model.metadata.builder.connection.Connection) result.getParameter(),
+                                RepositoryToComponentProperty.getTableXMLMappingValue(connectionItem.getConnection(),
                                         (List<Map<String, Object>>) param.getValue(), node);
                             } else if (param.getFieldType().equals(EParameterFieldType.TABLE) && param.getName().equals("PARAMS")) {
-                                objectValue = RepositoryToComponentProperty.getValue(
-                                        (org.talend.core.model.metadata.builder.connection.Connection) result.getParameter(),
-                                        "PARAMS", node.getMetadataList().get(0));
+                                objectValue = RepositoryToComponentProperty.getValue(connectionItem.getConnection(), "PARAMS",
+                                        node.getMetadataList().get(0));
                                 List<Map<String, Object>> paramMaps = (List<Map<String, Object>>) param.getValue();
                                 if (paramMaps == null) {
                                     paramMaps = new ArrayList<Map<String, Object>>();
@@ -462,10 +484,25 @@ public class UpdateNodeParameterCommand extends Command {
                 }
             }
             if (!update) { // bult-in
-                node.setPropertyValue(EParameterName.PROPERTY_TYPE.getName(), EmfComponent.BUILTIN);
+                String propertyName = parentParamName + ":" + EParameterName.PROPERTY_TYPE.getName();
+                if (this.result.getParameter() instanceof IElementParameter) {
+                    IElementParameter parentParam = ((IElementParameter) this.result.getParameter()).getParentParameter();
+                    if (parentParam != null) {
+                        parentParamName = parentParam.getName();
+                        propertyName = parentParam.getName() + ":"
+                                + parentParam.getChildParameters().get(EParameterName.PROPERTY_TYPE.getName()).getName();
+                    }
+                }
+                node.setPropertyValue(propertyName, EmfComponent.BUILTIN);
                 for (IElementParameter param : node.getElementParameters()) {
-                    String repositoryValue = param.getRepositoryValue();
-                    if (param.isShow(node.getElementParameters()) && (repositoryValue != null)) {
+                    if (param.getRepositoryValue() == null || param.getRepositoryProperty() != null
+                            && !param.getRepositoryProperty().equals(parentParamName)) {
+                        continue;
+                    }
+                    if (param.getFieldType() == EParameterFieldType.PROPERTY_TYPE) {
+                        continue;
+                    }
+                    if (param.isShow(node.getElementParameters())) {
                         if (param.getName().equals(EParameterName.PROPERTY_TYPE.getName())
                                 || param.getFieldType() == EParameterFieldType.MEMO_SQL) {
                             continue;

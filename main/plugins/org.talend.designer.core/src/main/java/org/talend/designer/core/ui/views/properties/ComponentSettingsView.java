@@ -64,6 +64,7 @@ import org.talend.designer.core.i18n.Messages;
 import org.talend.designer.core.model.components.EParameterName;
 import org.talend.designer.core.model.components.EmfComponent;
 import org.talend.designer.core.ui.editor.connections.Connection;
+import org.talend.designer.core.ui.editor.connections.ConnectionLabel;
 import org.talend.designer.core.ui.editor.nodes.Node;
 import org.talend.designer.core.ui.editor.notes.Note;
 import org.talend.designer.core.ui.editor.properties.connections.MainConnectionComposite;
@@ -186,7 +187,13 @@ public class ComponentSettingsView extends ViewPart implements IComponentSetting
                     element = (Element) descriptor.getData();
                     currentSelectedTab = descriptor;
 
-                    createDynamicComposite(tabFactory.getTabComposite(), (Element) descriptor.getData(), descriptor.getCategory());
+                    if (descriptor.getData() instanceof ConnectionLabel) {
+                        createDynamicComposite(tabFactory.getTabComposite(),
+                                ((ConnectionLabel) descriptor.getData()).getConnection(), descriptor.getCategory());
+                    } else {
+                        createDynamicComposite(tabFactory.getTabComposite(), (Element) descriptor.getData(),
+                                descriptor.getCategory());
+                    }
 
                     selectedPrimary = false;
                 }
@@ -522,6 +529,9 @@ public class ComponentSettingsView extends ViewPart implements IComponentSetting
         } else if (elem instanceof SubjobContainer) {
             label = Messages.getString("ComponentSettingsView.subjob"); //$NON-NLS-1$
             image = ImageProvider.getImage(EImage.PASTE_ICON);
+        } else if (elem instanceof ConnectionLabel) {
+            label = ((ConnectionLabel) elem).getConnection().getElementName();
+            image = ImageProvider.getImage(EImage.RIGHT_ICON);
         }
         tabFactory.setTitle(label, image);
         super.setTitleToolTip(label);
@@ -622,6 +632,8 @@ public class ComponentSettingsView extends ViewPart implements IComponentSetting
             return EElementType.NOTE.getCategories();
         } else if (elem instanceof SubjobContainer) {
             return EElementType.SUBJOB.getCategories();
+        } else if (elem instanceof ConnectionLabel) {
+            return getCategories(((ConnectionLabel) elem).getConnection());
         }
         return null;
     }

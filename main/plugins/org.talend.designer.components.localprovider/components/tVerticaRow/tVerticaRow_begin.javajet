@@ -16,9 +16,15 @@ imports="
 	    }
 	    
 		public void setURL(INode node) {
+			if(dbproperties == null || ("\"\"").equals(dbproperties) || ("").equals(dbproperties)) {
 		%>
-			String url_<%=cid %> = "jdbc:vertica://"+<%=dbhost%>+":"+<%=dbport%>+"/"+<%=dbname%>;
+				String url_<%=cid %> = "jdbc:vertica://"+<%=dbhost%>+":"+<%=dbport%>+"/"+<%=dbname%>;
 		<%
+			} else {
+		%>
+				String url_<%=cid %> = "jdbc:vertica://"+<%=dbhost%>+":"+<%=dbport%>+"/"+<%=dbname%> + "?" + <%=dbproperties%>;
+		<%
+			}
 		}
 		
 		public String getDirverClassName(INode node){
@@ -34,6 +40,23 @@ imports="
 			//always set auto commit to 'false'.
 			useExistingConn="";
 			super.setCommit(node);
+		}
+		
+		public void afterConnection(INode node){
+			String use_NB_Line = ElementParameterParser.getValue(node, "__USE_NB_LINE__");
+			if ("NB_LINE_INSERTED".equals(use_NB_Line)) {
+			%>
+				int nb_line_inserted_<%=cid%> = 0;
+			<%
+			} else if ("NB_LINE_UPDATED".equals(use_NB_Line)) {
+			%>
+				int nb_line_update_<%=cid%> = 0;
+			<%
+			} else if ("NB_LINE_DELETED".equals(use_NB_Line)) {
+			%>
+				int nb_line_deleted_<%=cid%> = 0;
+			<%
+			}
 		}
 	}
 	dbRowBeginUtil = new DBRowBeginUtil();

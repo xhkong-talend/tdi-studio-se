@@ -22,10 +22,7 @@ import org.apache.commons.lang.ArrayUtils;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.ui.IEditorReference;
 import org.eclipse.ui.PlatformUI;
-import org.talend.commons.utils.VersionUtils;
 import org.talend.core.CorePlugin;
-import org.talend.core.context.Context;
-import org.talend.core.context.RepositoryContext;
 import org.talend.core.model.metadata.IEbcdicConstant;
 import org.talend.core.model.process.EParameterFieldType;
 import org.talend.core.model.process.Element;
@@ -34,16 +31,12 @@ import org.talend.core.model.process.IProcess;
 import org.talend.core.model.process.IProcess2;
 import org.talend.core.model.properties.Item;
 import org.talend.core.model.properties.ProcessItem;
-import org.talend.core.model.properties.PropertiesFactory;
-import org.talend.core.model.properties.Property;
 import org.talend.core.model.repository.ERepositoryObjectType;
 import org.talend.core.model.repository.IRepositoryViewObject;
 import org.talend.core.model.utils.TalendTextUtils;
 import org.talend.designer.core.IDesignerCoreService;
-import org.talend.designer.core.i18n.Messages;
 import org.talend.designer.core.model.components.EParameterName;
 import org.talend.designer.core.model.components.EmfComponent;
-import org.talend.designer.core.model.process.jobsettings.JobSettingsManager;
 import org.talend.designer.core.model.utils.emf.talendfile.ElementParameterType;
 import org.talend.designer.core.model.utils.emf.talendfile.ElementValueType;
 import org.talend.designer.core.model.utils.emf.talendfile.ParametersType;
@@ -61,7 +54,7 @@ public class ElementParameter2ParameterType {
 
     /**
      * save the EMF Model's parameters to Element
-     * 
+     *
      * @param elem
      * @param pType
      */
@@ -136,9 +129,9 @@ public class ElementParameter2ParameterType {
     }
 
     /**
-     * 
+     *
      * load the Element's parameters to EMF Model
-     * 
+     *
      * @param elemParam
      * @param paType
      */
@@ -318,9 +311,9 @@ public class ElementParameter2ParameterType {
     }
 
     /**
-     * 
+     *
      * load project settings to no-opened process
-     * 
+     *
      * @param elemParam
      * @param projectPaType
      */
@@ -361,28 +354,7 @@ public class ElementParameter2ParameterType {
                 processTypes.setName(pType.getName());
                 processTypes.setField(pType.getField());
                 processTypes.setValue(pType.getValue());
-
-                boolean needAdd = true;
-                Property property = PropertiesFactory.eINSTANCE.createProperty();
-                property.setAuthor(((RepositoryContext) CorePlugin.getContext().getProperty(Context.REPOSITORY_CONTEXT_KEY))
-                        .getUser());
-                property.setVersion(VersionUtils.DEFAULT_VERSION);
-                property.setStatusCode(""); //$NON-NLS-1$
-                property.setId("ID"); //$NON-NLS-1$
-                property.setLabel(Messages.getString("JobTemplateViewsAndProcessUtil.jobName"));
-                for (IElementParameter currentParam : JobSettingsManager
-                        .getJobSettingsParameters(new org.talend.designer.core.ui.editor.process.Process(property))) {
-                    if (currentParam.getName().equals(pType.getName())) {
-                        if (currentParam.getValue() != null && currentParam.getValue().equals(pType.getValue())) {
-                            // don't save parameter if the value is default one.
-                            needAdd = false;
-                            break;
-                        }
-                    }
-                }
-                if (needAdd) {
-                    processType.getElementParameter().add(processTypes);
-                }
+                processType.getElementParameter().add(processTypes);
             }
 
         }
@@ -468,7 +440,7 @@ public class ElementParameter2ParameterType {
 
     /**
      * DOC zli Comment method "loadProjectsettingsParameters".
-     * 
+     *
      * @param parameters
      */
     public static void loadProjectsettingsParameters(ParametersType parameters) {

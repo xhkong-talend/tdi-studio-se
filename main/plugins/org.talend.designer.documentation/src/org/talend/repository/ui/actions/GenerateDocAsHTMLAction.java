@@ -22,8 +22,10 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IWorkbench;
 import org.talend.commons.ui.runtime.image.EImage;
 import org.talend.commons.ui.runtime.image.ImageProvider;
+import org.talend.core.GlobalServiceRegister;
 import org.talend.core.model.repository.ERepositoryObjectType;
 import org.talend.core.repository.model.ProxyRepositoryFactory;
+import org.talend.designer.core.ICamelDesignerCoreService;
 import org.talend.repository.ProjectManager;
 import org.talend.repository.i18n.Messages;
 import org.talend.repository.model.ERepositoryStatus;
@@ -49,6 +51,15 @@ public class GenerateDocAsHTMLAction extends AContextualAction {
         ProjectManager instance = ProjectManager.getInstance();
         boolean canWork = false;
         List<RepositoryNode> nodes = selection.toList();
+        
+        ERepositoryObjectType routeType = null;
+        if (GlobalServiceRegister.getDefault().isServiceRegistered(ICamelDesignerCoreService.class)) {
+        	ICamelDesignerCoreService camelService = (ICamelDesignerCoreService) GlobalServiceRegister.getDefault()
+        			.getService(ICamelDesignerCoreService.class);
+        	routeType = camelService.getRoutes();
+        }
+        
+        
         for (RepositoryNode node : nodes) {
             if (ERepositoryObjectType.PROCESS_MR != null) {
                 if (node.getProperties(EProperties.CONTENT_TYPE) == ERepositoryObjectType.PROCESS_MR) {
@@ -57,11 +68,15 @@ public class GenerateDocAsHTMLAction extends AContextualAction {
                     }
                 }
             }
-            if (node.getProperties(EProperties.CONTENT_TYPE) == ERepositoryObjectType.PROCESS) {
-                if (node.getObject() != null && instance.isInCurrentMainProject(node)) {
-                    canWork = true;
-                }
-            }
+            
+            Object contentType = node.getProperties(EProperties.CONTENT_TYPE);
+			if (contentType == ERepositoryObjectType.PROCESS
+					|| (routeType != null && routeType == contentType)) {
+				if (node.getObject() != null
+						&& instance.isInCurrentMainProject(node)) {
+					canWork = true;
+				}
+			}
             if (canWork && node.getObject() != null
                     && ProxyRepositoryFactory.getInstance().getStatus(node.getObject()) == ERepositoryStatus.DELETED) {
                 canWork = false;

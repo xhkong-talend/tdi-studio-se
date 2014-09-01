@@ -12,11 +12,14 @@
 // ============================================================================
 package org.talend.designer.core.ui.editor.cmd;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.eclipse.gef.commands.Command;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.widgets.Display;
+import org.talend.core.model.metadata.IMetadataTable;
 import org.talend.core.model.process.AbstractNode;
 import org.talend.core.model.process.INode;
 import org.talend.core.model.process.INodeConnector;
@@ -36,6 +39,8 @@ public class ConnectionDeleteCommand extends Command {
 
     private List<Connection> connectionList;
 
+    private Map<Connection, ConnectionDeletedInfo> connectionDeletedInfosMap;
+
     /**
      * Initialisation of the command that will delete the given connection.
      * 
@@ -46,18 +51,32 @@ public class ConnectionDeleteCommand extends Command {
         this.connectionList = connectionList;
     }
 
+    @Override
     public void execute() {
+        connectionDeletedInfosMap = new HashMap<Connection, ConnectionDeleteCommand.ConnectionDeletedInfo>();
         Process process = (Process) connectionList.get(0).getSource().getProcess();
         for (Connection connection : connectionList) {
             boolean re = deleteExpendNode(connection);
             if (re) {
                 return;
             }
+            ConnectionDeletedInfo deletedInfo = new ConnectionDeletedInfo();
+            connectionDeletedInfosMap.put(connection, deletedInfo);
+
+            INode source = connection.getSource();
+            if (source != null) {
+                deletedInfo.metadataTable = connection.getMetadataTable();
+                List<IMetadataTable> metaList = source.getMetadataList();
+                if (metaList != null && deletedInfo.metadataTable != null) {
+                    deletedInfo.metadataTableIndex = metaList.indexOf(deletedInfo.metadataTable);
+                }
+            }
+
+            connection.disconnect();
             final INode target = connection.getTarget();
             if (target.getExternalNode() instanceof AbstractNode) {
                 ((AbstractNode) target.getExternalNode()).removeInput(connection);
             }
-            connection.disconnect();
             INodeConnector nodeConnectorSource, nodeConnectorTarget;
             nodeConnectorSource = connection.getSourceNodeConnector();
             if (nodeConnectorSource != null) {
@@ -70,11 +89,27 @@ public class ConnectionDeleteCommand extends Command {
         process.checkProcess();
     }
 
+    @Override
     public void undo() {
         Process process = (Process) connectionList.get(0).getSource().getProcess();
         for (Connection connection : connectionList) {
             collpseJoblet(connection);
+            ConnectionDeletedInfo deletedInfo = connectionDeletedInfosMap.get(connection);
+            if (deletedInfo != null) {
+                INode source = connection.getSource();
+                if (source != null && deletedInfo.metadataTable != null) {
+                    List<IMetadataTable> metaList = source.getMetadataList();
+                    if (!metaList.contains(deletedInfo.metadataTable)) {
+                        metaList.add(deletedInfo.metadataTableIndex, deletedInfo.metadataTable);
+                    }
+                }
+            }
             connection.reconnect();
+            INode target = connection.getTarget();
+            if (target.getExternalNode() instanceof AbstractNode) {
+                ((AbstractNode) target.getExternalNode()).addInput(connection);
+            }
+
             INodeConnector nodeConnectorSource, nodeConnectorTarget;
             nodeConnectorSource = connection.getSourceNodeConnector();
             if (nodeConnectorSource != null) {
@@ -124,5 +159,13 @@ public class ConnectionDeleteCommand extends Command {
         if ((target instanceof Node) && ((Node) target).isJoblet()) {
             ((JobletContainer) ((Node) target).getNodeContainer()).setCollapsed(true);
         }
+    }
+
+    private class ConnectionDeletedInfo {
+
+        public int metadataTableIndex = -1;
+
+        public IMetadataTable metadataTable = null;
+
     }
 }

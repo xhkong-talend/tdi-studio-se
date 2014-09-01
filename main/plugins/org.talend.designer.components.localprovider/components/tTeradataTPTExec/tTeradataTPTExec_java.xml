@@ -138,7 +138,7 @@
     FIELD="LABEL"
     NUM_ROW="5"
     >
-    <DEFAULT>*Note:You must specify one or more columns as primary key</DEFAULT>
+    <DEFAULT>*Note:You must specify one or more columns as primary key for updating or deleting</DEFAULT>
     </PARAMETER>
 
    <PARAMETER
@@ -218,6 +218,7 @@
 	    FIELD="CHECK"
 	    NUM_ROW="20"
 	    REQUIRED="true"
+      SHOW_IF="ACTION != 'INSERTER'"
 	>
 	    <DEFAULT>false</DEFAULT>
 	</PARAMETER>
@@ -289,8 +290,9 @@
 	    NAME="BEGINLOAD_ADVANCEDPARAM"
 	    FIELD="TEXT"
 	    NUM_ROW="30"
-	    REQUIRED="true"
-	>
+      SHOW="false"
+	    REQUIRED="false"
+      >
 	    <DEFAULT>"SESSIONS 8 CHECKPOINT 60 ERRLIMIT 1000"</DEFAULT>
 	</PARAMETER>
 	<PARAMETER

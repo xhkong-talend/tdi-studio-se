@@ -1357,7 +1357,7 @@ public abstract class AbstractElementPropertySectionController implements Proper
         }
         // Get real hsqldb type
         if (type.equals(EDatabaseTypeName.HSQLDB.name())
-                && getValueFromRepositoryName(element, "RUNNING_MODE").equals("HSQLDB_INPROGRESS_PERSISTENT")) {//$NON-NLS-1$ 
+                && getValueFromRepositoryName(element, "RUNNING_MODE").equals("HSQLDB_INPROGRESS_PERSISTENT")) {//$NON-NLS-1$
             type = EDatabaseTypeName.HSQLDB_IN_PROGRESS.getDisplayName();
         }
         // If the dbtype has been setted don't reset it again unless the dbtype of connParameters is null.
@@ -1545,6 +1545,13 @@ public abstract class AbstractElementPropertySectionController implements Proper
         String dir = getParameterValueWithContext(element, EConnectionParameterName.DIRECTORY.getName(), context);
         if (dbType.equals(EDatabaseTypeName.HSQLDB_IN_PROGRESS.getDisplayName())) {
             dir = getParameterValueWithContext(element, EConnectionParameterName.DBPATH.getName(), context);
+        }
+        if (connParameters.getSchema() == null || connParameters.getSchema().equals("")) {
+            if (EDatabaseTypeName.IBMDB2.getDisplayName().equals(dbType)
+                    || EDatabaseTypeName.IBMDB2ZOS.getDisplayName().equals(dbType)) {
+                connParameters.setSchema(getParameterValueWithContext(element, EParameterName.SCHEMA_DB_DB2.getDisplayName(),
+                        context));
+            }
         }
         connParameters.setDirectory(dir);
         connParameters.setHttps(Boolean.parseBoolean(getParameterValueWithContext(element,
@@ -1753,12 +1760,12 @@ public abstract class AbstractElementPropertySectionController implements Proper
         }
         // Get real hsqldb type
         if (type.equals(EDatabaseTypeName.HSQLDB.name())
-                && getValueFromRepositoryName(elem, "RUNNING_MODE").equals("HSQLDB_INPROGRESS_PERSISTENT")) {//$NON-NLS-1$ 
+                && getValueFromRepositoryName(elem, "RUNNING_MODE").equals("HSQLDB_INPROGRESS_PERSISTENT")) {//$NON-NLS-1$
             type = EDatabaseTypeName.HSQLDB_IN_PROGRESS.getDisplayName();
         }
         connParameters.setDbType(type);
 
-        String driverName = getValueFromRepositoryName(elem, "DB_VERSION"); //$NON-NLS-1$ 
+        String driverName = getValueFromRepositoryName(elem, "DB_VERSION"); //$NON-NLS-1$
         String dbVersionName = EDatabaseVersion4Drivers.getDbVersionName(type, driverName);
         if (EDatabaseTypeName.HIVE.getProduct().equalsIgnoreCase(type)) {
             if (EDatabaseVersion4Drivers.HIVE_EMBEDDED.getVersionValue().equals(
@@ -2130,34 +2137,44 @@ public abstract class AbstractElementPropertySectionController implements Proper
     }
 
     private Command refreshConnectionCommand(Control control) {
+        if (control.getData(PARAMETER_NAME) != null && control.getData(PARAMETER_NAME) instanceof String) {
+            String paramName = (String) control.getData(PARAMETER_NAME);
 
-        final IElementParameter propertyParam = elem.getElementParameterFromField(EParameterFieldType.PROPERTY_TYPE);
-        if (propertyParam != null) {
-            final IElementParameter repositoryParam = propertyParam.getChildParameters().get(
-                    EParameterName.REPOSITORY_PROPERTY_TYPE.getName());
-            if (repositoryParam != null) {
-                try {
-                    IRepositoryViewObject o = RepositoryPlugin.getDefault().getRepositoryService().getProxyRepositoryFactory()
-                            .getLastVersion((String) repositoryParam.getValue());
-                    // for bug 14535
-                    if (o != null && elem instanceof INode) {
-                        INode node = (INode) elem;
-                        IMetadataService metadataService = CorePlugin.getDefault().getMetadataService();
-                        if (metadataService != null) {
-                            metadataService.openMetadataConnection(o, node);
+            IElementParameter param = elem.getElementParameter(paramName);
+            String propertyParamName = null;
+            if (param.getRepositoryProperty() != null) {
+                propertyParamName = param.getRepositoryProperty();
+            } else {
+                propertyParamName = elem.getElementParameterFromField(EParameterFieldType.PROPERTY_TYPE).getName();
+            }
+            final IElementParameter propertyParam = elem.getElementParameter(propertyParamName);
+
+            if (propertyParam != null) {
+                final IElementParameter repositoryParam = propertyParam.getChildParameters().get(
+                        EParameterName.REPOSITORY_PROPERTY_TYPE.getName());
+                if (repositoryParam != null) {
+                    try {
+                        IRepositoryViewObject o = RepositoryPlugin.getDefault().getRepositoryService()
+                                .getProxyRepositoryFactory().getLastVersion((String) repositoryParam.getValue());
+                        // for bug 14535
+                        if (o != null && elem instanceof INode) {
+                            INode node = (INode) elem;
+                            IMetadataService metadataService = CorePlugin.getDefault().getMetadataService();
+                            if (metadataService != null) {
+                                metadataService.openMetadataConnection(o, node);
+                            }
+                            // TDI-21143 : Studio repository view : remove all refresh call to repo view
+                            // IRepositoryView view = RepositoryManagerHelper.findRepositoryView();
+                            // if (view != null) {
+                            // view.refresh();
+                            // }
                         }
-                        // TDI-21143 : Studio repository view : remove all refresh call to repo view
-                        // IRepositoryView view = RepositoryManagerHelper.findRepositoryView();
-                        // if (view != null) {
-                        // view.refresh();
-                        // }
+                    } catch (Exception e) {
+                        ExceptionHandler.process(e);
                     }
-                } catch (Exception e) {
-                    ExceptionHandler.process(e);
                 }
             }
         }
-
         return null;
     }
 

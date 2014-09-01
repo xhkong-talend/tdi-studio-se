@@ -42,6 +42,7 @@ import org.talend.designer.core.i18n.Messages;
 import org.talend.designer.core.ui.action.ComponentSearcher;
 import org.talend.designer.core.ui.editor.AbstractTalendEditor;
 import org.talend.designer.core.ui.editor.PaletteComponentFactory;
+import org.talend.designer.core.ui.editor.nodes.Node;
 import org.talend.repository.model.ComponentsFactoryProvider;
 import org.talend.repository.ui.actions.ShowFavoriteAction;
 
@@ -83,21 +84,42 @@ public class TalendPaletteContextMenuProvider extends PaletteContextMenuProvider
         return componentCategory.getName().equals(process.getComponentsType());
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public void buildContextMenu(IMenuManager menu) {
         super.buildContextMenu(menu);
-        if (!isComponentsTypePalette(ComponentCategory.CATEGORY_4_CAMEL)) {
-            menu.appendToGroup(GEFActionConstants.MB_ADDITIONS, new SearchComponentAction(getPaletteViewer()));
-        }
-        PaletteEntry element = (PaletteEntry) ((EditPart) getPaletteViewer().getSelectedEditParts().get(0)).getModel();
-        boolean note = element.getLabel().equals(Messages.getString("TalendEditorPaletteFactory.Note"));//$NON-NLS-1$
-        if (note) {
+        boolean hasSearchComponentAction = true;
 
-        } else {
-            if (ShowFavoriteAction.state == true) {
-                menu.appendToGroup(GEFActionConstants.GROUP_COPY, new FavoriteComponentAction(getPaletteViewer()));
-            } else {
-                menu.appendToGroup(GEFActionConstants.GROUP_COPY, new RemoveFavoriteComponentAction(getPaletteViewer()));
+        List editParts = getPaletteViewer().getSelectedEditParts();
+        if (!editParts.isEmpty()) {
+            PaletteEntry element = (PaletteEntry) ((EditPart) editParts.get(0)).getModel();
+            if (editParts.size() > 1) { // search component only process one .
+                hasSearchComponentAction = false;
+            } else { // check the entry is component or folder
+                if (element instanceof CombinedTemplateCreationEntry) {
+                    Object template = ((CombinedTemplateCreationEntry) element).getTemplate();
+                    if (template == null || !Node.class.equals(template)) {
+                        hasSearchComponentAction = false;
+                    }
+                } else { // not component entry
+                    hasSearchComponentAction = false;
+                }
+            }
+            // don't work for camel.
+            if (hasSearchComponentAction && isComponentsTypePalette(ComponentCategory.CATEGORY_4_CAMEL)) {
+                hasSearchComponentAction = false;
+            }
+            // note
+            boolean note = element.getLabel().equals(Messages.getString("TalendEditorPaletteFactory.Note"));//$NON-NLS-1$
+            if (!note) {
+                if (hasSearchComponentAction) {
+                    menu.appendToGroup(GEFActionConstants.MB_ADDITIONS, new SearchComponentAction(getPaletteViewer()));
+                }
+                if (ShowFavoriteAction.state == true) {
+                    menu.appendToGroup(GEFActionConstants.GROUP_COPY, new FavoriteComponentAction(getPaletteViewer()));
+                } else {
+                    menu.appendToGroup(GEFActionConstants.GROUP_COPY, new RemoveFavoriteComponentAction(getPaletteViewer()));
+                }
             }
         }
         menu.appendToGroup(GEFActionConstants.GROUP_COPY, new HiddenFloderAction(getPaletteViewer()));

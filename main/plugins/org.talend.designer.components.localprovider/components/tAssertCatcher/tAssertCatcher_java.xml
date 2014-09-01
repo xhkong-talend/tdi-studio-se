@@ -37,7 +37,7 @@ COMPATIBILITY="ALL"
         <COLUMN NAME="moment" TYPE="id_Date" PATTERN='"yyyy-MM-dd HH:mm:ss"'/>
         <COLUMN NAME="pid" TYPE="id_String" LENGTH="20"/>
         <COLUMN NAME="project" TYPE="id_String" LENGTH="50"/>
-        <COLUMN NAME="job" TYPE="id_String" LENGTH="50"/>
+        <COLUMN NAME="job" TYPE="id_String" LENGTH="255"/>
         <COLUMN NAME="language" TYPE="id_String" LENGTH="5"/>
         <COLUMN NAME="origin" TYPE="id_String" LENGTH="50"/>
         <COLUMN NAME="status" TYPE="id_String" LENGTH="10"/>
@@ -48,7 +48,7 @@ COMPATIBILITY="ALL"
         <COLUMN NAME="moment" TYPE="id_Date" PATTERN='"yyyy-MM-dd HH:mm:ss"'/>
         <COLUMN NAME="pid" TYPE="id_String" LENGTH="20"/>
         <COLUMN NAME="project" TYPE="id_String" LENGTH="50"/>
-        <COLUMN NAME="job" TYPE="id_String" LENGTH="50"/>
+        <COLUMN NAME="job" TYPE="id_String" LENGTH="255"/>
         <COLUMN NAME="language" TYPE="id_String" LENGTH="5"/>
         <COLUMN NAME="origin" TYPE="id_String" LENGTH="50"/>
         <COLUMN NAME="status" TYPE="id_String" LENGTH="10"/>

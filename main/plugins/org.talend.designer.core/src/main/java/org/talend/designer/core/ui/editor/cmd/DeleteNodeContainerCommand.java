@@ -15,6 +15,7 @@ package org.talend.designer.core.ui.editor.cmd;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.collections.map.MultiKeyMap;
 import org.eclipse.gef.commands.Command;
 import org.talend.core.CorePlugin;
 import org.talend.core.model.metadata.IMetadataTable;
@@ -46,6 +47,8 @@ public class DeleteNodeContainerCommand extends Command {
 
     private List<String> joinTableNames = new ArrayList<String>();
 
+    private MultiKeyMap connectionDeletedInfosMap;
+
     public DeleteNodeContainerCommand(IProcess2 process, List<INode> nodeList) {
         this.process = process;
         this.nodeList = nodeList;
@@ -55,6 +58,7 @@ public class DeleteNodeContainerCommand extends Command {
     @Override
     @SuppressWarnings("unchecked")
     public void execute() {
+        connectionDeletedInfosMap = new MultiKeyMap();
         process.setActivate(false);
         List uniqueNameList = new ArrayList();
         for (INode node : nodeList) {
@@ -83,18 +87,21 @@ public class DeleteNodeContainerCommand extends Command {
                     if (!nodeList.contains(jobletnode)) {
                         boolean builtInJobletNode = jobletnode.getConnectorFromType(EConnectionType.FLOW_MAIN).isMultiSchema()
                                 | node.getConnectorFromType(EConnectionType.TABLE).isMultiSchema();
+                        storeMetadata(connection, jobletnode);
                         jobletnode.removeOutput(connection);
-                        if (!builtInJobletNode)
+                        if (!builtInJobletNode) {
                             process.removeUniqueConnectionName(connection.getUniqueName());
+                        }
                     }
                 }
                 if (!nodeList.contains(prevNode)) {
                     boolean builtInPrevNode = prevNode.getConnectorFromType(EConnectionType.FLOW_MAIN).isMultiSchema()
                             | node.getConnectorFromType(EConnectionType.TABLE).isMultiSchema();
-
+                    storeMetadata(connection, prevNode);
                     prevNode.removeOutput(connection);
-                    if (!builtInPrevNode)
+                    if (!builtInPrevNode) {
                         process.removeUniqueConnectionName(connection.getUniqueName());
+                    }
                 }
             }
             for (IConnection connection : outputList) {
@@ -106,8 +113,9 @@ public class DeleteNodeContainerCommand extends Command {
                         jobletnode.removeInput(connection);
                         boolean builtInJobletNode = jobletnode.getConnectorFromType(EConnectionType.FLOW_MAIN).isMultiSchema()
                                 | node.getConnectorFromType(EConnectionType.TABLE).isMultiSchema();
-                        if (!builtInJobletNode)
+                        if (!builtInJobletNode) {
                             process.removeUniqueConnectionName(connection.getUniqueName());
+                        }
                     }
                 }
                 if (!nodeList.contains(nextNode)) {
@@ -120,6 +128,7 @@ public class DeleteNodeContainerCommand extends Command {
                             nextNodeConnection.updateName();
                         }
                     }
+
                     if (nextNode.getExternalNode() instanceof AbstractNode) {
                         ((AbstractNode) nextNode.getExternalNode()).removeInput(connection);
                     }
@@ -178,11 +187,13 @@ public class DeleteNodeContainerCommand extends Command {
                 if ((prevNode instanceof Node) && ((Node) prevNode).getJobletNode() != null) {
                     Node jobletnode = (Node) prevNode.getJobletNode();
                     ((JobletContainer) jobletnode.getNodeContainer()).getOutputs().add(connection);
+                    restoreMetadata(connection, jobletnode);
                 }
                 if (!nodeList.contains(prevNode)) {
                     if (!prevNode.getOutgoingConnections().contains(connection)) {
                         prevNode.addOutput(connection);
                     }
+                    restoreMetadata(connection, prevNode);
                     connection.reconnect();
                     connection.updateAllId();
                     boolean builtInPrevNode = prevNode.getConnectorFromType(EConnectionType.FLOW_MAIN).isMultiSchema()
@@ -214,6 +225,10 @@ public class DeleteNodeContainerCommand extends Command {
                     INodeConnector nodeConnector = nextNode.getConnectorFromType(connection.getLineStyle());
                     nodeConnector.setCurLinkNbInput(nodeConnector.getCurLinkNbInput() + 1);
                     connection.reconnect();
+
+                    if (nextNode.getExternalNode() instanceof AbstractNode) {
+                        ((AbstractNode) nextNode.getExternalNode()).addInput(connection);
+                    }
                 }
                 if (!builtIn) {
                     if (connection.getLineStyle().hasConnectionCategory(IConnectionCategory.UNIQUE_NAME)) {
@@ -246,5 +261,40 @@ public class DeleteNodeContainerCommand extends Command {
     @Override
     public void redo() {
         this.execute();
+    }
+
+    private void storeMetadata(IConnection connection, INode node) {
+        ConnectionDeletedInfo deletedInfo = new ConnectionDeletedInfo();
+        connectionDeletedInfosMap.put(connection, node, deletedInfo);
+
+        INode source = connection.getSource();
+        if (source != null) {
+            deletedInfo.metadataTable = connection.getMetadataTable();
+            List<IMetadataTable> metaList = source.getMetadataList();
+            if (metaList != null && deletedInfo.metadataTable != null) {
+                deletedInfo.metadataTableIndex = metaList.indexOf(deletedInfo.metadataTable);
+            }
+        }
+    }
+
+    private void restoreMetadata(IConnection connection, INode node) {
+        ConnectionDeletedInfo deletedInfo = (ConnectionDeletedInfo) connectionDeletedInfosMap.get(connection, node);
+        if (deletedInfo != null) {
+            INode source = connection.getSource();
+            if (source != null && deletedInfo.metadataTable != null) {
+                List<IMetadataTable> metaList = source.getMetadataList();
+                if (!metaList.contains(deletedInfo.metadataTable)) {
+                    metaList.add(deletedInfo.metadataTableIndex, deletedInfo.metadataTable);
+                }
+            }
+        }
+    }
+
+    private class ConnectionDeletedInfo {
+
+        public int metadataTableIndex = -1;
+
+        public IMetadataTable metadataTable = null;
+
     }
 }

@@ -594,7 +594,7 @@ public class ChangeMetadataCommand extends Command {
             updateColumnList(oldOutputMetadata, newOutputMetadata);
             ((Process) node.getProcess()).checkProcess();
         }
-
+        refreshTHMAPObjectType();
     }
 
     private org.talend.core.model.metadata.builder.connection.Connection connection;
@@ -727,6 +727,7 @@ public class ChangeMetadataCommand extends Command {
             updateColumnList(newOutputMetadata, oldOutputMetadata);
             ((Process) node.getProcess()).checkProcess();
         }
+        refreshTHMAPObjectType();
     }
 
     /**
@@ -806,4 +807,48 @@ public class ChangeMetadataCommand extends Command {
             }
         }
     }
+
+    private void refreshTHMAPObjectType() {
+        if (inputNode != null && inputNode.getComponent().getName().equals("tHMap")) {
+            if (inputNode.getElementParameter("SINGLE_COLUMN_OBJECTTYPE") != null) {
+                boolean isSingleObject = false;
+                if (currentInputMetadata.getListColumns().size() == 1) {
+                    if (currentInputMetadata.getListColumns().get(0).getTalendType().equals("id_Object")) {
+                        inputNode.getElementParameter("SINGLE_COLUMN_OBJECTTYPE").setValue(true);
+                        isSingleObject = true;
+                    }
+                }
+                if (!isSingleObject) {
+                    inputNode.getElementParameter("SINGLE_COLUMN_OBJECTTYPE").setValue(false);
+                    if (inputNode.getElementParameter("AS_STRING") != null) {
+                        inputNode.getElementParameter("AS_STRING").setValue(false);
+                        inputNode.getElementParameter("AS_BYTEARRAY").setValue(false);
+                        inputNode.getElementParameter("AS_INPUTSTREAM").setValue(false);
+                        inputNode.getElementParameter("AS_DOCUMENT").setValue(false);
+                    }
+                }
+            }
+        }
+        if (node != null && node.getComponent().getName().equals("tHMap")) {
+            if (node.getElementParameter("SINGLE_COLUMN_OBJECTTYPE") != null) {
+                boolean isSingleObject = false;
+                if (currentOutputMetadata.getListColumns().size() == 1) {
+                    if (currentOutputMetadata.getListColumns().get(0).getTalendType().equals("id_Object")) {
+                        node.getElementParameter("SINGLE_COLUMN_OBJECTTYPE").setValue(true);
+                        isSingleObject = true;
+                    }
+                }
+                if (!isSingleObject) {
+                    node.getElementParameter("SINGLE_COLUMN_OBJECTTYPE").setValue(false);
+                    if (node.getElementParameter("AS_STRING") != null) {
+                        node.getElementParameter("AS_STRING").setValue(false);
+                        node.getElementParameter("AS_BYTEARRAY").setValue(false);
+                        node.getElementParameter("AS_INPUTSTREAM").setValue(false);
+                        node.getElementParameter("AS_DOCUMENT").setValue(false);
+                    }
+                }
+            }
+        }
+    }
+
 }

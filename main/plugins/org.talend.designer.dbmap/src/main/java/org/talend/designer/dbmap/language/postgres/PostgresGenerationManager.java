@@ -27,6 +27,7 @@ import org.talend.designer.dbmap.external.data.ExternalDbMapEntry;
 import org.talend.designer.dbmap.external.data.ExternalDbMapTable;
 import org.talend.designer.dbmap.language.GenericDbLanguage;
 import org.talend.designer.dbmap.language.generation.DbGenerationManager;
+import org.talend.designer.dbmap.language.generation.DbMapSqlConstants;
 import org.talend.designer.dbmap.language.generation.MapExpressionParser;
 
 /**
@@ -81,13 +82,17 @@ public class PostgresGenerationManager extends DbGenerationManager {
                 String schemaStr = "";
                 String tableNameStr = "";
                 if (source != null) {
-                    IElementParameter schema = source.getElementParameter("ELT_SCHEMA_NAME");
-                    IElementParameter tableName = source.getElementParameter("ELT_TABLE_NAME");
-                    if (schema != null && schema.getValue() != null) {
-                        schemaStr = TalendTextUtils.removeQuotes(schema.getValue().toString());
-                    }
-                    if (tableName != null && tableName.getValue() != null) {
-                        tableNameStr = TalendTextUtils.removeQuotes(tableName.getValue().toString());
+                    if (isELTDBMap(source)) {
+                        tableNameStr = connection.getName();
+                    } else {
+                        IElementParameter schema = source.getElementParameter("ELT_SCHEMA_NAME");
+                        IElementParameter tableName = source.getElementParameter("ELT_TABLE_NAME");
+                        if (schema != null && schema.getValue() != null) {
+                            schemaStr = TalendTextUtils.removeQuotes(schema.getValue().toString());
+                        }
+                        if (tableName != null && tableName.getValue() != null) {
+                            tableNameStr = TalendTextUtils.removeQuotes(tableName.getValue().toString());
+                        }
                     }
                 }
 
@@ -196,27 +201,42 @@ public class PostgresGenerationManager extends DbGenerationManager {
 
     @Override
     protected void buildTableDeclaration(DbMapComponent component, StringBuilder sb, ExternalDbMapTable inputTable) {
-        sb.append(getHandledTableName(component, inputTable.getTableName()));
+        sb.append(getHandledTableName(component, inputTable.getTableName(), inputTable.getAlias(), true));
+    }
+
+    @Override
+    protected String getFormatedTableName(String tName) {
+        return "\\\"" + tName + "\\\""; //$NON-NLS-1$ //$NON-NLS-2$
     }
 
     @Override
     protected String getHandledTableName(DbMapComponent component, String name) {
+        return getHandledTableName(component, name, null, false);
+    }
+
+    protected String getHandledTableName(DbMapComponent component, String name, String aliasName, boolean generateSubSql) {
         List<IConnection> inputConnections = (List<IConnection>) component.getIncomingConnections();
         if (inputConnections == null) {
             return name;
         }
         for (IConnection iconn : inputConnections) {
+            boolean inputIsELTDBMap = false;
             INode source = iconn.getSource();
             String schemaStr = "";
             String tableNameStr = "";
             if (source != null) {
-                IElementParameter schema = source.getElementParameter("ELT_SCHEMA_NAME");
-                IElementParameter tableName = source.getElementParameter("ELT_TABLE_NAME");
-                if (schema != null && schema.getValue() != null) {
-                    schemaStr = TalendTextUtils.removeQuotes(schema.getValue().toString());
-                }
-                if (tableName != null && tableName.getValue() != null) {
-                    tableNameStr = TalendTextUtils.removeQuotes(tableName.getValue().toString());
+                inputIsELTDBMap = isELTDBMap(source);
+                if (inputIsELTDBMap) {
+                    tableNameStr = iconn.getName();
+                } else {
+                    IElementParameter schema = source.getElementParameter("ELT_SCHEMA_NAME");
+                    IElementParameter tableName = source.getElementParameter("ELT_TABLE_NAME");
+                    if (schema != null && schema.getValue() != null) {
+                        schemaStr = TalendTextUtils.removeQuotes(schema.getValue().toString());
+                    }
+                    if (tableName != null && tableName.getValue() != null) {
+                        tableNameStr = TalendTextUtils.removeQuotes(tableName.getValue().toString());
+                    }
                 }
             }
 
@@ -229,8 +249,31 @@ public class PostgresGenerationManager extends DbGenerationManager {
                 }
             }
             if (tableName.equals(name)) {
+                StringBuffer sb = new StringBuffer();
+                if (inputIsELTDBMap && generateSubSql) {
+                    DbMapComponent externalNode = null;
+                    if (source instanceof DbMapComponent) {
+                        externalNode = (DbMapComponent) source;
+                    } else {
+                        externalNode = (DbMapComponent) source.getExternalNode();
+                    }
+                    DbGenerationManager genManager = externalNode.getGenerationManager();
+                    String deliveredTable = genManager.buildSqlSelect(externalNode, iconn.getMetadataTable().getTableName(),
+                            tabSpaceString + "  "); //$NON-NLS-1$
+                    int begin = 1;
+                    int end = deliveredTable.length() - 1;
+                    if (begin <= end) {
+                        sb.append("(").append(DbMapSqlConstants.NEW_LINE).append(tabSpaceString).append("  "); //$NON-NLS-1$ //$NON-NLS-2$
+                        sb.append(deliveredTable.substring(begin, end)).append(DbMapSqlConstants.NEW_LINE).append(tabSpaceString)
+                                .append(" ) "); //$NON-NLS-1$
+                    }
+                    if (aliasName != null && !aliasName.trim().isEmpty()) {
+                        tableNameStr = aliasName;
+                    }
+                }
                 StringBuffer tempExp = getSchemaAndTable(schemaStr, tableNameStr);
-                return tempExp.toString();
+                sb.append(tempExp);
+                return sb.toString();
             }
         }
         return name;

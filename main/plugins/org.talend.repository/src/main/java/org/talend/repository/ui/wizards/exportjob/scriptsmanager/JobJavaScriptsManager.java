@@ -53,6 +53,7 @@ import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.jdt.core.IJavaProject;
@@ -156,6 +157,10 @@ public class JobJavaScriptsManager extends JobScriptsManager {
 
     private List<String> mavenModules = new ArrayList<String>();
 
+    private ExportFileResource[] exportFileResource;
+
+    public static final String PLUGIN_ID = "org.talend.libraries.apache.storm"; //$NON-NLS-1$
+
     /**
      * Getter for compiledModules.
      * 
@@ -200,10 +205,16 @@ public class JobJavaScriptsManager extends JobScriptsManager {
     }
 
     protected Set<String> getCompiledModuleNames() {
+        return getCompiledModuleNames(false);
+    }
+
+    protected Set<String> getCompiledModuleNames(boolean isSpecialMR) {
         Set<String> compiledModulesSet = new HashSet<String>(100);
 
         for (ModuleNeeded module : getCompiledModuleNeededs()) {
-            compiledModulesSet.add(module.getModuleName());
+            if ((isSpecialMR && module.isMrRequired()) || !isSpecialMR) {
+                compiledModulesSet.add(module.getModuleName());
+            }
         }
         return compiledModulesSet;
     }
@@ -682,7 +693,7 @@ public class JobJavaScriptsManager extends JobScriptsManager {
     @Override
     public List<ExportFileResource> getExportResources(ExportFileResource[] process, String... codeOptions)
             throws ProcessorException {
-
+        exportFileResource = process;
         for (int i = 0; i < process.length; i++) {
             ProcessItem processItem = (ProcessItem) process[i].getItem();
             String selectedJobVersion = processItem.getProperty().getVersion();
@@ -773,10 +784,14 @@ public class JobJavaScriptsManager extends JobScriptsManager {
     }
 
     protected ExportFileResource getCompiledLibExportFileResource(ExportFileResource[] processes) {
+        return getCompiledLibExportFileResource(processes, false);
+    }
+
+    protected ExportFileResource getCompiledLibExportFileResource(ExportFileResource[] processes, boolean isSpecialMR) {
         ExportFileResource libResource = new ExportFileResource(null, LIBRARY_FOLDER_NAME);
         // Gets talend libraries
         List<URL> talendLibraries = getExternalLibraries(isOptionChoosed(ExportChoice.needTalendLibraries), processes,
-                getCompiledModuleNames());
+                getCompiledModuleNames(isSpecialMR));
         if (talendLibraries != null) {
             libResource.addResources(talendLibraries);
         }
@@ -2034,5 +2049,45 @@ public class JobJavaScriptsManager extends JobScriptsManager {
         }
         return null;
 
+    }
+
+    public List<File> getLibPath(boolean isSpecialMR) {
+        List<File> ret = new ArrayList<File>();
+        if (exportFileResource != null) {
+            ExportFileResource libResource = getCompiledLibExportFileResource(exportFileResource, isSpecialMR);
+            Collection<Set<URL>> col = libResource.getAllResources();
+            // this from org.talend.libraries.apache.storm/lib
+            URL stormLibUrl = null;
+            File file = null;
+            try {
+                stormLibUrl = FileLocator.toFileURL(FileLocator.find(Platform.getBundle(PLUGIN_ID), new Path("lib"), null));
+                file = new File(stormLibUrl.getFile());
+            } catch (IOException e) {
+                ExceptionHandler.process(e);
+            }
+            for (Set<URL> set : col) {
+                Iterator<URL> it = set.iterator();
+                while (it.hasNext()) {
+                    URL url = it.next();
+                    // for storm not include the jar from libraries.apache.strom
+                    if (!isSpecialMR && stormLibUrl != null && file != null) {
+                        File[] jars = file.listFiles();
+                        String name = url.getFile().substring(url.getFile().lastIndexOf("/") + 1, url.getFile().length());
+                        boolean isExist = false;
+                        for (File jarFile : jars) {
+                            if (jarFile.getName().equals(name)) {
+                                isExist = true;
+                            }
+                        }
+                        if (!isExist) {
+                            ret.add(new File(url.getFile()));
+                        }
+                    } else {
+                        ret.add(new File(url.getFile()));
+                    }
+                }
+            }
+        }
+        return ret;
     }
 }

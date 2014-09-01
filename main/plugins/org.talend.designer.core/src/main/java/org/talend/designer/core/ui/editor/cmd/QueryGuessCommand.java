@@ -65,7 +65,7 @@ public class QueryGuessCommand extends Command {
 
     private Object oldValue;
 
-    private IMetadataTable newOutputMetadataTable;
+    private final IMetadataTable newOutputMetadataTable;
 
     private Map<String, String> dbNameAndDbTypeMap;
 
@@ -354,9 +354,9 @@ public class QueryGuessCommand extends Command {
 
         }
 
-        if (conn instanceof DatabaseConnection && conn.isContextMode()) {
-            schema = DatabaseConnectionParameterUtil.getContextTrueValue((DatabaseConnection) conn, schema);
-        }
+        // if (conn instanceof DatabaseConnection && conn.isContextMode()) {
+        // schema = DatabaseConnectionParameterUtil.getContextTrueValue((DatabaseConnection) conn, schema);
+        // }
 
         String newQuery = null;
         realTableName = QueryUtil.getTableName(node, newOutputMetadataTable, schema, dbType, realTableName);

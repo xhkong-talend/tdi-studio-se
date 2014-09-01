@@ -66,6 +66,7 @@ public class Note extends Element {
         param.setReadOnly(false);
         param.setRequired(true);
         param.setShow(true);
+        param.setDefaultValue(param.getValue());
         addElementParameter(param);
         param = new ElementParameter(this);
         param.setName(EParameterName.NOTETXT_COLOR.getName());
@@ -77,6 +78,7 @@ public class Note extends Element {
         param.setReadOnly(false);
         param.setRequired(true);
         param.setShow(true);
+        param.setDefaultValue(param.getValue());
         addElementParameter(param);
         param = new ElementParameter(this);
         param.setName(EParameterName.NOTETXT_LEFT.getName());
@@ -85,6 +87,7 @@ public class Note extends Element {
         param.setFieldType(EParameterFieldType.RADIO);
         param.setCategory(EComponentCategory.BASIC);
         param.setNumRow(4);
+        param.setDefaultValue(param.getValue());
         addElementParameter(param);
         param = new ElementParameter(this);
         param.setName(EParameterName.NOTETXT_RIGHT.getName());
@@ -93,6 +96,7 @@ public class Note extends Element {
         param.setFieldType(EParameterFieldType.RADIO);
         param.setCategory(EComponentCategory.BASIC);
         param.setNumRow(4);
+        param.setDefaultValue(param.getValue());
         addElementParameter(param);
         param = new ElementParameter(this);
         param.setName(EParameterName.NOTETXT_CENTER.getName());
@@ -101,6 +105,7 @@ public class Note extends Element {
         param.setFieldType(EParameterFieldType.RADIO);
         param.setCategory(EComponentCategory.BASIC);
         param.setNumRow(4);
+        param.setDefaultValue(param.getValue());
         addElementParameter(param);
         param = new ElementParameter(this);
         param.setName(EParameterName.NOTELABEL_CENTER.getName());
@@ -109,6 +114,7 @@ public class Note extends Element {
         param.setFieldType(EParameterFieldType.RADIO);
         param.setCategory(EComponentCategory.BASIC);
         param.setNumRow(4);
+        param.setDefaultValue(param.getValue());
         addElementParameter(param);
         param = new ElementParameter(this);
         param.setName(EParameterName.NOTETXT_TOP.getName());
@@ -117,6 +123,7 @@ public class Note extends Element {
         param.setFieldType(EParameterFieldType.RADIO);
         param.setCategory(EComponentCategory.BASIC);
         param.setNumRow(4);
+        param.setDefaultValue(param.getValue());
         addElementParameter(param);
         param = new ElementParameter(this);
         param.setName(EParameterName.NOTETXT_BOTTOM.getName());
@@ -125,6 +132,7 @@ public class Note extends Element {
         param.setFieldType(EParameterFieldType.RADIO);
         param.setCategory(EComponentCategory.BASIC);
         param.setNumRow(4);
+        param.setDefaultValue(param.getValue());
         addElementParameter(param);
         param = new ElementParameter(this);
         param.setName(EParameterName.NOTE_FONT.getName());
@@ -133,6 +141,7 @@ public class Note extends Element {
         param.setFieldType(EParameterFieldType.TEXT);
         param.setCategory(EComponentCategory.BASIC);
         param.setNumRow(4);
+        param.setDefaultValue(param.getValue());
         addElementParameter(param);
 
         param = new ElementParameter(this);
@@ -142,6 +151,7 @@ public class Note extends Element {
         param.setFieldType(EParameterFieldType.TEXT);
         param.setCategory(EComponentCategory.BASIC);
         param.setNumRow(4);
+        param.setDefaultValue(param.getValue());
         addElementParameter(param);
 
         param = new ElementParameter(this);
@@ -151,6 +161,7 @@ public class Note extends Element {
         param.setFieldType(EParameterFieldType.CHECK);
         param.setCategory(EComponentCategory.BASIC);
         param.setNumRow(4);
+        param.setDefaultValue(param.getValue());
         addElementParameter(param);
 
         param = new ElementParameter(this);
@@ -160,6 +171,7 @@ public class Note extends Element {
         param.setFieldType(EParameterFieldType.CHECK);
         param.setCategory(EComponentCategory.BASIC);
         param.setNumRow(4);
+        param.setDefaultValue(param.getValue());
         addElementParameter(param);
 
         param = new ElementParameter(this);
@@ -169,6 +181,7 @@ public class Note extends Element {
         param.setFieldType(EParameterFieldType.COLOR);
         param.setCategory(EComponentCategory.BASIC);
         param.setNumRow(4);
+        param.setDefaultValue(param.getValue());
         addElementParameter(param);
 
     }
@@ -178,10 +191,12 @@ public class Note extends Element {
         return null;
     }
 
+    @Override
     public boolean isReadOnly() {
         return readOnly;
     }
 
+    @Override
     public void setReadOnly(boolean readOnly) {
         this.readOnly = readOnly;
     }

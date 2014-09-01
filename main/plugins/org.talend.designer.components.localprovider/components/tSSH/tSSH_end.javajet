@@ -20,22 +20,19 @@ imports="
 	if ((metadatas!=null)&&(metadatas.size()>0)) {
     IMetadataTable metadata = metadatas.get(0);
     	if (metadata!=null) {	
-			if(("TO_CONSOLE").equals(standardOutput)){
+			if("TO_CONSOLE".equals(standardOutput) || "TO_CONSOLE_AND_GLOBAL_VARIABLE".equals(standardOutput)){
 %>
-				System.out.println(stringStdout_<%=cid%>.toString());
-<%
-			}else if(("TO_CONSOLE_AND_GLOBAL_VARIABLE").equals(standardOutput)){
-%>
-				System.out.println(stringStdout_<%=cid%>.toString());
+				if(stringStdout_<%=cid%>.length() > 0) {
+					System.out.println(stringStdout_<%=cid%>.toString());
+				}
 <%
 			}
-			if(("TO_CONSOLE").equals(errorOutput)){
+			
+			if("TO_CONSOLE".equals(errorOutput) || "TO_CONSOLE_AND_GLOBAL_VARIABLE".equals(errorOutput)){
 %>
-				System.out.println(stringStderr_<%=cid%>.toString());
-<%		
-			}else if(("TO_CONSOLE_AND_GLOBAL_VARIABLE").equals(errorOutput)){
-%>
-				System.out.println(stringStderr_<%=cid%>.toString());
+				if(stringStderr_<%=cid%>.length() > 0) {
+					System.out.println(stringStderr_<%=cid%>.toString());
+				}
 <%
 			}
 		}

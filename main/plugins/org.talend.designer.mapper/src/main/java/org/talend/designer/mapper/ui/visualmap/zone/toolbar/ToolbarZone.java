@@ -99,7 +99,7 @@ public abstract class ToolbarZone {
 
         new ToolItem(getToolBarActions(), SWT.SEPARATOR);
 
-        if (this instanceof ToolbarInputZone && !mapperManager.isMRProcess()) {
+        if (this instanceof ToolbarInputZone) {
             settingManager = MapperSettingsManager.getNewInstance(mapperManager);
             propertyButton = new ToolItem(toolBarActions, SWT.PUSH);
             propertyButton.setImage(ImageProviderMapper.getImage(getPropertyItemImage(settingManager.getChangeNumOfSettings())));

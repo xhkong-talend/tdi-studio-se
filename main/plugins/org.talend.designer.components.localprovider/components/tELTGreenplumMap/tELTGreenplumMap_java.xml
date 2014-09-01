@@ -28,6 +28,7 @@
 
   <CONNECTORS>
 	    <CONNECTOR CTYPE="TABLE" BUILTIN="true" MIN_INPUT="1" MIN_OUTPUT="1"/>
+	    <CONNECTOR CTYPE="TABLE_REF" BUILTIN="true" MIN_INPUT="1" MIN_OUTPUT="1" MAX_OUTPUT="1" />
 	    
 		<CONNECTOR CTYPE="ITERATE" MAX_OUTPUT="0" MAX_INPUT="0"/>
 		<CONNECTOR CTYPE="SUBJOB_OK" MAX_INPUT="1" />
@@ -38,10 +39,12 @@
   </CONNECTORS>
 
   <PARAMETERS>
+
 	   <PARAMETER
 	     NAME="USE_EXISTING_CONNECTION"
 	     FIELD="CHECK"
 	     NUM_ROW="2"
+	     SHOW_IF="#LINK@CONNECTOR.OUT.TABLE_REF == '0'"
 	   >
 	     <DEFAULT>false</DEFAULT>
 	   </PARAMETER>    
@@ -51,7 +54,7 @@
 	     FIELD="COMPONENT_LIST"
 	     REQUIRED="true" FILTER="tGreenplumConnection"
 	     NUM_ROW="2"
-	     SHOW_IF="USE_EXISTING_CONNECTION == 'true'"
+	     SHOW_IF="(#LINK@CONNECTOR.OUT.TABLE_REF == '0') AND (USE_EXISTING_CONNECTION == 'true')"
 	     DYNAMIC_SETTINGS="true"/>
 
       <PARAMETER NAME="MAP" FIELD="EXTERNAL" NUM_ROW="10">
@@ -62,6 +65,7 @@
         NAME="LINK_STYLE"
         FIELD="CLOSED_LIST"
         NUM_ROW="10"
+        SHOW_IF="#LINK@CONNECTOR.OUT.TABLE_REF == '0'"
       >
         <ITEMS DEFAULT="">
           <ITEM NAME="AUTO"   VALUE="AUTO" />
@@ -76,6 +80,7 @@
       SHOW="true"
       NUM_ROW="20"
       REPOSITORY_VALUE="DATABASE:GREENPLUM"
+      SHOW_IF="#LINK@CONNECTOR.OUT.TABLE_REF == '0'"
     />
     
 
@@ -84,7 +89,7 @@
       FIELD="TEXT"
       NUM_ROW="40"
       REPOSITORY_VALUE="SERVER_NAME"
-      SHOW_IF="USE_EXISTING_CONNECTION == 'false'"
+      SHOW_IF="(#LINK@CONNECTOR.OUT.TABLE_REF == '0') AND (USE_EXISTING_CONNECTION == 'false')"
     >
       <DEFAULT>""</DEFAULT>
     </PARAMETER>
@@ -94,7 +99,7 @@
       FIELD="TEXT"
       NUM_ROW="40"
       REPOSITORY_VALUE="PORT"
-      SHOW_IF="USE_EXISTING_CONNECTION == 'false'"
+      SHOW_IF="(#LINK@CONNECTOR.OUT.TABLE_REF == '0') AND (USE_EXISTING_CONNECTION == 'false')"
     >
       <DEFAULT>"1433"</DEFAULT>
     </PARAMETER>
@@ -105,7 +110,7 @@
       NUM_ROW="50"
       REPOSITORY_VALUE="SID"
       REQUIRED="true"
-      SHOW_IF="USE_EXISTING_CONNECTION == 'false'"
+      SHOW_IF="(#LINK@CONNECTOR.OUT.TABLE_REF == '0') AND (USE_EXISTING_CONNECTION == 'false')"
     >
       <DEFAULT>""</DEFAULT>
     </PARAMETER>
@@ -116,7 +121,7 @@
       NUM_ROW="60"
       REPOSITORY_VALUE="USERNAME"
       REQUIRED="true"
-      SHOW_IF="USE_EXISTING_CONNECTION == 'false'"
+      SHOW_IF="(#LINK@CONNECTOR.OUT.TABLE_REF == '0') AND (USE_EXISTING_CONNECTION == 'false')"
     >
       <DEFAULT>""</DEFAULT>
     </PARAMETER>
@@ -127,7 +132,7 @@
       NUM_ROW="60"
       REPOSITORY_VALUE="PASSWORD"
       REQUIRED="true"
-      SHOW_IF="USE_EXISTING_CONNECTION == 'false'"
+      SHOW_IF="(#LINK@CONNECTOR.OUT.TABLE_REF == '0') AND (USE_EXISTING_CONNECTION == 'false')"
     >
       <DEFAULT>""</DEFAULT>
     </PARAMETER>
@@ -148,6 +153,7 @@
       NUM_ROW="70"
       SHOW="true"
       READONLY="true"
+      SHOW_IF="#LINK@CONNECTOR.OUT.TABLE_REF == '0'"
     >
       <DEFAULT>greenplum_id</DEFAULT>
     </PARAMETER>

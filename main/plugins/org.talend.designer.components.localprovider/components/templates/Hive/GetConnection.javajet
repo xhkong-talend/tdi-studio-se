@@ -144,7 +144,7 @@ java.sql.Connection conn_<%=cid%> = null;
 			}
 		}
 		
-		if(((isCustom && !useYarn) || (!isCustom && !"PIVOTAL_HD_1_0_1".equals(hiveVersion) && !"PIVOTAL_HD_2_0".equals(hiveVersion) && !"HDP_2_0".equals(hiveVersion) && !"HDP_2_1".equals(hiveVersion) && !"Cloudera_CDH4_YARN".equals(hiveVersion) && !"Cloudera_CDH5".equals(hiveVersion))) && setMapredJT) {
+		if(((isCustom && !useYarn) || (!isCustom && !"PIVOTAL_HD_1_0_1".equals(hiveVersion) && !"PIVOTAL_HD_2_0".equals(hiveVersion) && !"HDP_2_0".equals(hiveVersion) && !"HDP_2_1".equals(hiveVersion) && !"Cloudera_CDH4_YARN".equals(hiveVersion) && !"Cloudera_CDH5".equals(hiveVersion) && !"APACHE_2_4_0_EMR".equals(hiveVersion))) && setMapredJT) {
 			String mapredJT = ElementParameterParser.getValue(node, "__MAPRED_JT__");
 %>
 			System.setProperty("mapred.job.tracker", <%=mapredJT%>);
@@ -177,7 +177,7 @@ java.sql.Connection conn_<%=cid%> = null;
 			System.setProperty("hive.metastore.execute.setugi", "true");
 			String url_<%=cid%> = "jdbc:<%=hiveServer%>://";
 <%
-			if(isCustom || (!isCustom && ("HDP_1_0,HDP_1_2,HDP_1_3,HDP_2_0,HDP_2_1,Cloudera_CDH4,Cloudera_CDH4_YARN,Cloudera_CDH5,PIVOTAL_HD_1_0_1,PIVOTAL_HD_2_0".contains(hiveVersion)))) {
+			if(isCustom || (!isCustom && (("HDP_1_0,HDP_1_2,HDP_1_3,HDP_2_0,HDP_2_1,Cloudera_CDH4,Cloudera_CDH4_YARN,Cloudera_CDH5,PIVOTAL_HD_1_0_1,PIVOTAL_HD_2_0".contains(hiveVersion)) || ("APACHE_2_4_0_EMR".equals(hiveVersion))))) {
 %>
 				if(dbUser_<%=cid %>!=null && !"".equals(dbUser_<%=cid %>.trim())) {
 					System.setProperty("HADOOP_USER_NAME",dbUser_<%=cid %>);
@@ -234,7 +234,7 @@ java.sql.Connection conn_<%=cid%> = null;
 	}
 	
 	boolean isKerberosAvailableHadoop2 = !isCustom && ("HDP_2_0".equals(hiveVersion) || "HDP_2_1".equals(hiveVersion) || "Cloudera_CDH4_YARN".equals(hiveVersion) || "Cloudera_CDH5".equals(hiveVersion) || "PIVOTAL_HD_2_0".equals(hiveVersion));
-	boolean isHadoop2 = "PIVOTAL_HD_1_0_1".equals(hiveVersion) || isKerberosAvailableHadoop2;
+	boolean isHadoop2 = "PIVOTAL_HD_1_0_1".equals(hiveVersion) ||  "APACHE_2_4_0_EMR".equals(hiveVersion) || isKerberosAvailableHadoop2;
 	
 	boolean isKerberosAvailableHadoop1 = !isCustom && ("HDP_1_0".equals(hiveVersion) || "HDP_1_2".equals(hiveVersion) || "HDP_1_3".equals(hiveVersion) || "Cloudera_CDH4".equals(hiveVersion));
 		
@@ -284,6 +284,12 @@ java.sql.Connection conn_<%=cid%> = null;
 				init_<%=cid%>.execute("SET yarn.resourcemanager.scheduler.address=" + <%=schedulerAddress%>);
 <%
 			}
+    		
+            if ("true".equals(ElementParameterParser.getValue(node, "__USE_DATANODE_HOSTNAME__"))) {
+                %>
+                init_<%=cid%>.execute("SET dfs.client.use.datanode.hostname=true");
+                <%
+            }
 			
     		if("true".equals(ElementParameterParser.getValue(node, "__SET_FS_DEFAULT_NAME__"))) {
     			String namenode = ElementParameterParser.getValue(node, "__FS_DEFAULT_NAME__");
@@ -298,11 +304,13 @@ java.sql.Connection conn_<%=cid%> = null;
 				init_<%=cid%>.execute("SET mapreduce.app-submission.cross-platform=true");
 				init_<%=cid%>.execute("SET yarn.application.classpath=/etc/hadoop/conf,/usr/lib/hadoop/*,/usr/lib/hadoop/lib/*,/usr/lib/hadoop-hdfs/*,/usr/lib/hadoop-hdfs/lib/*,/usr/lib/hadoop-yarn/*,/usr/lib/hadoop-yarn/lib/*,/usr/lib/hadoop-mapreduce/*,/usr/lib/hadoop-mapreduce/lib/*");
 <%
+				/**/
 				} else {
 %>
         		//set default yarn classpath with environment variable
         		init_<%=cid%>.execute("SET yarn.application.classpath=$HADOOP_CONF_DIR,$HADOOP_COMMON_HOME/*,$HADOOP_COMMON_HOME/lib/*,$HADOOP_HDFS_HOME/*,$HADOOP_HDFS_HOME/lib/*,$HADOOP_MAPRED_HOME/*,$HADOOP_MAPRED_HOME/lib/*,$YARN_HOME/*,$YARN_HOME/lib/*,$HADOOP_YARN_HOME/*,$HADOOP_YARN_HOME/lib/*,$HADOOP_COMMON_HOME/share/hadoop/common/*,$HADOOP_COMMON_HOME/share/hadoop/common/lib/*,$HADOOP_HDFS_HOME/share/hadoop/hdfs/*,$HADOOP_HDFS_HOME/share/hadoop/hdfs/lib/*,$HADOOP_YARN_HOME/share/hadoop/yarn/*,$HADOOP_YARN_HOME/share/hadoop/yarn/lib/*");
 <%
+				/**/
 				}
 				
     			boolean crossPlatformSubmission = "true".equals(ElementParameterParser.getValue(node, "__CROSS_PLATFORM_SUBMISSION__"));

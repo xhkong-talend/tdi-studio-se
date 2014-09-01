@@ -15,6 +15,7 @@ package org.talend.designer.codegen;
 import java.beans.PropertyChangeEvent;
 
 import org.eclipse.core.runtime.jobs.Job;
+import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 import org.talend.commons.model.components.IComponentConstants;
 import org.talend.commons.ui.runtime.CommonUIPlugin;
@@ -62,6 +63,20 @@ public class CodeGeneratorService implements ICodeGeneratorService {
         if (GlobalServiceRegister.getDefault().isServiceRegistered(IMRCodeGeneratorService.class)) {
             IMRCodeGeneratorService service = (IMRCodeGeneratorService) GlobalServiceRegister.getDefault().getService(
                     IMRCodeGeneratorService.class);
+            if (service.validProcess(process)) {
+                return service.createCodeGenerator(process, statistics, trace, options);
+            }
+        }
+        if (GlobalServiceRegister.getDefault().isServiceRegistered(ICamelCodeGeneratorService.class)) {
+            ICamelCodeGeneratorService service = (ICamelCodeGeneratorService) GlobalServiceRegister.getDefault().getService(
+                    ICamelCodeGeneratorService.class);
+            if (service.validProcess(process)) {
+                return service.createCodeGenerator(process, statistics, trace, options);
+            }
+        }
+        if (GlobalServiceRegister.getDefault().isServiceRegistered(IStormCodeGeneratorService.class)) {
+            IStormCodeGeneratorService service = (IStormCodeGeneratorService) GlobalServiceRegister.getDefault().getService(
+                    IStormCodeGeneratorService.class);
             if (service.validProcess(process)) {
                 return service.createCodeGenerator(process, statistics, trace, options);
             }
@@ -148,12 +163,14 @@ public class CodeGeneratorService implements ICodeGeneratorService {
         IComponentSettingsView viewer = null;
         if (!CommonUIPlugin.isFullyHeadless()) {
             // TDI-25866:In case select a component and sctrl+shift+f3,need clean its componentSetting view
-            viewer = (IComponentSettingsView) PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage()
-                    .findView(IComponentSettingsView.ID);
+            IWorkbenchWindow wwindow = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
+            if (wwindow != null && wwindow.getActivePage() != null) {
+                viewer = (IComponentSettingsView) wwindow.getActivePage().findView(IComponentSettingsView.ID);
 
-            if (viewer != null) {
-                oldComponent = viewer.getElement();
-                viewer.cleanDisplay();
+                if (viewer != null) {
+                    oldComponent = viewer.getElement();
+                    viewer.cleanDisplay();
+                }
             }
         }
         ComponentCompilations.deleteMarkers();

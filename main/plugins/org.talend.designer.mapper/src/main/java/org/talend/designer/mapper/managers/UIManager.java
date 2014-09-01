@@ -116,6 +116,7 @@ import org.talend.designer.mapper.model.tableentry.TableEntryLocation;
 import org.talend.designer.mapper.model.tableentry.VarTableEntry;
 import org.talend.designer.mapper.ui.MapperUI;
 import org.talend.designer.mapper.ui.commands.DataMapTableViewSelectedCommand;
+import org.talend.designer.mapper.ui.dialog.MapReducePropertySetDialog;
 import org.talend.designer.mapper.ui.dialog.OutputAddDialog;
 import org.talend.designer.mapper.ui.dialog.PropertySetDialog;
 import org.talend.designer.mapper.ui.footer.StatusBar;
@@ -1873,7 +1874,11 @@ public class UIManager extends AbstractUIManager {
 
     @Override
     public void openPropertySetDialog() {
-        new PropertySetDialog(getShell(), mapperManager).open();
+        if (mapperManager.isMRProcess()) {
+            new MapReducePropertySetDialog(getShell(), mapperManager).open();
+        } else {
+            new PropertySetDialog(getShell(), mapperManager).open();
+        }
     }
 
     public boolean isTableViewMoveable(Zone zone, boolean moveUp) {

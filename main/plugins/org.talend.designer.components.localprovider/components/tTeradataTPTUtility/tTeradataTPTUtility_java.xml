@@ -122,7 +122,7 @@
     FIELD="LABEL"
     NUM_ROW="17"
     >
-    <DEFAULT>*Note:You must specify one or more columns as primary key</DEFAULT>
+    <DEFAULT>*Note:You must specify one or more columns as primary key for updating or deleting</DEFAULT>
     </PARAMETER>
 
     <PARAMETER
@@ -288,6 +288,7 @@
 	    FIELD="CHECK"
 	    NUM_ROW="10"
 	    REQUIRED="true"
+      SHOW_IF="ACTION != 'INSERTER'"
 	>
 	    <DEFAULT>false</DEFAULT>
 	</PARAMETER>

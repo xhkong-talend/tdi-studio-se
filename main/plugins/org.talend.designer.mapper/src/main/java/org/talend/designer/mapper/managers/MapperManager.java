@@ -1126,6 +1126,7 @@ public class MapperManager extends AbstractMapperManager {
             defaultSettingMap.put(DataMapTableView.SCHEMA_TYPE, false);
             defaultSettingMap.put(DataMapTableView.SCHEMA_ID, null);
 
+            defaultSettingMap.put(MapperSettingsManager.REPLICATED_JOIN, false);
             defaultSettingMap.put(MapperSettingsManager.DIE_ON_ERROR, true);
 
             // boolean parallel = false;

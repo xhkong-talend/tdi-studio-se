@@ -110,11 +110,13 @@ public class JobJavaScriptOSGIForESBManager extends JobJavaScriptsManager {
 
     private MultiKeyMap requireBundleModules = new MultiKeyMap();
 
-    private String jobName;
-
     private String itemType = null;
 
     private final File classesLocation = new File(getTmpFolder() + File.separator + "classes"); //$NON-NLS-1$;
+
+	private String parentRouteName;
+
+	private boolean jobShared;
 
     @Override
     public List<ExportFileResource> getExportResources(ExportFileResource[] processes, String... codeOptions)
@@ -123,8 +125,6 @@ public class JobJavaScriptOSGIForESBManager extends JobJavaScriptsManager {
 
         ExportFileResource osgiResource = new ExportFileResource(null, ""); //$NON-NLS-1$;
         ExportFileResource jobScriptResource = new ExportFileResource(null, ""); //$NON-NLS-1$
-
-        List<ProcessItem> itemToBeExport = new ArrayList<ProcessItem>();
 
         list.add(osgiResource);
         list.add(jobScriptResource);
@@ -135,8 +135,9 @@ public class JobJavaScriptOSGIForESBManager extends JobJavaScriptsManager {
         ProcessorUtilities.setExportConfig(JAVA, "", ""); //$NON-NLS-1$
 
         try {
+            ProcessItem processItem = null;
             for (ExportFileResource process : processes) {
-                ProcessItem processItem = (ProcessItem) process.getItem();
+                processItem = (ProcessItem) process.getItem();
                 if (processItem.eIsProxy() || processItem.getProcess().eIsProxy()) {
                     try {
                         Property property = ProxyRepositoryFactory.getInstance().getUptodateProperty(processItem.getProperty());
@@ -145,8 +146,6 @@ public class JobJavaScriptOSGIForESBManager extends JobJavaScriptsManager {
                         throw new ProcessorException(e);
                     }
                 }
-                itemToBeExport.add(processItem);
-                jobName = processItem.getProperty().getLabel();
 
                 String jobVersion = processItem.getProperty().getVersion();
                 if (!isMultiNodes() && getSelectedJobVersion() != null) {
@@ -195,7 +194,7 @@ public class JobJavaScriptOSGIForESBManager extends JobJavaScriptsManager {
                 if (isRoute()) {
                     addOSGIRouteResources(osgiResource, processItem);
                 }
-                
+
                 /*
                  *  export current item's dependencies.
                  *  this used for TDM components specially
@@ -207,14 +206,14 @@ public class JobJavaScriptOSGIForESBManager extends JobJavaScriptsManager {
             ExportFileResource libResource = getCompiledLibExportFileResource(processes);
             list.add(libResource);
 
+            // generate the META-INFO folder
+            ExportFileResource metaInfoFolder = genMetaInfoFolder(libResource, processItem);
+            list.add(0, metaInfoFolder);
+
             ExportFileResource providedLibResources = getProvidedLibExportFileResource(processes);
             if (providedLibResources != null) {
                 list.add(providedLibResources);
             }
-
-            // generate the META-INFO folder
-            ExportFileResource metaInfoFolder = genMetaInfoFolder(libResource, itemToBeExport, jobName);
-            list.add(0, metaInfoFolder);
         } catch (Exception e) {
             throw new ProcessorException(e);
         }
@@ -280,19 +279,6 @@ public class JobJavaScriptOSGIForESBManager extends JobJavaScriptsManager {
              * Else, add the bundle id in "Require-Bundle", but don't add the lib.
              */
             if (isIncludedLib(module)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    protected boolean isSpecialLib(String libName) {
-        if (libName != null) {
-            // temp workaround for https://jira.talendforge.org/browse/TDI-22934
-            if (libName.startsWith("camel-core-") //$NON-NLS-1$
-                    || libName.startsWith("dom4j-") //$NON-NLS-1$
-                    // temp workaround for https://jira.talendforge.org/browse/TESB-7271
-                    || libName.startsWith("ojdbc")) { //$NON-NLS-1$
                 return true;
             }
         }
@@ -457,22 +443,25 @@ public class JobJavaScriptOSGIForESBManager extends JobJavaScriptsManager {
         String name = processItem.getProperty().getLabel();
         String className = getPackageName(processItem) + PACKAGE_SEPARATOR + name;
 
+        boolean isTalendStepTemplate = isTalendStepTemplate(processItem);
         // job name and class name
         String jobName = name;
         if (!EmfModelUtils.getComponentsByName(processItem, "tRouteInput").isEmpty()) { //$NON-NLS-1$
             jobName = className;
-        } else if (!EmfModelUtils.getComponentsByName(processItem, "tiPaaSInput", "tiPaaSOutput").isEmpty()) { //$NON-NLS-1$ //$NON-NLS-2$
+        } else if (isTalendStepTemplate) {
             jobName = "${artifactID}"; //$NON-NLS-1$
         }
         jobInfo.put("name", jobName);
-        jobInfo.put("version", processItem.getProperty().getVersion()); //$NON-NLS-1$
+        if (!isTalendStepTemplate) {
+            jobInfo.put("version", processItem.getProperty().getVersion()); //$NON-NLS-1$
+        }
         jobInfo.put("className", className); //$NON-NLS-1$
 
         // additional Talend job interfaces (ESB related)
         boolean isESBJob = isTalendESBJob(processItem);
         jobInfo.put("isESBJob", isESBJob); //$NON-NLS-1$
         jobInfo.put("isESBJobFactory", isESBJob && isTalendESBJobFactory(processItem)); //$NON-NLS-1$
-        jobInfo.put("isTalendStepTemplate", isTalendStepTemplate(processItem)); //$NON-NLS-1$
+        jobInfo.put("isTalendStepTemplate", isTalendStepTemplate); //$NON-NLS-1$
 
         // job components use SAM / use SAML
         boolean useSAM = false;
@@ -537,7 +526,7 @@ public class JobJavaScriptOSGIForESBManager extends JobJavaScriptsManager {
         // unwrap JSON response (drop root element)
         endpointInfo.put("unwrapJsonResponse", //$NON-NLS-1$
                 EmfModelUtils.computeCheckElementValue("UNWRAP_JSON_RESPONSE", restRequestComponent)); //$NON-NLS-1$
-        
+
         // Convert JSON to string (big double values)
         endpointInfo.put("convertTypesToStrings", //$NON-NLS-1$
                 EmfModelUtils.computeCheckElementValue("CONVERT_JSON_VALUES_TO_STRING", restRequestComponent)); //$NON-NLS-1$
@@ -555,16 +544,16 @@ public class JobJavaScriptOSGIForESBManager extends JobJavaScriptsManager {
         // use Service Locator
         endpointInfo.put("useSL", //$NON-NLS-1$
                 EmfModelUtils.computeCheckElementValue("SERVICE_LOCATOR", restRequestComponent)); //$NON-NLS-1$
-        
+
         // use Authorization
-        if (isStudioEEVersion()){ 
+        if (isStudioEEVersion()) {
             if (EmfModelUtils.computeCheckElementValue("NEED_AUTH", restRequestComponent))
             endpointInfo.put("useAuthorization", //$NON-NLS-1$
                     EmfModelUtils.computeCheckElementValue("NEED_AUTHORIZATION", restRequestComponent)); //$NON-NLS-1$
-        }else{
+        } else {
             endpointInfo.put("useAuthorization", false); //$NON-NLS-1$
         }
-        
+
         // Service Locator custom properties
         Map<String, String> slCustomProperties = new HashMap<String, String>();
         ElementParameterType customPropsType = EmfModelUtils.findElementParameterByName(
@@ -596,7 +585,7 @@ public class JobJavaScriptOSGIForESBManager extends JobJavaScriptsManager {
         // correlation id
         endpointInfo.put("useBusinesCorrelation", //$NON-NLS-1$
                 EmfModelUtils.computeCheckElementValue("USE_BUSINESS_CORRELATION", restRequestComponent)); //$NON-NLS-1$
-        
+
         return endpointInfo;
     }
 
@@ -669,24 +658,24 @@ public class JobJavaScriptOSGIForESBManager extends JobJavaScriptsManager {
         Collection<NodeType> cCXFs = EmfModelUtils.getComponentsByName(processItem, "cCXF");
         boolean hasCXFComponent = !cCXFs.isEmpty();
         cCXFs.addAll(EmfModelUtils.getComponentsByName(processItem, "cCXFRS"));
-        if(!cCXFs.isEmpty()) {
+        if (!cCXFs.isEmpty()) {
         	Set<String> consumerNodes = new HashSet<String>();
         	@SuppressWarnings("unchecked")
 			List<ConnectionType> connections = processItem.getProcess().getConnection();
         	for (ConnectionType conn : connections) {
         		consumerNodes.add(conn.getTarget());
         	}
-        	
+
         	boolean isEEVersion = isStudioEEVersion();
 			for (NodeType node : cCXFs) { //$NON-NLS-1$
 	        	boolean nodeUseSAM = false;
 	        	boolean nodeUseSaml = false;
 	        	boolean nodeUseAuthz = false;
 	        	boolean nodeUseRegistry = false;
-	
+
 	            // http://jira.talendforge.org/browse/TESB-3850
 	            String format = EmfModelUtils.computeTextElementValue("DATAFORMAT", node); //$NON-NLS-1$
-	            
+
 	            if (!useSAM && !"RAW".equals(format)) { //$NON-NLS-1$
 	            	nodeUseSAM = EmfModelUtils.computeCheckElementValue("ENABLE_SAM", node) //$NON-NLS-1$
 	            	    || EmfModelUtils.computeCheckElementValue("SERVICE_ACTIVITY_MONITOR", node); //$NON-NLS-1$
@@ -708,14 +697,14 @@ public class JobJavaScriptOSGIForESBManager extends JobJavaScriptsManager {
 	    			}
 				}
 	            useSAM |= nodeUseSAM;
-	            if(consumerNodes.contains(ElementParameterParser.getUNIQUENAME(node))) {
+	            if (consumerNodes.contains(ElementParameterParser.getUNIQUENAME(node))) {
 	            	hasCXFSamlConsumer |= nodeUseSaml | nodeUseRegistry;
-	            }else {
+	            } else {
 	            	hasCXFSamlProvider |= nodeUseSaml | nodeUseRegistry;
 	            	hasCXFRSSamlProviderAuthz |= nodeUseAuthz;
 				}
-	        
-	            if(useSAM && hasCXFSamlConsumer && hasCXFSamlConsumer && (!isEEVersion || hasCXFRSSamlProviderAuthz)) {
+
+	            if (useSAM && hasCXFSamlConsumer && hasCXFSamlConsumer && (!isEEVersion || hasCXFRSSamlProviderAuthz)) {
 	            	break;
 	            }
 	        }
@@ -732,8 +721,7 @@ public class JobJavaScriptOSGIForESBManager extends JobJavaScriptsManager {
         return routeInfo;
     }
 
-    private ExportFileResource genMetaInfoFolder(ExportFileResource libResource,
-            List<ProcessItem> itemToBeExport, String itemName) throws IOException {
+    private ExportFileResource genMetaInfoFolder(ExportFileResource libResource, ProcessItem processItem) throws IOException {
 
         ExportFileResource metaInfoResource = new ExportFileResource(null, FileConstants.META_INF_FOLDER_NAME);
 
@@ -742,7 +730,7 @@ public class JobJavaScriptOSGIForESBManager extends JobJavaScriptsManager {
 
         FileOutputStream fos = null;
         try {
-            Manifest manifest = getManifest(libResource, itemToBeExport, itemName);
+            Manifest manifest = getManifest(libResource, processItem);
             fos = new FileOutputStream(manifestFile);
             manifest.write(fos);
         } finally {
@@ -756,92 +744,114 @@ public class JobJavaScriptOSGIForESBManager extends JobJavaScriptsManager {
         return metaInfoResource;
     }
 
-    private Manifest getManifest(ExportFileResource libResource, List<ProcessItem> itemToBeExport, String bundleName)
-            throws IOException {
+    private Manifest getManifest(ExportFileResource libResource, ProcessItem processItem) throws IOException {
 
         Analyzer analyzer = new Analyzer();
         Jar bin = new Jar(classesLocation);
         analyzer.setJar(bin);
 
-        // http://jira.talendforge.org/browse/TESB-5382 LiXiaopeng
-        String symbolicName = bundleName;
-        Project project = ProjectManager.getInstance().getCurrentProject();
-        if (project != null) {
-            String proName = project.getLabel();
-            if (proName != null) {
-                symbolicName = proName.toLowerCase() + '.' + symbolicName;
+        String symbolicName;
+        String bundleName = processItem.getProperty().getLabel();
+        if (isTalendStepTemplate(processItem)) {
+            bundleName += '_' + processItem.getProperty().getVersion();
+            symbolicName = "${artifactID}"; //$NON-NLS-1$
+        } else {
+            symbolicName = processItem.getProperty().getLabel();
+            if (parentRouteName != null) {
+            	symbolicName = parentRouteName + "-" + symbolicName;
+            }
+            // http://jira.talendforge.org/browse/TESB-5382 LiXiaopeng
+            Project project = ProjectManager.getInstance().getCurrentProject();
+            if (project != null) {
+                String proName = project.getLabel();
+                if (proName != null) {
+                    symbolicName = proName.toLowerCase() + '.' + symbolicName;
+                }
             }
         }
-        analyzer.setProperty(Analyzer.BUNDLE_NAME, bundleName);
+        if (parentRouteName != null) {
+        	analyzer.setProperty(Analyzer.BUNDLE_NAME, bundleName + " for " + parentRouteName);
+        } else {
+        	analyzer.setProperty(Analyzer.BUNDLE_NAME, bundleName);
+		}
         analyzer.setProperty(Analyzer.BUNDLE_SYMBOLICNAME, symbolicName);
         analyzer.setProperty(Analyzer.BUNDLE_VERSION, getBundleVersion());
         IBrandingService brandingService = (IBrandingService) GlobalServiceRegister.getDefault().getService(
                 IBrandingService.class);
-        analyzer.setProperty(Analyzer.BUNDLE_VENDOR, brandingService.getFullProductName() + " (" //$NON-NLS-1$
-                + brandingService.getAcronym() + '_' + RepositoryPlugin.getDefault().getBundle().getVersion().toString() + ")"); //$NON-NLS-1$
+        analyzer.setProperty(Analyzer.BUNDLE_VENDOR, brandingService.getFullProductName()
+        		+ " (" //$NON-NLS-1$
+                + brandingService.getAcronym()
+                + '_'
+                + RepositoryPlugin.getDefault().getBundle().getVersion()
+                + ")"); //$NON-NLS-1$
 
         Collection<String> importPackages = new HashSet<String>();
         boolean hasSAM = false;
         StringBuilder exportPackage = new StringBuilder();
         String requireBundle = ""; //$NON-NLS-1$
         String delim = ""; //$NON-NLS-1$
-        for (ProcessItem pi : itemToBeExport) {
-            exportPackage.append(delim).append(getPackageName(pi));
-            delim = ","; //$NON-NLS-1$
-            // Add Route Resource Export packages
-            // http://jira.talendforge.org/browse/TESB-6227
-            if (isRoute()) {
-                for (String routeResourcePackage : addRouteResourcePackages(pi)) {
-                    exportPackage.append(delim).append(routeResourcePackage);
-                }
-            } else { // JOB
-                NodeType restRequestComponent = getRESTRequestComponent(pi);
-                if (null != restRequestComponent) {
-                    importPackages.add("org.apache.cxf.management.counters");
 
-                    if (EmfModelUtils.computeCheckElementValue("NEED_AUTH", restRequestComponent)) { //$NON-NLS-1$
-                        String authType = EmfModelUtils.computeTextElementValue("AUTH_TYPE", restRequestComponent); //$NON-NLS-1$
-                        if ("BASIC".equals(authType)) { //$NON-NLS-1$
-                            importPackages.add("org.apache.cxf.jaxrs.security"); //$NON-NLS-1$
-                        } else if ("SAML".equals(authType)) { //$NON-NLS-1$
-                            importPackages.add("org.apache.cxf.interceptor.security"); //$NON-NLS-1$
-                            importPackages.add("org.apache.cxf.rs.security.saml"); //$NON-NLS-1$
-                            if (EmfModelUtils.computeCheckElementValue("NEED_AUTHORIZATION", restRequestComponent)) { //$NON-NLS-1$
-                                importPackages.add("org.talend.esb.authorization.xacml.rt.pep");//$NON-NLS-1$
-                            }
+        exportPackage.append(delim).append(getPackageName(processItem));
+        String jobBundleVersion = getBundleVersion();
+        if (parentRouteName != null) {
+        	jobBundleVersion += "-" + parentRouteName;
+		}
+        exportPackage.append(";version=\"" + jobBundleVersion + "\"");
+        delim = ","; //$NON-NLS-1$
+        // Add Route Resource Export packages
+        // http://jira.talendforge.org/browse/TESB-6227
+        if (isRoute()) {
+            for (String routeResourcePackage : addRouteResourcePackages(processItem)) {
+                exportPackage.append(delim).append(routeResourcePackage);
+            }
+        } else { // JOB
+            NodeType restRequestComponent = getRESTRequestComponent(processItem);
+            if (null != restRequestComponent) {
+                importPackages.add("org.apache.cxf.management.counters");
+
+                if (EmfModelUtils.computeCheckElementValue("NEED_AUTH", restRequestComponent)) { //$NON-NLS-1$
+                    String authType = EmfModelUtils.computeTextElementValue("AUTH_TYPE", restRequestComponent); //$NON-NLS-1$
+                    if ("BASIC".equals(authType)) { //$NON-NLS-1$
+                        importPackages.add("org.apache.cxf.jaxrs.security"); //$NON-NLS-1$
+                    } else if ("SAML".equals(authType)) { //$NON-NLS-1$
+                        importPackages.add("org.apache.cxf.interceptor.security"); //$NON-NLS-1$
+                        importPackages.add("org.apache.cxf.rs.security.saml"); //$NON-NLS-1$
+                        if (EmfModelUtils.computeCheckElementValue("NEED_AUTHORIZATION", restRequestComponent)) { //$NON-NLS-1$
+                            importPackages.add("org.talend.esb.authorization.xacml.rt.pep"); //$NON-NLS-1$
                         }
                     }
-                    if (EmfModelUtils.computeCheckElementValue("SERVICE_LOCATOR", restRequestComponent)) { //$NON-NLS-1$
-                        importPackages.add("org.talend.esb.servicelocator.cxf"); //$NON-NLS-1$
-                    }
-                    if (EmfModelUtils.computeCheckElementValue("SERVICE_ACTIVITY_MONITOR", restRequestComponent)) { //$NON-NLS-1$
-                        hasSAM = true;
-                    }
-                    // https://jira.talendforge.org/browse/TESB-10601
-                    if (EmfModelUtils.computeCheckElementValue("USE_BUSINESS_CORRELATION", restRequestComponent)){ //$NON-NLS-1$
-                        importPackages.add("org.talend.esb.policy.correlation.feature"); //$NON-NLS-1$
-                    }
                 }
-                for (NodeType node : EmfModelUtils.getComponentsByName(pi, "tRESTClient")) {
-                    // https://jira.talendforge.org/browse/TESB-8066
-                    if (EmfModelUtils.computeCheckElementValue("SERVICE_ACTIVITY_MONITOR", node)) { //$NON-NLS-1$
-                        hasSAM = true;
-                        break;
-                    }
+                if (EmfModelUtils.computeCheckElementValue("SERVICE_LOCATOR", restRequestComponent)) { //$NON-NLS-1$
+                    importPackages.add("org.talend.esb.servicelocator.cxf"); //$NON-NLS-1$
                 }
-                for (NodeType node : EmfModelUtils.getComponentsByName(pi, "tESBConsumer")) { //$NON-NLS-1$
-                    // https://jira.talendforge.org/browse/TESB-9574
-                    if (requireBundle.isEmpty() && EmfModelUtils.computeCheckElementValue("USE_SR", node)) { //$NON-NLS-1$
-                        requireBundle = "tesb-xacml-rt"; //$NON-NLS-1$
-                    }
+                if (EmfModelUtils.computeCheckElementValue("SERVICE_ACTIVITY_MONITOR", restRequestComponent)) { //$NON-NLS-1$
+                    hasSAM = true;
                 }
-                //
+                // https://jira.talendforge.org/browse/TESB-10601
+                if (EmfModelUtils.computeCheckElementValue("USE_BUSINESS_CORRELATION", restRequestComponent)) { //$NON-NLS-1$
+                    importPackages.add("org.talend.esb.policy.correlation.feature"); //$NON-NLS-1$
+                }
             }
+            for (NodeType node : EmfModelUtils.getComponentsByName(processItem, "tRESTClient")) {
+                // https://jira.talendforge.org/browse/TESB-8066
+                if (EmfModelUtils.computeCheckElementValue("SERVICE_ACTIVITY_MONITOR", node)) { //$NON-NLS-1$
+                    hasSAM = true;
+                    break;
+                }
+            }
+            for (NodeType node : EmfModelUtils.getComponentsByName(processItem, "tESBConsumer")) { //$NON-NLS-1$
+                // https://jira.talendforge.org/browse/TESB-9574
+                if (requireBundle.isEmpty() && EmfModelUtils.computeCheckElementValue("USE_SR", node)) { //$NON-NLS-1$
+                    requireBundle = "tesb-xacml-rt"; //$NON-NLS-1$
+                }
+            }
+            //
         }
+
         analyzer.setProperty(Analyzer.EXPORT_PACKAGE, exportPackage.toString());
 
         if (isRoute()) {
-            addRouteOsgiDependencies(analyzer, libResource, itemToBeExport);
+            addRouteOsgiDependencies(analyzer, libResource, processItem);
         } else {
             if (hasSAM) {
                 importPackages.add("org.talend.esb.sam.agent.feature"); //$NON-NLS-1$
@@ -903,7 +913,7 @@ public class JobJavaScriptOSGIForESBManager extends JobJavaScriptsManager {
      */
     private static Collection<String> addRouteResourcePackages(ProcessItem item) {
         Collection<String> pkgs = new HashSet<String>();
-        EMap<?,?> additionalProperties = item.getProperty().getAdditionalProperties();
+        EMap<?, ?> additionalProperties = item.getProperty().getAdditionalProperties();
         if (additionalProperties != null) {
             Object resourcesObj = additionalProperties.get("ROUTE_RESOURCES_PROP");
             if (resourcesObj != null) {
@@ -930,44 +940,43 @@ public class JobJavaScriptOSGIForESBManager extends JobJavaScriptsManager {
         return pkgs;
     }
 
-    private static void addRouteOsgiDependencies(Analyzer analyzer, ExportFileResource libResource,
-            List<ProcessItem> itemToBeExport) throws IOException {
+    private void addRouteOsgiDependencies(Analyzer analyzer, ExportFileResource libResource,
+            ProcessItem processItem) throws IOException {
 
         IPath libPath = ResourcesPlugin.getWorkspace().getRoot().getProject(JavaUtils.JAVA_PROJECT_NAME).getLocation()
                 .append(JavaUtils.JAVA_LIB_DIRECTORY);
-        for (ProcessItem pi : itemToBeExport) {
-            IOsgiDependenciesService dependenciesService = (IOsgiDependenciesService) GlobalServiceRegister.getDefault()
-                    .getService(IOsgiDependenciesService.class);
-            if (dependenciesService != null) {
-                Map<String, String> bundleDependences = dependenciesService.getBundleDependences(pi, pi.getProperty()
-                        .getAdditionalProperties());
-                // process external libs
-                String externalLibs = bundleDependences.get(IOsgiDependenciesService.BUNDLE_CLASSPATH);
-                String[] libs = externalLibs.split(IOsgiDependenciesService.ITEM_SEPARATOR);
-                Set<URL> list = new HashSet<URL>();
-                for (String s : libs) {
-                    if (s.isEmpty()) {
-                        continue;
-                    }
-                    IPath path = libPath.append(s);
-                    URL url = path.toFile().toURI().toURL();
-                    list.add(url);
-                }
-                libResource.addResources(new ArrayList<URL>(list));
 
-                // add manifest items
-                String requireBundles = bundleDependences.get(IOsgiDependenciesService.REQUIRE_BUNDLE);
-                if (requireBundles != null && !"".equals(requireBundles)) {
-                    analyzer.setProperty(Analyzer.REQUIRE_BUNDLE, requireBundles);
+        IOsgiDependenciesService dependenciesService = (IOsgiDependenciesService) GlobalServiceRegister.getDefault()
+                .getService(IOsgiDependenciesService.class);
+        if (dependenciesService != null) {
+            Map<String, String> bundleDependences = dependenciesService.getBundleDependences(processItem,
+            		jobShared ? null : analyzer.getBundleVersion());
+            // process external libs
+            String externalLibs = bundleDependences.get(IOsgiDependenciesService.BUNDLE_CLASSPATH);
+            String[] libs = externalLibs.split(IOsgiDependenciesService.ITEM_SEPARATOR);
+            Set<URL> list = new HashSet<URL>();
+            for (String s : libs) {
+                if (s.isEmpty()) {
+                    continue;
                 }
-                String importPackages = bundleDependences.get(IOsgiDependenciesService.IMPORT_PACKAGE);
-                if (importPackages != null && !"".equals(importPackages)) {
-                    analyzer.setProperty(Analyzer.IMPORT_PACKAGE, importPackages + ",*;resolution:=optional"); //$NON-NLS-1$
-                }
-                String exportPackages = bundleDependences.get(IOsgiDependenciesService.EXPORT_PACKAGE);
-                if (exportPackages != null && !"".equals(exportPackages)) {
-                    analyzer.setProperty(Analyzer.EXPORT_PACKAGE, exportPackages);
-                }
+                IPath path = libPath.append(s);
+                URL url = path.toFile().toURI().toURL();
+                list.add(url);
+            }
+            libResource.addResources(new ArrayList<URL>(list));
+
+            // add manifest items
+            String requireBundles = bundleDependences.get(IOsgiDependenciesService.REQUIRE_BUNDLE);
+            if (requireBundles != null && !"".equals(requireBundles)) {
+                analyzer.setProperty(Analyzer.REQUIRE_BUNDLE, requireBundles);
+            }
+            String importPackages = bundleDependences.get(IOsgiDependenciesService.IMPORT_PACKAGE);
+            if (importPackages != null && !"".equals(importPackages)) {
+                analyzer.setProperty(Analyzer.IMPORT_PACKAGE, importPackages + ",*;resolution:=optional"); //$NON-NLS-1$
+            }
+            String exportPackages = bundleDependences.get(IOsgiDependenciesService.EXPORT_PACKAGE);
+            if (exportPackages != null && !"".equals(exportPackages)) {
+                analyzer.setProperty(Analyzer.EXPORT_PACKAGE, exportPackages);
             }
         }
     }
@@ -1113,4 +1122,12 @@ public class JobJavaScriptOSGIForESBManager extends JobJavaScriptsManager {
         }
         return providedModulesSet;
     }
+
+    public void setParentRoute(String parentRouteName) {
+		this.parentRouteName = parentRouteName;
+	}
+
+	public void setJobShared(boolean jobShared) {
+		this.jobShared = jobShared;
+	}
 }

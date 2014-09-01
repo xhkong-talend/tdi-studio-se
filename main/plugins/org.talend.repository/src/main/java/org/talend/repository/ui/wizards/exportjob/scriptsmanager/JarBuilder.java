@@ -12,25 +12,35 @@
 // ============================================================================
 package org.talend.repository.ui.wizards.exportjob.scriptsmanager;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Enumeration;
+import java.util.List;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.eclipse.core.resources.IProject;
 import org.talend.commons.exception.ExceptionHandler;
+import org.talend.commons.utils.generation.JavaUtils;
 import org.talend.core.model.general.Project;
 import org.talend.repository.ProjectManager;
 import org.talend.repository.model.ResourceModelUtils;
 import org.talend.repository.utils.ZipFileUtils;
+import org.talend.utils.io.FilesUtils;
 
 /**
  * This is a jar file builder. <br/>
@@ -57,6 +67,10 @@ public class JarBuilder {
     private static final String CONTEXT = "context"; //$NON-NLS-1$
 
     private static final String TEMP = "temp"; //$NON-NLS-1$
+
+    private List<File> libPath;
+
+    private boolean isStorm = false;
 
     /**
      * Constructure.
@@ -214,6 +228,21 @@ public class JarBuilder {
                     }
                 }
             }
+            if (libPath != null && libPath.size() > 0) {
+                File tempLib = new File(tempFolderPath + File.separatorChar + JavaUtils.JAVA_LIB_DIRECTORY);
+                for (File file : libPath) {
+                    if (isStorm) {
+                        // unzip the jar file
+                        unZipFile(file.getAbsolutePath(), new File(tempFolderPath).getAbsolutePath());
+                    } else {
+                        if (!tempLib.exists()) {
+                            tempLib.mkdir();
+                        }
+                        FilesUtils.copyFile(new FileInputStream(file), new File(tempLib.getAbsolutePath() + File.separatorChar
+                                + file.getName()));
+                    }
+                }
+            }
             ZipFileUtils.zip(tempFolderPath, jarFile.getPath(), false);
         } else {
             JarOutputStream jarOut = null;
@@ -281,5 +310,98 @@ public class JarBuilder {
         }
         tmpFolder = tmpFolder + "/talendExporter"; //$NON-NLS-1$
         return tmpFolder;
+    }
+
+    /**
+     * Getter for libPath.
+     * 
+     * @return the libPath
+     */
+    public List<File> getLibPath() {
+        return this.libPath;
+    }
+
+    /**
+     * Sets the libPath.
+     * 
+     * @param libPath the libPath to set
+     */
+    public void setLibPath(List<File> libPath) {
+        this.libPath = libPath;
+    }
+
+    private void unZipFile(String jarPath, String outFileName) throws IOException {
+        JarFile jarFile = new JarFile(jarPath);
+        Enumeration<JarEntry> jarEntrys = jarFile.entries();
+        while (jarEntrys.hasMoreElements()) {
+            JarEntry jarEntry = jarEntrys.nextElement();
+            File f = new File(outFileName + File.separator + jarEntry.getName());
+            makeSupDir(f.getAbsolutePath());
+            if (jarEntry.isDirectory() || jarEntry.getName().contains("MANIFEST.MF")) {
+                continue;
+            }
+            writeFile(jarFile.getInputStream(jarEntry), f);
+        }
+    }
+
+    private static void makeSupDir(String outFileName) {
+        Pattern p = Pattern.compile("[/\\" + File.separator + "]");
+        Matcher m = p.matcher(outFileName);
+        while (m.find()) {
+            int index = m.start();
+            String subDir = outFileName.substring(0, index);
+            File subDirFile = new File(subDir);
+            if (!subDirFile.exists()) {
+                subDirFile.mkdir();
+            }
+        }
+    }
+
+    private static void writeFile(File inputFile, File outputFile) throws IOException {
+        writeFile(new FileInputStream(inputFile), outputFile);
+    }
+
+    private static void writeFile(InputStream ips, File outputFile) throws IOException {
+        OutputStream ops = new BufferedOutputStream(new FileOutputStream(outputFile));
+        try {
+            byte[] buffer = new byte[1024];
+            int nBytes = 0;
+            while ((nBytes = ips.read(buffer)) > 0) {
+                ops.write(buffer, 0, nBytes);
+            }
+        } catch (IOException ioe) {
+            throw ioe;
+        } finally {
+            try {
+                if (null != ops) {
+                    ops.flush();
+                    ops.close();
+                }
+            } catch (IOException ioe) {
+                throw ioe;
+            } finally {
+                if (null != ips) {
+                    ips.close();
+                }
+            }
+        }
+    }
+
+    /**
+     * Getter for isStorm.
+     * 
+     * @return the isStorm
+     */
+    public boolean isStorm() {
+        return this.isStorm;
+    }
+
+    /**
+     * Sets the isStorm.
+     * 
+     * @param isStorm the isStorm to set
+     */
+    public void setStorm(boolean isStorm) {
+        this.isStorm = isStorm;
     }
 }

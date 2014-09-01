@@ -17,11 +17,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.eclipse.emf.common.util.EList;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.talend.commons.exception.SystemException;
 import org.talend.commons.ui.runtime.exception.ExceptionHandler;
+import org.talend.core.model.components.IODataComponentContainer;
 import org.talend.core.model.genhtml.HTMLDocUtils;
 import org.talend.core.model.metadata.IMetadataTable;
 import org.talend.core.model.process.IComponentDocumentation;
@@ -33,6 +35,8 @@ import org.talend.core.model.temp.ECodePart;
 import org.talend.designer.abstractmap.AbstractMapComponent;
 import org.talend.designer.codegen.ICodeGeneratorService;
 import org.talend.designer.core.model.utils.emf.talendfile.AbstractExternalData;
+import org.talend.designer.core.ui.editor.connections.Connection;
+import org.talend.designer.dbmap.external.converter.ExternalNodeUtils;
 import org.talend.designer.dbmap.external.data.ExternalDbMapData;
 import org.talend.designer.dbmap.external.data.ExternalDbMapEntry;
 import org.talend.designer.dbmap.external.data.ExternalDbMapTable;
@@ -50,6 +54,7 @@ import org.talend.designer.dbmap.model.emf.dbmap.DbmapFactory;
 import org.talend.designer.dbmap.model.emf.dbmap.FilterEntry;
 import org.talend.designer.dbmap.model.emf.dbmap.InputTable;
 import org.talend.designer.dbmap.model.emf.dbmap.OutputTable;
+import org.talend.designer.dbmap.model.tableentry.FilterTableEntry;
 import org.talend.designer.dbmap.model.tableentry.TableEntryLocation;
 import org.talend.designer.dbmap.utils.DBMapHelper;
 import org.talend.designer.dbmap.utils.DataMapExpressionParser;
@@ -295,23 +300,29 @@ public class DbMapComponent extends AbstractMapComponent {
                     entities.add(entity);
                 }
                 externalTable.setMetadataTableEntries(entities);
-                externalTables.add(externalTable);
+
                 // filters
                 entities = new ArrayList<ExternalDbMapEntry>();
+                List<ExternalDbMapEntry> otherFilterEntities = new ArrayList<ExternalDbMapEntry>();
+
                 for (FilterEntry pFilter : pTable.getFilterEntries()) {
                     ExternalDbMapEntry entity = new ExternalDbMapEntry();
                     entity.setExpression(pFilter.getExpression());
                     entity.setName(pFilter.getName());
-                    entities.add(entity);
+                    if (FilterTableEntry.OTHER_FILTER.equals(pFilter.getFilterKind())) {
+                        otherFilterEntities.add(entity);
+                    } else {
+                        entities.add(entity);
+                    }
                 }
-                externalTable.setCustomConditionsEntries(entities);
+                externalTable.setCustomWhereConditionsEntries(entities);
+                externalTable.setCustomOtherConditionsEntries(otherFilterEntities);
 
+                externalTables.add(externalTable);
             }
             externalData.setOutputTables(externalTables);
-
         }
         this.setExternalData(externalData);
-
     }
 
     @Override
@@ -338,6 +349,7 @@ public class DbMapComponent extends AbstractMapComponent {
      */
     @Override
     public void removeInput(IConnection connection) {
+        Connection conn = null;
         DBMapData externalEmfData = (DBMapData) getExternalEmfData();
         InputTable toRemove = null;
         for (InputTable inputTable : externalEmfData.getInputTables()) {
@@ -347,9 +359,38 @@ public class DbMapComponent extends AbstractMapComponent {
             }
         }
         if (toRemove != null) {
-            externalEmfData.getInputTables().remove(toRemove);
+            EList<InputTable> inputTableList = externalEmfData.getInputTables();
+            inputTableList.remove(toRemove);
+            ExternalNodeUtils.prepareExternalNodeReadyToOpen(getExternalNode());
+            IODataComponentContainer iContainer = getIODataComponents();
+            if (iContainer != null) {
+                mapperMain.initIOConnections(iContainer);
+                mapperMain.getMapperManager().initInternalData();
+            }
             buildExternalData(externalEmfData);
         }
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.talend.core.model.process.AbstractNode#addInput(org.talend.core.model.process.IConnection)
+     */
+    @Override
+    public void addInput(IConnection connection) {
+        Object eData = getExternalEmfData();
+        if (eData == null) {
+            return;
+        }
+
+        DBMapData externalEmfData = (DBMapData) eData;
+        ExternalNodeUtils.prepareExternalNodeReadyToOpen(this);
+        IODataComponentContainer iContainer = getIODataComponents();
+        if (iContainer != null) {
+            mapperMain.initIOConnections(iContainer);
+            mapperMain.getMapperManager().initInternalData();
+        }
+        buildExternalData(externalEmfData);
     }
 
     @Override
@@ -446,8 +487,13 @@ public class DbMapComponent extends AbstractMapComponent {
                     replaceLocation(oldLocation, newLocation, entry, dataMapExpressionParser, tableRenamed);
                 } // for (ExternalMapperTableEntry entry : metadataTableEntries) {
             }
-            if (table.getCustomConditionsEntries() != null) {
-                for (ExternalDbMapEntry entry : table.getCustomConditionsEntries()) {
+            if (table.getCustomWhereConditionsEntries() != null) {
+                for (ExternalDbMapEntry entry : table.getCustomWhereConditionsEntries()) {
+                    replaceLocation(oldLocation, newLocation, entry, dataMapExpressionParser, tableRenamed);
+                }
+            }
+            if (table.getCustomOtherConditionsEntries() != null) {
+                for (ExternalDbMapEntry entry : table.getCustomOtherConditionsEntries()) {
                     replaceLocation(oldLocation, newLocation, entry, dataMapExpressionParser, tableRenamed);
                 }
             }
@@ -586,8 +632,15 @@ public class DbMapComponent extends AbstractMapComponent {
                         }
                     } // for (ExternalMapperTableEntry entry : metadataTableEntries) {
                 }
-                if (table.getCustomConditionsEntries() != null) {
-                    for (ExternalDbMapEntry entry : table.getCustomConditionsEntries()) {
+                if (table.getCustomWhereConditionsEntries() != null) {
+                    for (ExternalDbMapEntry entry : table.getCustomWhereConditionsEntries()) {
+                        if (hasOrRenameEntry(entry, oldName, newName, renameAction)) {
+                            return true;
+                        }
+                    }
+                }
+                if (table.getCustomOtherConditionsEntries() != null) {
+                    for (ExternalDbMapEntry entry : table.getCustomOtherConditionsEntries()) {
                         if (hasOrRenameEntry(entry, oldName, newName, renameAction)) {
                             return true;
                         }

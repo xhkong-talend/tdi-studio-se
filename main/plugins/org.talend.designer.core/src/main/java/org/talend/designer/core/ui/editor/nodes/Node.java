@@ -13,6 +13,7 @@
 package org.talend.designer.core.ui.editor.nodes;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -1630,6 +1631,10 @@ public class Node extends Element implements IGraphicalNode {
         Node source = (Node) connection.getSource();
         if (source.isELTMapComponent()) {
             IMetadataTable table = connection.getMetadataTable();
+            if (0 < source.countConnectionsUsingMetadata(table)) {
+                // still have connetions using this metadataTable, couldn't delete
+                return;
+            }
             if (table != null) { // hywang add for bug 0009593
                 String label = table.getLabel();
                 IMetadataTable metadataTable = MetadataToolHelper.getMetadataTableFromNode(source, label);
@@ -1639,6 +1644,19 @@ public class Node extends Element implements IGraphicalNode {
             }
         }
 
+    }
+
+    public int countConnectionsUsingMetadata(IMetadataTable metaTable) {
+        int retValue = 0;
+        List<? extends IConnection> connList = this.getOutgoingConnections();
+        if (connList != null) {
+            for (IConnection iconn : connList) {
+                if (metaTable == iconn.getMetadataTable()) {
+                    retValue++;
+                }
+            }
+        }
+        return retValue;
     }
 
     private int getIndex(List<Map<String, String>> vlist, String label) {
@@ -2023,6 +2041,10 @@ public class Node extends Element implements IGraphicalNode {
                     }
                 }
             } else {
+                List<? extends IConnection> tableRefs = getOutgoingConnections(EConnectionType.TABLE_REF);
+                if (tableRefs != null && 0 < tableRefs.size()) {
+                    return false;
+                }
                 if (!(Boolean) getPropertyValue(EParameterName.STARTABLE.getName())) {
                     return false;
                 }
@@ -2181,8 +2203,10 @@ public class Node extends Element implements IGraphicalNode {
                 nodeTmp = nodeTmp.getJobletNode();
             }
             if ((connection.getLineStyle().hasConnectionCategory(IConnectionCategory.USE_HASH)
-                    || nodeTmp.getOutgoingConnections(EConnectionType.TABLE).size() != 0 || nodeTmp.getIncomingConnections(
-                    EConnectionType.TABLE).size() != 0)
+                    || nodeTmp.getOutgoingConnections(EConnectionType.TABLE).size() != 0
+                    || nodeTmp.getIncomingConnections(EConnectionType.TABLE).size() != 0
+                    || nodeTmp.getOutgoingConnections(EConnectionType.TABLE_REF).size() != 0 || nodeTmp.getIncomingConnections(
+                    EConnectionType.TABLE_REF).size() != 0)
                     && !connection.getLineStyle().hasConnectionCategory(IConnectionCategory.DEPENDENCY)) {
                 // System.out.println(" ** Ref Link Found in:" + nodeTmp + "
                 // from:" + this);
@@ -2512,8 +2536,24 @@ public class Node extends Element implements IGraphicalNode {
                     Problems.add(ProblemStatus.INFO, this, infoValue);
                 }
             }
+            List<IElementParameter> emptyParamList = Collections.emptyList();
+            Boolean noConditionOnShow = StringUtils.isEmpty(param.getShowIf()) && StringUtils.isEmpty(param.getNotShowIf());
+            // no condition on show means if the field is displayed or hidden all the time
+
+            /**
+             * ***Some explain for the following check***
+             * 
+             * "if (param.isRequired(getElementParameters()) && !param.isShow(emptyParamList)" <br>
+             * 
+             * 1. in fact it's simply for components who have a table never displayed<br>
+             * like tAdvancedOutput / tRowGenerator etc<br>
+             * 2. as long as there is any show_if / not_show_if.... means there is no point to check any error here,
+             * since the table is not displayed with the current config of the component<br>
+             * 3. if table is always hidden, then we should force some checks
+             */
             // if the parameter is required but empty, an error will be added
-            if (param.isRequired(getElementParameters()) && !param.isShow(getElementParameters()) && this.externalNode != null) {
+            if (param.isRequired(getElementParameters()) && !param.isShow(emptyParamList) && noConditionOnShow
+                    && this.externalNode != null) {
                 if (param.getFieldType().equals(EParameterFieldType.TABLE)) {
                     List<Map<String, String>> tableValues = (List<Map<String, String>>) param.getValue();
                     // add by wzhang. all schemas need loop element.
@@ -2533,8 +2573,6 @@ public class Node extends Element implements IGraphicalNode {
                                 Problems.add(ProblemStatus.ERROR, this, errorMessage);
                             }
                         }
-                    } else if ("tELTJDBCMap".equals(component.getName())) { //$NON-NLS-1$
-                        // don't check this here.
                     } else {
                         if (tableValues == null || tableValues.size() == 0) {
                             String errorMessage = Messages.getString("Node.needOneValue", param.getDisplayName()); //$NON-NLS-1$
@@ -3099,10 +3137,41 @@ public class Node extends Element implements IGraphicalNode {
                 }
             }
         }
+        int tableOutLinkNum = 0;
+        int tableRefOutLinkNum = 0;
+        List<? extends IConnection> tableOutLinks = this.getOutgoingConnections(EConnectionType.TABLE);
+        if (null != tableOutLinks) {
+            tableOutLinkNum = tableOutLinks.size();
+        }
+        List<? extends IConnection> tableRefOutLinks = this.getOutgoingConnections(EConnectionType.TABLE_REF);
+        if (null != tableRefOutLinks) {
+            tableRefOutLinkNum = tableRefOutLinks.size();
+        }
+        int tableInLinkNum = 0;
+        int tableRefInLinkNum = 0;
+        List<? extends IConnection> tableInLinks = this.getIncomingConnections(EConnectionType.TABLE);
+        if (null != tableInLinks) {
+            tableInLinkNum = tableInLinks.size();
+        }
+        List<? extends IConnection> tableRefInLinks = this.getIncomingConnections(EConnectionType.TABLE_REF);
+        if (null != tableRefInLinks) {
+            tableRefInLinkNum = tableRefInLinks.size();
+        }
         int jobletBuildConnectorNum = 0;
+        // means this Node is an ELTDBMap, and it can use subQuery, so the check maybe a little different
+        boolean subQueryMode = true;
+        INodeConnector tableRefConnector = getConnectorFromType(EConnectionType.TABLE_REF);
+        if (null != tableRefConnector) {
+            if (tableRefConnector.getMaxLinkOutput() == 0) {
+                subQueryMode = false;
+            }
+        }
+
         for (INodeConnector nodeConnector : listConnector) {
             if (!nodeConnector.getDefaultConnectionType().hasConnectionCategory(IConnectionCategory.USE_HASH)
                     && nodeConnector.getDefaultConnectionType() != EConnectionType.FLOW_MERGE) {
+                boolean needCheckOutput = true;
+                boolean needCheckInput = true;
                 int nbMaxOut;
                 nbMaxOut = nodeConnector.getMaxLinkOutput();
                 int nbMaxIn;
@@ -3116,6 +3185,58 @@ public class Node extends Element implements IGraphicalNode {
                 int curLinkIn;
                 curLinkIn = nodeConnector.getCurLinkNbInput();
                 String typeName = nodeConnector.getMenuName();
+
+                boolean isCheckingTableLink = false;
+
+                if (subQueryMode) {
+                    if (nodeConnector.getDefaultConnectionType() == EConnectionType.TABLE) {
+                        if (0 < tableRefOutLinkNum) {
+                            needCheckOutput = false;
+                            if (0 < tableOutLinkNum) {
+                                Object[] errorParams = new String[] { EConnectionType.TABLE.getDefaultMenuName(),
+                                        EConnectionType.TABLE_REF.getDefaultMenuName() };
+                                String errorMessage = Messages.getString("Node.canNotMultiKindTableOutput", errorParams); //$NON-NLS-1$
+                                Problems.add(ProblemStatus.ERROR, this, errorMessage);
+                            }
+                        }
+                        if (0 < tableRefInLinkNum) {
+                            needCheckInput = false;
+                        }
+                        isCheckingTableLink = true;
+                        // A subjob can not have multi start node of ELTDBMap
+                        if (this.getComponent().getName().endsWith("Map") && tableOutLinks != null) { //$NON-NLS-1$
+                            for (IConnection iconn : tableOutLinks) {
+                                INode newTarget = iconn.getTarget();
+                                if (newTarget.isELTComponent() && newTarget.getComponent().getName().endsWith("Map")) { //$NON-NLS-1$
+                                    Object[] errorParams = new String[] { this.getLabel(), newTarget.getLabel(),
+                                            EConnectionType.TABLE_REF.getDefaultMenuName() };
+                                    String errorMessage = Messages.getString(
+                                            "Node.ELTDBMap.canNotHaveMultiStartNode", errorParams); //$NON-NLS-1$
+                                    Problems.add(ProblemStatus.ERROR, this, errorMessage);
+                                }
+                            }
+                        }
+                    } else if (nodeConnector.getDefaultConnectionType() == EConnectionType.TABLE_REF) {
+                        if (0 < tableOutLinkNum) {
+                            needCheckOutput = false;
+                            if (0 < tableRefOutLinkNum) {
+                                Object[] errorParams = new String[] { EConnectionType.TABLE.getDefaultMenuName(),
+                                        EConnectionType.TABLE_REF.getDefaultMenuName() };
+                                String errorMessage = Messages.getString("Node.canNotMultiKindTableOutput", errorParams); //$NON-NLS-1$
+                                Problems.add(ProblemStatus.ERROR, this, errorMessage);
+                            }
+                        }
+                        if (0 < tableInLinkNum) {
+                            needCheckInput = false;
+                        }
+                        isCheckingTableLink = true;
+                    }
+                }
+
+                if (isCheckingTableLink) {
+                    typeName = EConnectionType.TABLE.getDefaultMenuName() + "/" + EConnectionType.TABLE_REF.getDefaultMenuName(); //$NON-NLS-1$
+                }
+
                 if (nodeConnector.getDefaultConnectionType() == EConnectionType.FLOW_MAIN) {
                     typeName = "Row"; //$NON-NLS-1$
                     if (isJoblet) {
@@ -3125,32 +3246,36 @@ public class Node extends Element implements IGraphicalNode {
                         continue;
                     }
                 }
-                if (nbMaxOut != -1) {
-                    if (curLinkOut > nbMaxOut) {
-                        String errorMessage = Messages.getString("Node.tooMuchTypeOutput", typeName); //$NON-NLS-1$
-                        Problems.add(ProblemStatus.WARNING, this, errorMessage);
+                if (needCheckOutput) {
+                    if (nbMaxOut != -1) {
+                        if (curLinkOut > nbMaxOut) {
+                            String errorMessage = Messages.getString("Node.tooMuchTypeOutput", typeName); //$NON-NLS-1$
+                            Problems.add(ProblemStatus.WARNING, this, errorMessage);
+                        }
                     }
-                }
-                if (nbMinOut != 0) {
-                    if (curLinkOut < nbMinOut) {
-                        String errorMessage = Messages.getString("Node.notEnoughTypeOutput", typeName); //$NON-NLS-1$
-                        Problems.add(ProblemStatus.WARNING, this, errorMessage);
+                    if (nbMinOut != 0) {
+                        if (curLinkOut < nbMinOut) {
+                            String errorMessage = Messages.getString("Node.notEnoughTypeOutput", typeName); //$NON-NLS-1$
+                            Problems.add(ProblemStatus.WARNING, this, errorMessage);
+                        }
                     }
                 }
 
                 // ingore input warning
                 if (!isJoblet) {
+
                     if (nbMaxIn != -1) {
                         if (curLinkIn > nbMaxIn) {
                             String errorMessage = Messages.getString("Node.tooMuchTypeInput", typeName); //$NON-NLS-1$
                             Problems.add(ProblemStatus.WARNING, this, errorMessage);
                         }
                     }
-
-                    if (nbMinIn != 0) {
-                        if (curLinkIn < nbMinIn) {
-                            String errorMessage = Messages.getString("Node.notEnoughTypeInput", typeName); //$NON-NLS-1$
-                            Problems.add(ProblemStatus.WARNING, this, errorMessage);
+                    if (needCheckInput) {
+                        if (nbMinIn != 0) {
+                            if (curLinkIn < nbMinIn) {
+                                String errorMessage = Messages.getString("Node.notEnoughTypeInput", typeName); //$NON-NLS-1$
+                                Problems.add(ProblemStatus.WARNING, this, errorMessage);
+                            }
                         }
                     }
                 }
@@ -3563,8 +3688,9 @@ public class Node extends Element implements IGraphicalNode {
                 outputMeta = getMetadataList().get(0);
                 for (IConnection connection : inputs) {
                     if (connection.isActivate()
-                            && (connection.getLineStyle().equals(EConnectionType.FLOW_MAIN) || connection.getLineStyle().equals(
-                                    EConnectionType.TABLE))) {
+                            && (connection.getLineStyle().equals(EConnectionType.FLOW_MAIN)
+                                    || connection.getLineStyle().equals(EConnectionType.TABLE) || connection.getLineStyle()
+                                    .equals(EConnectionType.TABLE_REF))) {
                         inputMeta = connection.getMetadataTable();
                         inputConnecion = connection;
                     }
@@ -3683,6 +3809,26 @@ public class Node extends Element implements IGraphicalNode {
             }
 
         }
+    }
+
+    /**
+     * 
+     * DOC cmeng Comment method "checkELTTableReference".
+     * 
+     * @return true >> is a ELTTable Reference, and set reference true<br>
+     * false >> is not a ELTTable Reference, and set reference false
+     */
+    private boolean checkELTTableReference() {
+        boolean isReference = false;
+        // check reference
+        if (this.isELTComponent() && this.getComponent().getName().endsWith("Map")) { //$NON-NLS-1$
+            List<? extends IConnection> tableRefs = this.getOutgoingConnections(EConnectionType.TABLE_REF);
+            if (tableRefs != null && 0 < tableRefs.size()) {
+                isReference = true;
+            }
+            this.setPropertyValue(EParameterName.UPDATE_COMPONENTS.getName(), Boolean.TRUE);
+        }
+        return isReference;
     }
 
     private void checkTRunjobwithMRProcess() {
@@ -3950,6 +4096,9 @@ public class Node extends Element implements IGraphicalNode {
     @Override
     public boolean checkIfCanBeStart() {
         if (isELTComponent()) {
+            if (this.checkELTTableReference()) {
+                return false;
+            }
             // is there condition link, then can't set the start.
             boolean isThereConditionLink = false;
             for (int j = 0; j < getIncomingConnections().size() && !isThereConditionLink; j++) {

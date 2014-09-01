@@ -43,6 +43,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.PlatformUI;
 import org.talend.commons.exception.BusinessException;
 import org.talend.commons.exception.LoginException;
+import org.talend.commons.exception.OperationCancelException;
 import org.talend.commons.exception.PersistenceException;
 import org.talend.commons.ui.runtime.exception.ExceptionHandler;
 import org.talend.commons.ui.runtime.exception.MessageBoxExceptionHandler;
@@ -393,10 +394,22 @@ public class LoginDialog extends TrayDialog {
 
             dialog.run(true, true, runnable);
 
-        } catch (InvocationTargetException e) {
+        } catch (final InvocationTargetException e) {
             if (PluginChecker.isSVNProviderPluginLoaded()) {
                 loginComposite.populateProjectList();
-                MessageBoxExceptionHandler.process(e.getTargetException(), getShell());
+                if (e.getTargetException() instanceof OperationCancelException) {
+                    Display.getDefault().syncExec(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            MessageDialog.openError(Display.getDefault().getActiveShell(),
+                                    Messages.getString("LoginDialog.logonCanceled"), e.getTargetException().getLocalizedMessage());
+                        }
+
+                    });
+                } else {
+                    MessageBoxExceptionHandler.process(e.getTargetException(), getShell());
+                }
             } else {
                 loginComposite.populateTOSProjectList();
                 MessageBoxExceptionHandler.process(e.getTargetException(), getShell());

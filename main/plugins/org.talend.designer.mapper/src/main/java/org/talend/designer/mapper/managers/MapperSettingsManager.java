@@ -22,6 +22,8 @@ import org.talend.designer.mapper.model.MapperSettingModel;
  */
 public class MapperSettingsManager {
 
+    public static final String REPLICATED_JOIN = "REPLICATED_JOIN"; //$NON-NLS-1$
+
     public static final String DIE_ON_ERROR = "DIE_ON_ERROR"; //$NON-NLS-1$
 
     public static final String TEMPORARY_DATA_DIRECTORY = "TEMPORARY_DATA_DIRECTORY"; //$NON-NLS-1$
@@ -80,6 +82,7 @@ public class MapperSettingsManager {
 
     private void initDefaultModel() {
         defaultModel = new MapperSettingModel();
+        defaultModel.setReplicatedJoin((Boolean) manager.getDefaultSetting().get(REPLICATED_JOIN));
         defaultModel.setDieOnError((Boolean) manager.getDefaultSetting().get(DIE_ON_ERROR));
         defaultModel.setLookInParallel((Boolean) manager.getDefaultSetting().get(LOOKUP_IN_PARALLEL));
         defaultModel.setTempDataDir(String.valueOf(manager.getDefaultSetting().get(TEMPORARY_DATA_DIRECTORY)));
@@ -88,8 +91,18 @@ public class MapperSettingsManager {
 
     private void initCurrnentModel() {
         currentModel = new MapperSettingModel();
+        // Ensure that the unmodified fields are the same as the default model.
+        currentModel.setReplicatedJoin(defaultModel.isReplicatedJoin());
+        currentModel.setDieOnError(defaultModel.isDieOnError());
+        currentModel.setLookInParallel(defaultModel.isLookInParallel());
+        currentModel.setTempDataDir(defaultModel.getTempDataDir());
+        currentModel.setRowBufferSize(defaultModel.getRowBufferSize());
         AbstractMapComponent component = manager.getAbstractMapComponent();
-        IElementParameter parameter = component.getElementParameter(DIE_ON_ERROR);
+        IElementParameter parameter = component.getElementParameter(REPLICATED_JOIN);
+        if (parameter != null && parameter.getValue() != null && parameter.getValue() instanceof Boolean) {
+            currentModel.setReplicatedJoin((Boolean) parameter.getValue());
+        }
+        parameter = component.getElementParameter(DIE_ON_ERROR);
         if (parameter != null && parameter.getValue() != null && parameter.getValue() instanceof Boolean) {
             currentModel.setDieOnError((Boolean) parameter.getValue());
         }
@@ -135,7 +148,11 @@ public class MapperSettingsManager {
 
     public void saveCurrentSettings() {
         AbstractMapComponent component = manager.getAbstractMapComponent();
-        IElementParameter parameter = component.getElementParameter(DIE_ON_ERROR);
+        IElementParameter parameter = component.getElementParameter(REPLICATED_JOIN);
+        if (parameter != null) {
+            parameter.setValue(currentModel.isReplicatedJoin());
+        }
+        parameter = component.getElementParameter(DIE_ON_ERROR);
         if (parameter != null) {
             parameter.setValue(currentModel.isDieOnError());
         }
