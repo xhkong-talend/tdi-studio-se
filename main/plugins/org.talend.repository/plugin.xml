@@ -241,8 +241,8 @@
    <extension
          point="org.talend.core.runtime.service">
       <Service
-      		serviceId="IRepositoryService"
-      		class="org.talend.repository.RepositoryService"/>
+            serviceId="IRepositoryService"
+            class="org.talend.repository.RepositoryService"/>
       <Service
             class="org.talend.repository.RepositoryService"
             serviceId="IRepositoryContextService">
@@ -1060,14 +1060,14 @@
                name="Rename the XMLMultiSchema to MSXML"
                version="5.1.2">
          </projecttask>
-	      <projecttask
+          <projecttask
              beforeLogon="false"
              breaks="5.1.1"
              class="org.talend.repository.model.migration.ChangeExtendInsertDefaultValueMigrationTask"
              id="org.talend.repository.model.migration.ChangeExtendInsertDefaultValueMigrationTask"
              name="ChangeExtendInsertDefaultValueMigrationTask"
              version="5.1.2">
-	      </projecttask>
+          </projecttask>
        <projecttask
              beforeLogon="false"
              breaks="5.1.1"
@@ -1459,7 +1459,7 @@
             name="UpgrateDatabaseTypeForSybaseConnection"
             version="5.1.2">
       </projecttask>
-	  <projecttask
+      <projecttask
          beforeLogon="false"
          breaks="5.1.1"
          class="org.talend.repository.model.migration.RenameModeParaForPigMigrationTask"
@@ -1468,7 +1468,7 @@
          name="Rename pig mode parameter"
          version="5.1.2">
       </projecttask>
-  	  <projecttask
+      <projecttask
            beforeLogon="false"
            breaks="5.1.1"
            class="org.talend.repository.model.migration.SetStandaloneModeForHiveComponentsMigrationTask"
@@ -1477,7 +1477,7 @@
            name="Set the standalone value for the connection mode for old jobs."
            version="5.1.2">
       </projecttask>
-	  <projecttask
+      <projecttask
            beforeLogon="false"
            breaks="5.1.1"
            class="org.talend.repository.model.migration.SetDefineRegisterJarToTrueForPigLoadMigrationTask"
@@ -1486,7 +1486,7 @@
            name="Set the Define jar option to true for old jobs."
            version="5.3.0">
       </projecttask>
-	  <projecttask
+      <projecttask
          beforeLogon="false"
          breaks="5.1.1"
          class="org.talend.repository.model.migration.AddDistributionClosedListForHadoopComponentsMigrationTask"
@@ -1495,7 +1495,7 @@
          name="Replace host and port by namenode uri for hadoop components"
          version="5.1.2">
       </projecttask>
-  	  <projecttask
+      <projecttask
          beforeLogon="false"
          breaks="5.1.1"
          class="org.talend.repository.model.migration.ReplaceHostAndPortByNamenodeURIMigrationTask"
@@ -1674,7 +1674,7 @@
               name="Add additionalField to the job model"
               version="5.1.2">
         </projecttask>
-		<projecttask
+        <projecttask
         beforeLogon="false"
         breaks="5.1.1"
         class="org.talend.repository.model.migration.SetFilterTiemFromTotoFromPOPComponentsMigrationTask"
@@ -1682,23 +1682,23 @@
         id="org.talend.repository.model.migration.SetFilterTiemFromTotoFromPOPComponentsMigrationTask"
         name="SetFilterTiemFromTotoFromPOPComponentsMigrationTask"
         version="5.1.2">
-		</projecttask>
-		<projecttask
+        </projecttask>
+        <projecttask
         beforeLogon="false"
         breaks="5.1.1"
         class="org.talend.repository.model.migration.ChangeDefaultValueTDIBug21708"
         id="org.talend.repository.model.migration.ChangeDefaultValueTDIBug21708"
         name="ChangeDefaultValueTDIBug21708"
         version="5.1.2">
-		</projecttask>
-		<projecttask
+        </projecttask>
+        <projecttask
         beforeLogon="false"
         breaks="5.1.1"
         class="org.talend.repository.model.migration.ChangetMongoDBInputSortTextToTable"
         id="org.talend.repository.model.migration.ChangetMongoDBInputSortTextToTable"
         name="ChangetMongoDBInputSortTextToTable"
         version="5.1.2">
-		</projecttask>
+        </projecttask>
         <projecttask
             beforeLogon="false"
             breaks="5.1.1"
@@ -1715,13 +1715,13 @@
               name="ChangeDefaultValueFortNormalizeCSVOption"
               version="5.1.2">
         </projecttask>
-	  <workspacetask
+      <workspacetask
         breaks="5.2.0"
         class="org.talend.repository.model.migration.ChangeProjectTechinicalNameMigrationTask"
         id="org.talend.repository.model.migration.ChangeProjectTechinicalName"
         name="Change Project Techinical Name"
         version="5.2.0">
- 	 </workspacetask>
+     </workspacetask>
         <projecttask
               beforeLogon="false"
               breaks="5.1.1"
@@ -1812,7 +1812,7 @@
               version="5.2.1">
         </projecttask>
         <projecttask
-        	beforeLogon="false"
+            beforeLogon="false"
             breaks="5.2.1"
             class="org.talend.repository.model.migration.ChangeELTHiveOutputPartitionValue"
             description="Add double quotes for tELTHiveOutput Partition Name and Value to support context variable"
@@ -1866,15 +1866,15 @@
             version="5.2.1">
       </projecttask>
       <projecttask
-      		beforeLogon="false"
-      		breaks="5.2.0"
-      		class="org.talend.repository.model.migration.MoveStartsLinkFromPartitionerToDepartitioner"
-      		description="change Starts link for tRecollector from tPartitioner to tDepartitioner."
-      		id="org.talend.repository.model.migration.MoveStartsLinkFromPartitionerToDepartitioner"
-      		name="MoveStartsLinkFromPartitionerToDepartitioner"
-      		version="5.3.0">
-      	</projecttask>
-      	<projecttask
+            beforeLogon="false"
+            breaks="5.2.0"
+            class="org.talend.repository.model.migration.MoveStartsLinkFromPartitionerToDepartitioner"
+            description="change Starts link for tRecollector from tPartitioner to tDepartitioner."
+            id="org.talend.repository.model.migration.MoveStartsLinkFromPartitionerToDepartitioner"
+            name="MoveStartsLinkFromPartitionerToDepartitioner"
+            version="5.3.0">
+        </projecttask>
+        <projecttask
             beforeLogon="false"
             breaks="5.2.1"
             class="org.talend.repository.model.migration.ChangeHadoopVersionValue4TDQComponents"
@@ -1882,7 +1882,7 @@
             id="org.talend.repository.model.migration.ChangeHadoopVersionValue4TDQComponents"
             name="ChangeHadoopVersionValue4TDQComponents"
             version="5.2.2">
-       	</projecttask>
+        </projecttask>
         <projecttask
             beforeLogon="false"
             breaks="5.2.1"
@@ -1947,7 +1947,7 @@
             version="5.3.1">
         </projecttask>
         <projecttask
-        	beforeLogon="false"
+            beforeLogon="false"
             breaks="5.2.2"
             class="org.talend.repository.model.migration.ChangeSalesForceComponetsCustomerModuleName"
             description="Add double quote if &quot;customer module name&quot; is not surrounded by it"
@@ -2225,12 +2225,12 @@
         </projecttask>
         <projecttask
               beforeLogon="false"
-              breaks="5.4.2"
+              breaks="5.3.2"
               class="org.talend.repository.model.migration.ChangeRecalculateFormulaValueMigrationTask"
               description="set the checkbox:RECALCULATE_FORMULA to true for old job"
               id="org.talend.repository.model.migration.ChangeRecalculateFormulaValueMigrationTask"
               name="ChangeRecalculateFormulaValueMigrationTask"
-              version="5.4.3">
+              version="5.3.3">
         </projecttask>
         <projecttask
               beforeLogon="false"

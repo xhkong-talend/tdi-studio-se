@@ -135,12 +135,6 @@
          version="0.0.0"/>
 
    <plugin
-         id="org.talend.libraries.ebcdic"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"/>
-
-   <plugin
          id="org.talend.libraries.edifact"
          download-size="0"
          install-size="0"
@@ -148,12 +142,6 @@
 
    <plugin
          id="org.talend.libraries.ehcache"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"/>
-
-   <plugin
-         id="org.talend.libraries.ftp"
          download-size="0"
          install-size="0"
          version="0.0.0"/>

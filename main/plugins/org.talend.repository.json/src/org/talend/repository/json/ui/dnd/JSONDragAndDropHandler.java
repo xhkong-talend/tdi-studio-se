@@ -311,7 +311,7 @@ public class JSONDragAndDropHandler extends AbstractDragAndDropServiceHandler {
         return setting;
     }
 
-    private void setJSONRepositoryValue(JSONFileConnection connection, INode node, String repositoryValue) {
+    private void setJSONRepositoryValue(JSONFileConnection connection, INode node, IElementParameter param) {
     }
 
     @Override
@@ -338,9 +338,9 @@ public class JSONDragAndDropHandler extends AbstractDragAndDropServiceHandler {
     }
 
     @Override
-    public void setComponentValue(Connection connection, INode node, String repositoryValue) {
+    public void setComponentValue(Connection connection, INode node, IElementParameter param) {
         if (node != null && canHandle(connection)) {
-            setJSONRepositoryValue((JSONFileConnection) connection, node, repositoryValue);
+            setJSONRepositoryValue((JSONFileConnection) connection, node, param);
         }
     }
 

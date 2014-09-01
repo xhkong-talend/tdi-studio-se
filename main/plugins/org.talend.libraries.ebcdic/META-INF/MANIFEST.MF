@@ -4,4 +4,14 @@ Bundle-Name: Ebcdic
 Bundle-SymbolicName: org.talend.libraries.ebcdic;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Bundle-ActivationPolicy: lazy
+Bundle-ClassPath: lib/cb2xml.jar,
+ lib/cobol2j-1.5.3.jar
+Export-Package: net.sf.cb2xml,
+ net.sf.cb2xml.convert,
+ net.sf.cb2xml.sablecc.analysis,
+ net.sf.cb2xml.sablecc.lexer,
+ net.sf.cb2xml.sablecc.node,
+ net.sf.cb2xml.sablecc.parser,
+ net.sf.cb2xml.util,
+ net.sf.cobol2j
 
