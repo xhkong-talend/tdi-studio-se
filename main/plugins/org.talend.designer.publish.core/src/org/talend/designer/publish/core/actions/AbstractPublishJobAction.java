@@ -170,6 +170,10 @@ public abstract class AbstractPublishJobAction implements IRunnableWithProgress 
         return featuresModel;
     }
 
+    protected String getJobVersion() {
+        return jobVersion;
+    }
+
     @SuppressWarnings("serial")
     private static final Map<String, BundleModel> BUNDLE_MAPPING = new HashMap<String, BundleModel>() {
 
