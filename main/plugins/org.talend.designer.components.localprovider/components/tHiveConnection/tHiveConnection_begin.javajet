@@ -14,10 +14,10 @@ imports="
 	if("MICROSOFT_HD_INSIGHT".equals(ElementParameterParser.getValue(theNode, "__DISTRIBUTION__"))) { // Execution through WebHCat
 %>
 		<%@ include file="@{org.talend.designer.components.localprovider}/components/tHiveConnection/tHiveConnection_azure.javajet"%>
-<%
+<%	
 	} else { // JDBC execution
 %>
 		<%@ include file="@{org.talend.designer.components.localprovider}/components/tHiveConnection/tHiveConnection_jdbc.javajet"%>
 <%
 	}
-%>
+%>	
