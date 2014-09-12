@@ -141,6 +141,14 @@
 						</a>
 					</b>
 				</div>
+				<div class="FONTSTYLE">
+                    <b>
+                        <a href="#ComparedConnectorList">
+                            <xsl:value-of
+                                select="/project/@i18n.compare.compare.compared.connector.list" />
+                        </a>
+                    </b>
+                </div>
 				<br />
 				<br />
 				<!-- Project Description -->
@@ -799,6 +807,136 @@
 					</xsl:for-each>
 				</xsl:if>
 				<!-- _END_ Compared Component Modified Detailed List -->
+				
+				<!--Compared Connector List -->
+                <xsl:variable name="connector" select="/project/connector" />
+                <h2 class="FONTSTYLE">
+                    <a name="#ComparedConnectorList">
+                        <xsl:value-of
+                            select="/project/@i18n.compare.compare.compared.connector.list" />
+                    </a>
+                </h2>
+                <xsl:variable name="addConnectorList"
+                    select="$connector/addedConnectorList/addedItem/@Title" />
+                <xsl:if test="string-length($addConnectorList)!=0">
+                    <b class="FONTSTYLE">
+                        <xsl:value-of select="/project/@i18n.compare.added.connector" />
+                    </b>
+                    <br />
+                    <xsl:for-each select="$connector/addedConnectorList">
+                        <b class="FONTSTYLE">
+                            <xsl:value-of select="@rowname" />
+                        </b>
+	                    <table width="40%" border="1" cellpadding="0" cellspacing="0"
+	                        style="border-collapse: collapse; padding-left:10mm;" bordercolor="#111111"
+	                        frame="box" summary="">
+	                        <tr>
+	                            <th width="10%" align="left" class="TABLECOLUMNSTYLE">
+	                                 <xsl:value-of select="/project/@i18n.compare.connector.title" />
+	                            </th>
+	                            <th width="45%" align="left" class="TABLECOLUMNSTYLE">
+	                                <xsl:value-of select="/project/@i18n.compare.connector.value" />
+	                            </th>
+	                        </tr>    
+	                         <xsl:for-each select="addedItem">
+	                         <tr>
+	                             <td class="FONTSTYLE" align="left">
+	                                  <xsl:value-of select="@Title" />
+	                             </td>
+	                             <td class="FONTSTYLE" align="left">
+	                                 <xsl:value-of select="@NewValue" />
+	                             </td>
+	                         </tr>
+	                         </xsl:for-each>
+	                    </table>
+	                    <b></b>
+                    </xsl:for-each>
+                    <br />
+                </xsl:if>
+
+                <xsl:variable name="deleteConnectorList"
+                    select="$connector/deletedConnectorList/deletedItem/@Title" />
+                <xsl:if test="string-length($deleteConnectorList)!=0">
+                    <b class="FONTSTYLE">
+                        <xsl:value-of select="/project/@i18n.compare.current.deleted.connector" />
+                    </b>
+                    <br />
+                     <xsl:for-each select="$connector/deletedConnectorList">
+	                        <b class="FONTSTYLE">
+	                            <xsl:value-of select="@rowname" />
+	                        </b>
+		                    <table width="40%" border="1" cellpadding="0" cellspacing="0"
+		                        style="border-collapse: collapse; padding-left:10mm;" bordercolor="#111111"
+		                        frame="box" summary="">
+		                        <tr>
+		                            <th width="10%" align="left" class="TABLECOLUMNSTYLE">
+		                                <xsl:value-of select="/project/@i18n.compare.connector.title" />
+		                            </th>
+		                            <th width="45%" align="left" class="TABLECOLUMNSTYLE">
+		                                <xsl:value-of select="/project/@i18n.compare.connector.value" />
+		                            </th>
+		                        </tr>
+		                        <xsl:for-each select="deletedItem">
+		                          <tr>
+		                                <td class="FONTSTYLE" align="left">
+		                                    <xsl:value-of select="@Title" />
+		                                </td>
+		                                <td class="FONTSTYLE" align="left">
+		                                    <xsl:value-of select="@OldValue" />
+		                                </td>
+		                            </tr>
+		                         </xsl:for-each>
+		                    </table>
+		                    <b></b>
+                      </xsl:for-each>
+                    <br />
+                </xsl:if>
+
+                <xsl:variable name="modifyConnectorList"
+                    select="$connector/modifiedConnectorList/modifiedItem/@Title" />
+                <xsl:if test="string-length($modifyConnectorList)!=0">
+                    <b class="FONTSTYLE">
+                        <xsl:value-of select="/project/@i18n.compare.added.modified.connector" />
+                    </b>
+                    <br />
+                    <xsl:for-each select="$connector/modifiedConnectorList">
+                        <b class="FONTSTYLE">
+                               <xsl:value-of select="@rowname" />
+                        </b>
+	                    <table width="40%" border="1" cellpadding="0" cellspacing="0"
+	                        style="border-collapse: collapse; padding-left:10mm;" bordercolor="#111111"
+	                        frame="box" summary="">
+	                        <tr>
+	                            <th width="10%" align="left" class="TABLECOLUMNSTYLE">
+	                                <xsl:value-of select="/project/@i18n.compare.connector.title" />
+	                            </th>
+	                            <th width="45%" align="left" class="TABLECOLUMNSTYLE">
+	                                <xsl:value-of select="/project/@i18n.compare.connector.newvalue" />
+	                            </th>
+	                            <th width="45%" align="left" class="TABLECOLUMNSTYLE">
+	                                <xsl:value-of select="/project/@i18n.compare.connector.oldvalue" />
+	                            </th>
+	                        </tr>              
+	                         <xsl:for-each select="modifiedItem">
+		                         <tr>
+		                               <td class="FONTSTYLE" align="center">
+		                                   <xsl:value-of select="@Title" />
+		                               </td>
+		                               <td class="FONTSTYLE" align="left">
+		                                   <xsl:value-of select="@NewValue" />
+		                               </td>
+		                               <td class="FONTSTYLE" align="left">
+		                                   <xsl:value-of select="@OldValue" />
+		                               </td>
+		                           </tr>
+	                          </xsl:for-each>
+	                    </table>
+	                    <b></b>
+                   </xsl:for-each>
+                </xsl:if>
+                <br />
+                <br />
+                <!--End Compared Connector List -->
 			</body>
 		</html>
 	</xsl:template>
