@@ -37,7 +37,7 @@ if(useSSL) {
 	ks.load(fis, decryptedPassword_<%=cid%>.toCharArray());
 	fis.close();
 	tmf.init(ks);
-	javax.net.ssl.SSLContext sslContext = javax.net.ssl.SSLContext.getInstance("SSL");
+	javax.net.ssl.SSLContext sslContext = javax.net.ssl.SSLContext.getInstance(<%=helper.getStringParam("__SSL_ALGORITHM__")%>);
 	sslContext.init(null, tmf.getTrustManagers(), new java.security.SecureRandom());
 <%	
 }
@@ -49,7 +49,7 @@ String proxyPort = helper.getStringParam("__PROXY_PORT__");
 %>
 		.setProxy(new java.net.Proxy(java.net.Proxy.Type.HTTP, java.net.InetSocketAddress.createUnresolved(<%=proxyHost%>, <%=proxyPort%>)))
 <%}
-  if("true".equals(useSSL)) {
+  if(useSSL) {
 %>
 	.setSslSocketFactory(sslContext.getSocketFactory())
 <%
