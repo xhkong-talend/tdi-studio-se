@@ -55,6 +55,8 @@ public class SQLPropertyDialog extends TitleAreaDialog {
 
     private boolean ifcontext; // add by hyWang
 
+    private boolean showQueryProperty;
+
     public void setIfcontext(boolean ifcontext) {
         this.ifcontext = ifcontext;
     }
@@ -84,7 +86,7 @@ public class SQLPropertyDialog extends TitleAreaDialog {
      */
     public void setQuery(Query query) {
         this.query = query;
-        if (query != null) {
+        if (query != null && !showQueryProperty) {
             names.remove(query.getLabel());
         }
     }
@@ -94,6 +96,7 @@ public class SQLPropertyDialog extends TitleAreaDialog {
      * 
      * @see org.eclipse.jface.dialogs.Dialog#createDialogArea(org.eclipse.swt.widgets.Composite)
      */
+    @Override
     protected Control createDialogArea(Composite parent) {
         Composite area = (Composite) super.createDialogArea(parent);
         Composite container = new Composite(area, SWT.NONE);
@@ -101,9 +104,6 @@ public class SQLPropertyDialog extends TitleAreaDialog {
         gridLayout.numColumns = 2;
         container.setLayout(gridLayout);
         container.setLayoutData(new GridData(GridData.FILL_BOTH));
-
-        this.setTitle(Messages.getString("SQLEditor.Actions.SaveSQL")); //$NON-NLS-1$
-        this.setMessage(Messages.getString("SQLEditor.Actions.InputMessage"), IMessageProvider.INFORMATION); //$NON-NLS-1$
 
         final Label nameLabel = new Label(container, SWT.NONE);
         nameLabel.setText(Messages.getString("SQLEditor.SQLPropertyDialog.Name")); //$NON-NLS-1$
@@ -117,6 +117,17 @@ public class SQLPropertyDialog extends TitleAreaDialog {
         commentText = new Text(container, SWT.BORDER);
         commentText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 
+        if (showQueryProperty && query != null) {
+            this.setMessage(
+                    Messages.getString("SQLEditor.SQLPropertyDialog.ShowQueryProperty.message"), IMessageProvider.INFORMATION);//$NON-NLS-1$
+            nameText.setText(query.getLabel());
+            nameText.setEditable(false);
+            commentText.setText(query.getComment());
+            // commentText.setEditable(false);
+        } else {
+            this.setTitle(Messages.getString("SQLEditor.Actions.SaveSQL")); //$NON-NLS-1$
+            this.setMessage(Messages.getString("SQLEditor.Actions.InputMessage"), IMessageProvider.INFORMATION); //$NON-NLS-1$
+        }
         this.addListener();
         return area;
     }
@@ -126,8 +137,8 @@ public class SQLPropertyDialog extends TitleAreaDialog {
      * 
      * @see org.eclipse.jface.dialogs.Dialog#okPressed()
      */
+    @Override
     protected void okPressed() {
-
         if (query == null) {
             query = ConnectionFactory.eINSTANCE.createQuery();
             query.setValue(""); //$NON-NLS-1$
@@ -146,6 +157,7 @@ public class SQLPropertyDialog extends TitleAreaDialog {
      * 
      * @param parent
      */
+    @Override
     protected void createButtonsForButtonBar(Composite parent) {
         createButton(parent, IDialogConstants.OK_ID, Messages.getString("SQLEditor.Actions.SaveMessage"), true); //$NON-NLS-1$
         getButton(IDialogConstants.OK_ID).setEnabled(false);
@@ -172,15 +184,32 @@ public class SQLPropertyDialog extends TitleAreaDialog {
         setShellStyle(SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL | SWT.RESIZE | SWT.MIN | SWT.MAX);
     }
 
+    /**
+     * ShowQueryProperty constructor.
+     * 
+     * @param shell
+     * @param string
+     */
+    public SQLPropertyDialog(Shell shell, boolean showQueryProperty) {
+        super(shell);
+        this.showQueryProperty = showQueryProperty;
+        setShellStyle(SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL | SWT.RESIZE | SWT.MIN | SWT.MAX);
+    }
+
     /*
      * (non-Javadoc)
      * 
      * @see org.eclipse.jface.window.Window#configureShell(org.eclipse.swt.widgets.Shell)
      */
+    @Override
     protected void configureShell(Shell shell) {
         super.configureShell(shell);
         // Set the title bar text
-        shell.setText(dialogTitle); //$NON-NLS-1$
+        if (showQueryProperty) {
+            shell.setText(Messages.getString("SQLEditor.SQLPropertyDialog.ShowQueryProperty.title")); //$NON-NLS-1$
+        } else {
+            shell.setText(dialogTitle);
+        }
     }
 
     /**
@@ -200,6 +229,7 @@ public class SQLPropertyDialog extends TitleAreaDialog {
              * 
              * @see org.eclipse.swt.events.ModifyListener#modifyText(org.eclipse.swt.events.ModifyEvent)
              */
+            @Override
             public void modifyText(ModifyEvent e) {
                 String result = validate(nameText.getText());
                 if (result == null) {
@@ -236,10 +266,16 @@ public class SQLPropertyDialog extends TitleAreaDialog {
              * 
              * @see org.eclipse.swt.events.ModifyListener#modifyText(org.eclipse.swt.events.ModifyEvent)
              */
+            @Override
             public void modifyText(ModifyEvent e) {
                 if (commentText.getText().length() == 0) {
                     SQLPropertyDialog.this.setMessage(Messages.getString("SQLEditor.Actions.EmptyCommentMessage"), //$NON-NLS-1$
                             IMessageProvider.INFORMATION);
+                } else if (showQueryProperty) {
+                    SQLPropertyDialog.this.setMessage(
+                            Messages.getString("SQLEditor.SQLPropertyDialog.ShowQueryProperty.message"), //$NON-NLS-1$
+                            IMessageProvider.INFORMATION);
+                    SQLPropertyDialog.this.getButton(IDialogConstants.OK_ID).setEnabled(true);
                 }
             }
         });
