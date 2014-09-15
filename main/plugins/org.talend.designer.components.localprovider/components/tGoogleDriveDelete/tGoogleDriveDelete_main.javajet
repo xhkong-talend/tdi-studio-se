@@ -1,0 +1,52 @@
+<%@ jet 
+imports="
+    org.talend.core.model.process.INode 
+    org.talend.core.model.process.IConnection
+    org.talend.core.model.process.IConnectionCategory 
+    org.talend.core.model.process.ElementParameterParser 
+    org.talend.designer.codegen.config.CodeGeneratorArgument
+    org.talend.core.model.metadata.IMetadataTable 
+    org.talend.core.model.metadata.IMetadataColumn
+    org.talend.core.model.metadata.types.JavaTypesManager
+    org.talend.core.model.metadata.types.JavaType
+    java.util.List
+" 
+%>
+<%
+		CodeGeneratorArgument codeGenArgument = (CodeGeneratorArgument) argument;
+		INode node = (INode)codeGenArgument.getArgument();
+		String cid = node.getUniqueName();
+		
+		String connection = ElementParameterParser.getValue(node,"__CONNECTION__");
+	    String connectionKey = "\"conn_" + connection+"\"";
+		
+		String fileId = ElementParameterParser.getValue(node, "__FILE_ID__");
+		boolean dieOnError = "true".equals(ElementParameterParser.getValue(node, "__DIE_ON_ERROR__"));
+		
+
+%>
+	com.google.api.services.drive.Drive <%=cid%>_client = (com.google.api.services.drive.Drive)globalMap.get(<%=connectionKey%>);
+	try
+	{
+		if(<%=fileId%> == null || "".equals(<%=fileId%>.trim()))
+		{
+			throw new Exception("File/folder id can not be null");
+		}
+		<%=cid%>_client.files().delete(<%=fileId%>).execute();
+		
+	}
+	catch (java.lang.Exception e)
+	{
+<%
+		if(dieOnError) {
+%>
+			throw e;
+<%
+		} else {
+%>
+			System.err.println(e);
+<%
+		}
+%>
+	}
+			
