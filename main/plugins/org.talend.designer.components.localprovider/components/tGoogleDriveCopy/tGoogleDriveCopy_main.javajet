@@ -1,0 +1,74 @@
+<%@ jet 
+imports="
+    org.talend.core.model.process.INode 
+    org.talend.core.model.process.IConnection
+    org.talend.core.model.process.IConnectionCategory 
+    org.talend.core.model.process.ElementParameterParser 
+    org.talend.designer.codegen.config.CodeGeneratorArgument
+    org.talend.core.model.metadata.IMetadataTable 
+    org.talend.core.model.metadata.IMetadataColumn
+    org.talend.core.model.metadata.types.JavaTypesManager
+    org.talend.core.model.metadata.types.JavaType
+    java.util.List
+" 
+%>
+<%
+		CodeGeneratorArgument codeGenArgument = (CodeGeneratorArgument) argument;
+		INode node = (INode)codeGenArgument.getArgument();
+		String cid = node.getUniqueName();
+		
+		String connection = ElementParameterParser.getValue(node,"__CONNECTION__");
+	    String connectionKey = "\"conn_" + connection+"\"";
+		
+		String fileId = ElementParameterParser.getValue(node, "__FILE_ID__");
+		String dest_folderId = ElementParameterParser.getValue(node, "__DESTINATION_FOLDERID__");
+		String dest_fieName = ElementParameterParser.getValue(node,  "__DESTINATION_FILE_NAME__");
+
+		boolean dieOnError = "true".equals(ElementParameterParser.getValue(node, "__DIE_ON_ERROR__"));
+		boolean rename = "true".equals(ElementParameterParser.getValue(node, "__RENAME__"));
+		boolean remove = "true".equals(ElementParameterParser.getValue(node, "__REMOVE_SOURCE_FILE__"));
+		
+
+%>
+	com.google.api.services.drive.Drive <%=cid%>_client = (com.google.api.services.drive.Drive)globalMap.get(<%=connectionKey%>);
+	try
+	{
+		if(<%=fileId%> == null || "".equals(<%=fileId%>.trim()) || <%=dest_folderId%> == null || "".equals(<%=dest_folderId%>.trim()) )
+		{
+			throw new Exception("File/folder id can not be null");
+		}
+
+        com.google.api.services.drive.model.File copiedFile = new com.google.api.services.drive.model.File();
+        <%
+        if (rename) {
+        %>
+		   copiedFile.setTitle(<%=dest_fieName%>); 
+        <%
+        }
+        %>
+        copiedFile.setParents(java.util.Arrays.asList(new com.google.api.services.drive.model.ParentReference().setId(<%=dest_folderId%>)));
+        <%=cid%>_client.files().copy(<%=fileId%>, copiedFile).execute();
+        <%
+        if (remove) {
+        %>
+             <%=cid%>_client.files().delete(<%=fileId%>).execute();
+        <%
+        }
+        %>
+		
+	}
+	catch (java.lang.Exception e)
+	{
+<%
+		if(dieOnError) {
+%>
+			throw e;
+<%
+		} else {
+%>
+			System.err.println(e);
+<%
+		}
+%>
+	}
+			

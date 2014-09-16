@@ -81,11 +81,17 @@ String proxyPort = helper.getStringParam("__PROXY_PORT__");
 %>
 	com.google.api.services.drive.Drive <%=cid%>_client = (com.google.api.services.drive.Drive)globalMap.get(<%=connectionKey%>);
 <%}%>
-   
     String parentPath = ""; 
     java.util.List<com.google.api.services.drive.model.File> result = new java.util.ArrayList<com.google.api.services.drive.model.File>();
     com.google.api.services.drive.Drive.Files.List request = <%=cid%>_client.files().list();
-	<%if ("false".equals(helper.getStringParam("__INCLUDSUBDIR__"))) { %> //without subfolders
+	<%
+    if(folderID.startsWith("\"")){
+		folderID = folderID.substring(1);
+	}
+	if(folderID.endsWith("\"")){
+		folderID = folderID.substring(0, folderID.length() - 1);
+    }
+	if ("false".equals(helper.getStringParam("__INCLUDSUBDIR__"))) { %> //without subfolders
     do {
       try {
 	  <%if ("BOTH".equals(helper.getStringParam("__LIST_MODE__"))) {%>
