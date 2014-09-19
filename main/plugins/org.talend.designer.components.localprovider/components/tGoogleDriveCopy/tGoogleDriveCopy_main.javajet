@@ -24,6 +24,7 @@ String accessToken = helper.getStringParam("__ACCESS_TOKEN__");
 String folderID = helper.getStringParam("__FOLDERID__");
 boolean useProxy = helper.getBoolParam("__USE_PROXY__");
 boolean useSSL = helper.getBoolParam("__USE_SSL__");
+boolean isFile = helper.getBoolParam("__FILE_MODE__");
 
 String connection = ElementParameterParser.getValue(node,"__CONNECTION__");
 String connectionKey = "\"conn_" + connection+"\"";
@@ -41,6 +42,7 @@ String dataOutputConnection = null;
 
 String fileId = ElementParameterParser.getValue(node, "__FILE_ID__");
 String dest_folderId = ElementParameterParser.getValue(node, "__DESTINATION_FOLDERID__");
+String source_folderId = ElementParameterParser.getValue(node, "__SOURCE_FOLDERID__");
 String dest_fieName = ElementParameterParser.getValue(node,  "__DESTINATION_FILE_NAME__");
 
 boolean dieOnError = "true".equals(ElementParameterParser.getValue(node, "__DIE_ON_ERROR__"));
@@ -99,24 +101,50 @@ String proxyPort = helper.getStringParam("__PROXY_PORT__");
 		{
 			throw new Exception("File/folder id can not be null");
 		}
-
-        com.google.api.services.drive.model.File copiedFile = new com.google.api.services.drive.model.File();
+        com.google.api.services.drive.model.File file = <%=cid%>_client.files().get(<%=fileId%>).execute();
 		com.google.api.services.drive.model.File resultFile = new com.google.api.services.drive.model.File();
+        if (<%=isFile%> && file.getMimeType().equals("application/vnd.google-apps.folder")) {
+					throw new Exception("It is not file but folder.");
+		}
+
+        if (!<%=isFile%> && !file.getMimeType().equals("application/vnd.google-apps.folder")) {
+					throw new Exception("It is not folder.");
+		}
+
         <%
-        if (rename) {
-        %>
-		   copiedFile.setTitle(<%=dest_fieName%>); 
-        <%
-        }
-        %>
-        copiedFile.setParents(java.util.Arrays.asList(new com.google.api.services.drive.model.ParentReference().setId(<%=dest_folderId%>)));
-        resultFile = <%=cid%>_client.files().copy(<%=fileId%>, copiedFile).execute();
-        <%
-        if (remove) {
-        %>
-             <%=cid%>_client.files().delete(<%=fileId%>).execute();
-        <%
-        }
+        if (isFile) {
+        %> 
+		        com.google.api.services.drive.model.File copiedFile = new com.google.api.services.drive.model.File();
+		        <%
+					if (rename) {
+		        %>
+					copiedFile.setTitle(<%=dest_fieName%>); 
+		        <%
+				}
+		        %>
+		        copiedFile.setParents(java.util.Arrays.asList(new com.google.api.services.drive.Drive.ParentReference().setId(<%=dest_folderId%>)));
+			    resultFile = <%=cid%>_client.files().copy(<%=fileId%>, copiedFile).execute();
+		        <%
+				if (remove) {
+		        %>
+				     <%=cid%>_client.files().delete(<%=fileId%>).execute();
+		        <%
+				}
+		}else{
+			    if (rename) {
+		        %>
+				   com.google.api.services.drive.model.File filePatch = new com.google.api.services.drive.model.File();
+                   filePatch.setTitle(<%=dest_fieName%>);
+                   com.google.api.services.drive.Drive.Files.Patch patchRequest = <%=cid%>_client.files().patch(<%=fileId%>, filePatch);
+                   patchRequest.setFields("title");
+                   patchRequest.execute();
+		        <%
+				}
+		        %>
+               <%=cid%>_client.parents().insert(<%=fileId%>, new com.google.api.services.drive.model.ParentReference().setId(<%=dest_folderId%>)).execute();
+			   <%=cid%>_client.parents().delete(<%=fileId%>, <%=source_folderId%>).execute();
+			   resultFile = file;
+		<%}	
 
 		if(dataOutputConnection != null) {
         %>
