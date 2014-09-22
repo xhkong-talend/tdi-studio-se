@@ -77,6 +77,10 @@ class XMLTool{
 %>
 			String.valueOf(<%=column.getPrecision() == null? connName + "." + column.getLabel() : connName + "." + column.getLabel() + ".setScale(" + column.getPrecision() + ", java.math.RoundingMode.HALF_UP)" %>)
 <%
+        }else if("id_Document".equals(column.getTalendType())) {
+%>
+			<%=connName%>.<%=column.getLabel()%>.toCompactString()
+<%
         }else{
 %>
             <%=connName%>.<%=column.getLabel()%>.toString()
@@ -335,6 +339,7 @@ class GenerateToolByDom4j{
 	String cid = null;
 	boolean allowEmpty = false;
 	boolean bAddEmptyAttr = false, bAddUnmappedAttr = false;
+	boolean isSaveDocAsNode = false;
 	boolean outputAsXSD = false;
 	XMLTool tool = null;
 	boolean isAppend = false;
@@ -515,7 +520,17 @@ class GenerateToolByDom4j{
 				if("id_Document".equals(node.relatedColumn.getTalendType())) {
 %>
 					if(<%tool.getValue(node); %>!=null){
-						nestXMLTool_<%=cid%> .setText(<%touchXMLNode.getXMLElement(currEleName);%>, ParserUtils.parseTo_Document(<%tool.getValue(node);%>).getDocument().getRootElement().asXML());
+<%
+						if (isSaveDocAsNode) {
+%>
+							nestXMLTool_<%=cid%> .appendContent(<%=currEleName%>_<%=cid%>, ParserUtils.parseTo_Document(<%tool.getValue(node);%>).getDocument());
+<%
+						} else {
+%>
+							nestXMLTool_<%=cid%> .setText(<%=currEleName%>_<%=cid%>, ParserUtils.parseTo_Document(<%tool.getValue(node);%>).getDocument().getRootElement().asXML());
+<%
+						}
+%>
 					}
 <%
 				} else {
@@ -597,6 +612,7 @@ class GenerateExprCmpByDom4j{
 	XMLTool tool = null;
 	XMLNode groupNode = null;
 	boolean needEmptyNode = true;
+	boolean isSaveDocAsNode = false;
 	public void generateCode(XMLNode node, String parentName){
 		String tmpPath = node.path.replaceFirst(groupNode.path,"");
 		String[] arrNames = tmpPath.split("/");
@@ -611,8 +627,19 @@ class GenerateExprCmpByDom4j{
 %>(<%tool.getValue(node); %>==null && <%generateCmnExpr(arrNames, parentName); %> == null) || (true &&
 <%			}%>
  <%generateCmnExpr(arrNames, parentName); %>!=null
+ <%
+ if(isSaveDocAsNode && "id_Document".equals(node.relatedColumn.getTalendType())){
+ %>
+ && <%generateCmnExpr(arrNames, parentName); %>.hasContent()
+ && ((org.dom4j.Node)<%generateCmnExpr(arrNames, parentName); %>.content().get(0)).asXML().equals(<%tool.getValue(node); %>)
+<%
+}else{
+%>
  && <%generateCmnExpr(arrNames, parentName); %>.getText()!=null
  && <%generateCmnExpr(arrNames, parentName); %>.getText().equals(<%tool.getValue(node); %>)
+<%
+}
+%>
 <%if(!needEmptyNode){%>)<%}%>
 )
 <%

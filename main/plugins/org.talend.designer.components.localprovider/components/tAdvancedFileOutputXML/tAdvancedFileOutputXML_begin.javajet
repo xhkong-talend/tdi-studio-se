@@ -155,7 +155,9 @@ if ((metadatas != null) && (metadatas.size() > 0)) {
 						element.setText(value);
 					}
 				}
-
+				public void appendContent(org.dom4j.Element element, org.dom4j.Document doc) {
+					element.appendContent(doc);
+				}
 				public void replaceDefaultNameSpace(org.dom4j.Element nestRoot){
 					if (nestRoot != null) {
 						boolean isDefaultNameSpaceAtRoot = "".equals(nestRoot.getQName().getNamespace().getPrefix());
@@ -348,6 +350,7 @@ if ((metadatas != null) && (metadatas.size() > 0)) {
         		String thousandsSeparator = ElementParameterParser.getValueWithJavaType(node, "__THOUSANDS_SEPARATOR__", JavaTypesManager.CHARACTER);
         		String decimalSeparator = ElementParameterParser.getValueWithJavaType(node, "__DECIMAL_SEPARATOR__", JavaTypesManager.CHARACTER);
         		String outputAsXSD = ElementParameterParser.getValue(node, "__OUTPUT_AS_XSD__");
+        		boolean isSaveDocAsNode = ("true").equals(ElementParameterParser.getValue(node,"__ADD_DOCUMENT_AS_NODE__"));
         		boolean bAddEmptyAttr = "true".equals(ElementParameterParser.getValue(node, "__ADD_EMPTY_ATTRIBUTE__"));
                 boolean bAddUnmappedAttr = "true".equals(ElementParameterParser.getValue(node, "__ADD_UNMAPPED_ATTRIBUTE__"));
         		int schemaOptNum=100;
@@ -478,6 +481,7 @@ if ((metadatas != null) && (metadatas.size() > 0)) {
 							}
 							generateToolByDom4j.bAddEmptyAttr = bAddEmptyAttr;
 							generateToolByDom4j.bAddUnmappedAttr = bAddUnmappedAttr;
+							generateToolByDom4j.isSaveDocAsNode = isSaveDocAsNode;
 							generateToolByDom4j.cid = cid;
 							generateToolByDom4j.touchXMLNode.cid = cid;
 							generateToolByDom4j.bigMethodHelper.cid = cid;
@@ -490,6 +494,7 @@ if ((metadatas != null) && (metadatas.size() > 0)) {
 										GenerateExprCmpByDom4j generateExprCmpByDom4j = new GenerateExprCmpByDom4j();
 										generateExprCmpByDom4j.tool = tool;
 										generateExprCmpByDom4j.groupNode = groupNode;
+										generateExprCmpByDom4j.isSaveDocAsNode = isSaveDocAsNode;
 										generateExprCmpByDom4j.needEmptyNode = ("true").equals(allowEmpty);
 								
 %>
