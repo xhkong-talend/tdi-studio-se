@@ -43,8 +43,13 @@ String folderId = ElementParameterParser.getValue(node, "__FOLDER_ID__");
 String newFolderName = ElementParameterParser.getValue(node, "__NEW_FOLDER_NAME__");
 
 boolean dieOnError = "true".equals(ElementParameterParser.getValue(node, "__DIE_ON_ERROR__"));
-
+%>
+com.google.api.services.drive.Drive <%=cid%>_client;
+<%
 if(!"true".equals(useExistingConn)){
+%>
+{
+<%
 if(useSSL) {
 %>
  	javax.net.ssl.TrustManagerFactory tmf = javax.net.ssl.TrustManagerFactory
@@ -81,13 +86,13 @@ String proxyPort = helper.getStringParam("__PROXY_PORT__");
 	.build();
 
 	com.google.api.client.googleapis.auth.oauth2.GoogleCredential credential = new com.google.api.client.googleapis.auth.oauth2.GoogleCredential().setAccessToken(<%=accessToken%>);
-	 com.google.api.services.drive.Drive <%=cid%>_client = new  com.google.api.services.drive.Drive.Builder(httpTransport, new com.google.api.client.json.jackson2.JacksonFactory(), credential)
+	<%=cid%>_client = new  com.google.api.services.drive.Drive.Builder(httpTransport, new com.google.api.client.json.jackson2.JacksonFactory(), credential)
 	.setApplicationName(<%=helper.getStringParam("__APPLICATION_NAME__")%>).build();
-	
+}	
 <%
 } else {
 %>
-	com.google.api.services.drive.Drive <%=cid%>_client = (com.google.api.services.drive.Drive)globalMap.get(<%=connectionKey%>);
+	<%=cid%>_client = (com.google.api.services.drive.Drive)globalMap.get(<%=connectionKey%>);
 <%}%>
 
 	try

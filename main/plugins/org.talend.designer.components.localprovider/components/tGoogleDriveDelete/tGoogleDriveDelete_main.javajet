@@ -39,12 +39,15 @@ imports="
 %>
 com.google.api.services.drive.Drive <%=cid%>_client;
 <%
-    if(!useExistingConn) {
+if(!useExistingConn) {
+%>
+	{
+<%
     	boolean useSSL = helper.getBoolParam("__USE_SSL__");
     	boolean useProxy = helper.getBoolParam("__USE_PROXY__");
     	if(useSSL) {
 %>
-{
+
 	javax.net.ssl.TrustManagerFactory tmf = javax.net.ssl.TrustManagerFactory
 		.getInstance(javax.net.ssl.TrustManagerFactory.getDefaultAlgorithm());
 	

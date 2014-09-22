@@ -78,7 +78,7 @@
                     MODULE="google-api-client-1.19.0.jar"
                     REQUIRED="true" />
                <IMPORT NAME="google-api-services-drive-v2"
-                    MODULE="google-api-services-drive-v2-rev140-1.19.0.jar"
+                    MODULE="google-api-services-drive-v2-rev144-1.19.0.jar"
                     REQUIRED="true" />
                <IMPORT NAME="google-http-client"
                     MODULE="google-http-client-1.19.0.jar"

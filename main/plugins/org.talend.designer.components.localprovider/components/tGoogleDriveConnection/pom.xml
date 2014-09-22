@@ -5,7 +5,7 @@
 	<artifactId>download.jars.google-api-services-drive</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<properties>
-		<google-api-servies-drive-version>v2-rev140-1.19.0</google-api-servies-drive-version>
+		<google-api-servies-drive-version>v2-rev144-1.19.0</google-api-servies-drive-version>
 	</properties>
 
 	<dependencies>

@@ -49,7 +49,14 @@ boolean dieOnError = "true".equals(ElementParameterParser.getValue(node, "__DIE_
 boolean rename = "true".equals(ElementParameterParser.getValue(node, "__RENAME__"));
 boolean remove = "true".equals(ElementParameterParser.getValue(node, "__REMOVE_SOURCE_FILE__"));
 
+%>
+com.google.api.services.drive.Drive <%=cid%>_client;
+<%
+
 if(!"true".equals(useExistingConn)){
+%>
+{
+<%
 if(useSSL) {
 %>
  	javax.net.ssl.TrustManagerFactory tmf = javax.net.ssl.TrustManagerFactory
@@ -86,13 +93,13 @@ String proxyPort = helper.getStringParam("__PROXY_PORT__");
 	.build();
 
 	com.google.api.client.googleapis.auth.oauth2.GoogleCredential credential = new com.google.api.client.googleapis.auth.oauth2.GoogleCredential().setAccessToken(<%=accessToken%>);
-	 com.google.api.services.drive.Drive <%=cid%>_client = new  com.google.api.services.drive.Drive.Builder(httpTransport, new com.google.api.client.json.jackson2.JacksonFactory(), credential)
+	<%=cid%>_client = new  com.google.api.services.drive.Drive.Builder(httpTransport, new com.google.api.client.json.jackson2.JacksonFactory(), credential)
 	.setApplicationName(<%=helper.getStringParam("__APPLICATION_NAME__")%>).build();
-	
+}	
 <%
 } else {
 %>
-	com.google.api.services.drive.Drive <%=cid%>_client = (com.google.api.services.drive.Drive)globalMap.get(<%=connectionKey%>);
+	<%=cid%>_client = (com.google.api.services.drive.Drive)globalMap.get(<%=connectionKey%>);
 <%}%>
 
 	try
@@ -122,7 +129,7 @@ String proxyPort = helper.getStringParam("__PROXY_PORT__");
 		        <%
 				}
 		        %>
-		        copiedFile.setParents(java.util.Arrays.asList(new com.google.api.services.drive.Drive.ParentReference().setId(<%=dest_folderId%>)));
+		        copiedFile.setParents(java.util.Arrays.asList(new com.google.api.services.drive.model.ParentReference().setId(<%=dest_folderId%>)));
 			    resultFile = <%=cid%>_client.files().copy(<%=fileId%>, copiedFile).execute();
 		        <%
 				if (remove) {
