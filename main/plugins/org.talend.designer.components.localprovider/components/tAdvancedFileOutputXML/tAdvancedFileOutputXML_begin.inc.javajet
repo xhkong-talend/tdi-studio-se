@@ -24,6 +24,7 @@ class XMLTool{
  	public String decimalSeparator =null;
 	public String connName = null;
 	public String cid = null;
+	public boolean isAppend = false;
 	
 	public void getValue(XMLNode node){
 %>
@@ -77,9 +78,9 @@ class XMLTool{
 %>
 			String.valueOf(<%=column.getPrecision() == null? connName + "." + column.getLabel() : connName + "." + column.getLabel() + ".setScale(" + column.getPrecision() + ", java.math.RoundingMode.HALF_UP)" %>)
 <%
-        }else if("id_Document".equals(column.getTalendType())) {
+        }else if(isAppend && "id_Document".equals(column.getTalendType())) {
 %>
-			<%=connName%>.<%=column.getLabel()%>.toCompactString()
+			<%=connName%>.<%=column.getLabel()%>.formatXMLString(compactFormat_<%=cid%>)
 <%
         }else{
 %>

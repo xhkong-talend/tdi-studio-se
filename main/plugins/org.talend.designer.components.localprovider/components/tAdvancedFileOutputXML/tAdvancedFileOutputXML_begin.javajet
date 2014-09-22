@@ -265,6 +265,14 @@ if ((metadatas != null) && (metadatas.size() > 0)) {
 			format_<%=cid %>.setTrimText(<%=trim%>);
 			format_<%=cid %>.setEncoding(<%=encoding%>);
 			<%
+			if(!useStream && isMerge){
+			%>
+				org.dom4j.io.OutputFormat compactFormat_<%=cid%> = org.dom4j.io.OutputFormat.createCompactFormat();
+				compactFormat_<%=cid%>.setSuppressDeclaration(true); 
+			<%
+			}
+			%>
+			<%
 			int groupSize = 0;
 
 			if (groupTable != null && groupTable.size() > 0) {
@@ -366,6 +374,7 @@ if ((metadatas != null) && (metadatas.size() > 0)) {
                 tool.thousandsSeparator=thousandsSeparator;
                 tool.decimalSeparator=decimalSeparator;
                 tool.cid=cid;
+                tool.isAppend = !useStream && isMerge;
                 
                 // change tables to a tree 
 				Object[] treeObjs = getTree(rootTable, groupTable, loopTable, metadata.getListColumns());
@@ -395,7 +404,7 @@ if ((metadatas != null) && (metadatas.size() > 0)) {
 					for(IMetadataColumn column :metadata.getListColumns()){
 						if(colNum%schemaOptNum==0){
 %>
-				public void putValue_<%=colNum/schemaOptNum%>(<%=tool.connName%>Struct <%=tool.connName%>,java.util.Map<String,String> valueMap_<%=cid%>){
+				public void putValue_<%=colNum/schemaOptNum%>(<%=tool.connName%>Struct <%=tool.connName%>,java.util.Map<String,String> valueMap_<%=cid%><%if(tool.isAppend){%>,org.dom4j.io.OutputFormat compactFormat_<%=cid%><%}%>){
 <%
 						}
 %>

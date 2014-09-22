@@ -100,6 +100,7 @@ if ((metadatas!=null)&&(metadatas.size()>0)) {
                 tool.thousandsSeparator=thousandsSeparator;
                 tool.decimalSeparator=decimalSeparator;
                 tool.cid=cid;
+                tool.isAppend = !useStream && isMerge;
                 
                 // change tables to a tree 
 				Object[] treeObjs = getTree(rootTable, groupTable, loopTable, metadata.getListColumns());
@@ -130,7 +131,7 @@ if ((metadatas!=null)&&(metadatas.size()>0)) {
 					if(isOptimizeCode){
 						if(colNum%schemaOptNum==0){
 %>
-	advancedXMLUtil_<%=cid%>.putValue_<%=colNum/schemaOptNum%>(<%=tool.connName%>,valueMap_<%=cid%>);
+	advancedXMLUtil_<%=cid%>.putValue_<%=colNum/schemaOptNum%>(<%=tool.connName%>,valueMap_<%=cid%><%if(tool.isAppend){%>,compactFormat_<%=cid%><%}%>);
 <%
 						}
 					}else{
