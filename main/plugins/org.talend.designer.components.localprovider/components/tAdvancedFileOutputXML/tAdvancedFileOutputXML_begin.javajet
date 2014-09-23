@@ -130,6 +130,14 @@ if ((metadatas != null) && (metadatas.size() > 0)) {
 		%>
 		java.util.List<java.util.List<String>> groupbyList_<%=cid%> = new java.util.ArrayList<java.util.List<String>>();
 		final java.util.Map<String,String> valueMap_<%=cid%> = new java.util.HashMap<String,String>();
+		<%
+		if(!useStream && isMerge){
+		%>
+			org.dom4j.io.OutputFormat compactFormat_<%=cid%> = org.dom4j.io.OutputFormat.createCompactFormat();
+			compactFormat_<%=cid%>.setSuppressDeclaration(true); 
+		<%
+		}
+		%>
 
 		<%
 		// *** generation mode init ***
@@ -264,14 +272,6 @@ if ((metadatas != null) && (metadatas.size() > 0)) {
 			%>
 			format_<%=cid %>.setTrimText(<%=trim%>);
 			format_<%=cid %>.setEncoding(<%=encoding%>);
-			<%
-			if(!useStream && isMerge){
-			%>
-				org.dom4j.io.OutputFormat compactFormat_<%=cid%> = org.dom4j.io.OutputFormat.createCompactFormat();
-				compactFormat_<%=cid%>.setSuppressDeclaration(true); 
-			<%
-			}
-			%>
 			<%
 			int groupSize = 0;
 
