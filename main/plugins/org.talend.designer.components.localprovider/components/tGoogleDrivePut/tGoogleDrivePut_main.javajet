@@ -1,0 +1,113 @@
+<%@ jet 
+imports="
+    org.talend.core.model.process.INode 
+    org.talend.core.model.process.IConnection
+    org.talend.core.model.process.IConnectionCategory 
+    org.talend.core.model.process.ElementParameterParser 
+    org.talend.designer.codegen.config.CodeGeneratorArgument
+    org.talend.designer.codegen.config.NodeParamsHelper
+    org.talend.core.model.metadata.IMetadataTable 
+    org.talend.core.model.metadata.IMetadataColumn
+    org.talend.core.model.metadata.types.JavaTypesManager
+    org.talend.core.model.metadata.types.JavaType
+    java.util.List
+" 
+%>
+<%
+		CodeGeneratorArgument codeGenArgument = (CodeGeneratorArgument) argument;
+		INode node = (INode)codeGenArgument.getArgument();
+		String cid = node.getUniqueName();
+		NodeParamsHelper helper = new NodeParamsHelper(node);
+
+		String connection = helper.getStringParam("__CONNECTION__");
+		String connectionKey = "\"conn_" + connection+"\"";
+
+		boolean dieOnError = helper.getBoolParam("__DIE_ON_ERROR__");
+
+		boolean readContentFromInput = helper.getBoolParam("__READ_CONTENT_FROM_INPUT__");
+		boolean uploadLocalFile = helper.getBoolParam("__UPLOAD_LOCAL_FILE__");
+		boolean exposeOutput = helper.getBoolParam("__EXPOSE_OUTPUT_STREAM__");
+
+		String dataInputConnection = null;
+        String dataOutputConnection = null;
+
+        List< ? extends IConnection> inputConnections = node.getIncomingConnections();
+	    for(IConnection conn : inputConnections) {
+	        if(conn.getLineStyle().hasConnectionCategory(IConnectionCategory.DATA)) {
+	        	dataInputConnection = conn.getName();
+	        	break;
+	        } // if(conn) end
+	    } // for(conns) end
+	    
+	    
+		List< ? extends IConnection> outputConnections = node.getOutgoingSortedConnections();
+	    for(IConnection conn : outputConnections) {
+	        if(conn.getLineStyle().hasConnectionCategory(IConnectionCategory.DATA)) {
+	        	dataOutputConnection = conn.getName();
+	        	break;
+	        } // if(conn) end
+	    } // for(conns) end
+
+%>
+	
+	com.google.api.services.drive.model.File <%=cid%>_file = new com.google.api.services.drive.model.File();
+	com.google.api.client.http.AbstractInputStreamContent <%=cid%>_fContent = null;
+<%
+		String destFolderId = helper.getStringParam("__DESTINATION_FOLDERID__");
+		if(!destFolderId.matches("\\s*\"?\"?\\s*")){
+%>
+	<%=cid%>_file.setParents(java.util.Arrays.asList(new com.google.api.services.drive.model.ParentReference().setId(<%=destFolderId%>)));
+<%
+		}
+%>	
+<%
+		String title = helper.getStringParam("__FILE_TITLE__");
+		if(!title.matches("\\s*\"?\"?\\s*")){
+%>
+	<%=cid%>_file.setTitle(<%=title%>);
+<%
+		}
+		
+		if(readContentFromInput){
+			if(dataInputConnection != null){
+%>
+	Object <%=cid%>_content = <%=dataInputConnection%>.content;
+	
+	if(<%=cid%>_content == null){
+		throw new Exception("The Uploaded file Content can't be null");
+	}
+	if(<%=cid%>_content instanceof byte[]){
+		<%=cid%>_fContent = new com.google.api.client.http.ByteArrayContent(null, (byte[])<%=cid%>_content);
+	}else if(<%=cid%>_content instanceof java.io.InputStream){
+		<%=cid%>_fContent = new com.google.api.client.http.InputStreamContent(null, (java.io.InputStream)<%=cid%>_content);
+	}else{
+		<%=cid%>_fContent = new com.google.api.client.http.ByteArrayContent(null, <%=cid%>_content.toString().getBytes());
+	}
+<%
+				if(dataOutputConnection != null){
+%>
+	<%=dataOutputConnection%>.content = <%=cid%>_content;
+<%
+				}
+			}
+		}else if(uploadLocalFile){
+%>
+	<%=cid%>_fContent = new com.google.api.client.http.FileContent(null, new java.io.File(<%=helper.getStringParam("__LOCAL_FILE_PATH__")%>));
+<%
+		}
+%>
+	<%=cid%>_file = <%=cid%>_client.files().insert(<%=cid%>_file, <%=cid%>_fContent).execute();
+	
+	}catch(Exception e){
+<%
+		if(dieOnError) {
+%>
+			throw e;
+<%
+		} else {
+%>
+			System.err.println(e);
+<%
+		}
+%>
+	}
