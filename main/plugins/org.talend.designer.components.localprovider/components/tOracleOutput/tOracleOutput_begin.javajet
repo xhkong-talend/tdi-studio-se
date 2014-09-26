@@ -157,6 +157,7 @@ skeleton="../templates/db_output_bulk.skeleton"
     int nb_line_rejected_<%=cid%> = 0;
     
     int tmp_batchUpdateCount_<%=cid%> = 0;
+    int tmp_exec_OK_counter_<%= cid %> = 0;
     
     int deletedCount_<%=cid%>=0;
     int updatedCount_<%=cid%>=0;

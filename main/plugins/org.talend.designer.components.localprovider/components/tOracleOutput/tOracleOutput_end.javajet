@@ -187,7 +187,7 @@ imports="
             	%>                	
         	}
         	if (pstmt_<%=cid %> != null) { 
-            	tmp_batchUpdateCount_<%=cid%> = pstmt_<%=cid %>.getUpdateCount();            	
+            	tmp_batchUpdateCount_<%=cid%> = pstmt_<%=cid %>.getUpdateCount();
     	    	<%
     	    	if (("INSERT").equals(dataAction)) {
     	    	%>
@@ -203,7 +203,8 @@ imports="
     	    	<%
     	    	}
     	    	%>
-    	    	+= (tmp_batchUpdateCount_<%=cid%>!=-1?tmp_batchUpdateCount_<%=cid%>:0);                                  
+    	    	+= (tmp_batchUpdateCount_<%=cid%>!=-1?tmp_batchUpdateCount_<%=cid%>:0);
+                tmp_exec_OK_counter_<%= cid %> += (tmp_batchUpdateCount_<%=cid%>!=-1?tmp_batchUpdateCount_<%=cid%>:0);
             }
         <%
         }
@@ -228,11 +229,11 @@ imports="
 	if(!useExistingConnection){
 		if(!("").equals(commitEvery) && !("0").equals(commitEvery)){
 		%>
+		if(tmp_exec_OK_counter_<%= cid %> > 0){ <%dbLog.commit().commitTry(null, dbLog.var("tmp_exec_OK_counter"));%> }
 		if(commitCounter_<%=cid%> > 0) {
-			<%dbLog.commit().commitTry(null, dbLog.var("commitCounter"));%>
 		    conn_<%=cid%>.commit();
-			<%dbLog.commit().commitDone(null);%>
 		}
+		if(tmp_exec_OK_counter_<%= cid %> > 0){ <%dbLog.commit().commitDone(null);%> }
 		<%
 		}
 		%>	
