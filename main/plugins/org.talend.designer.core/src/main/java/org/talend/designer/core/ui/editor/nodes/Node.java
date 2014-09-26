@@ -73,7 +73,6 @@ import org.talend.core.model.process.IGraphicalNode;
 import org.talend.core.model.process.INode;
 import org.talend.core.model.process.INodeConnector;
 import org.talend.core.model.process.INodeReturn;
-import org.talend.core.model.process.IPerformance;
 import org.talend.core.model.process.IProcess;
 import org.talend.core.model.process.IProcess2;
 import org.talend.core.model.process.Problem;
@@ -1790,12 +1789,13 @@ public class Node extends Element implements IGraphicalNode {
                         refreshNodeContainer();
                     }
                 } else {
-                    IConnection[] conns = process.getAllConnections(null);
-                    for (IConnection conn : conns) {
-                        if (conn instanceof IPerformance) {
-                            ((IPerformance) conn).setPerformanceData(""); //$NON-NLS-1$
-                        }
-                    }
+                    // Fix for TDI-30185:statistics should not be cleard on preoperty change
+                    // IConnection[] conns = process.getAllConnections(null);
+                    // for (IConnection conn : conns) {
+                    // if (conn instanceof IPerformance) {
+                    //                            ((IPerformance) conn).setPerformanceData(""); //$NON-NLS-1$
+                    // }
+                    // }
                 }
             }
         }
