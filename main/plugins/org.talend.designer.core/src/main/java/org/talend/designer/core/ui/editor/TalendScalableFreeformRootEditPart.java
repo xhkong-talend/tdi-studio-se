@@ -51,7 +51,7 @@ public class TalendScalableFreeformRootEditPart extends ScalableFreeformRootEdit
 
     private TalendGridLayer gridLayer;
 
-    private FeedbackLayer feedbackLayer;
+    // private FeedbackLayer feedbackLayer;
 
     /*
      * (non-Javadoc)
@@ -97,7 +97,7 @@ public class TalendScalableFreeformRootEditPart extends ScalableFreeformRootEdit
         layers.add(getPrintableLayers(), PRINTABLE_LAYERS);
         layers.add(new FreeformLayer(), MAP_REDUCE_LAYER);
         layers.add(new FeedbackLayer(), SCALED_FEEDBACK_LAYER);
-        feedbackLayer = new FeedbackLayer();
+        // feedbackLayer = new FeedbackLayer();
         return layers;
     }
 
@@ -141,7 +141,7 @@ public class TalendScalableFreeformRootEditPart extends ScalableFreeformRootEdit
         super.deactivate();
         editorInput = null;
         zoomManager = null;
-        feedbackLayer = null;
+        // feedbackLayer = null;
         gridLayer = null;
     }
 }

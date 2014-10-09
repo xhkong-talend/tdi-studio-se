@@ -23,6 +23,7 @@ import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.swt.graphics.RGB;
 import org.talend.commons.ui.utils.image.ColorUtils;
+import org.talend.commons.ui.utils.workbench.gef.SimpleHtmlFigure;
 import org.talend.core.model.process.EComponentCategory;
 import org.talend.core.model.process.EParameterFieldType;
 import org.talend.core.model.process.Element;
@@ -48,6 +49,8 @@ import org.talend.designer.core.utils.DesignerColorUtils;
 public class SubjobContainer extends Element implements ISubjobContainer {
 
     public static final String UPDATE_SUBJOB_CONTENT = "UPDATE_SUBJOB_CONTENT"; //$NON-NLS-1$
+
+    public static final String UPDATE_SUBJOB_COLLAPS = "UPDATE_SUBJOB_COLLAPS"; //$NON-NLS-1$
 
     public static final String UPDATE_SUBJOB_DATA = "UPDATE_SUBJOB_DATA"; //$NON-NLS-1$
 
@@ -261,45 +264,56 @@ public class SubjobContainer extends Element implements ISubjobContainer {
      * @return
      */
     public Rectangle getSubjobContainerRectangle() {
+        final boolean collapsed = isCollapsed();
+
         Rectangle totalRectangle = null;
-        boolean collapsed = isCollapsed();
-        // boolean hasJoblet = false;
-        for (NodeContainer container : nodeContainers) {
-            Rectangle curRect = null;
-            if (container instanceof JobletContainer) {
-                curRect = ((JobletContainer) container).getJobletContainerRectangle();
-                // hasJoblet = true;
-            } else {
-                curRect = container.getNodeContainerRectangle();
-            }
 
-            if ((curRect.x + curRect.width) == (container.getNode().getPosX() + container.getNode().getSize().width)) {
-                curRect.setSize(curRect.getSize().width + TalendEditor.GRID_SIZE, curRect.getSize().height);
-            }
-            if ((curRect.y + curRect.height) == (container.getNode().getPosY() + container.getNode().getSize().height)) {
-                curRect.setSize(curRect.getSize().width, curRect.getSize().height + TalendEditor.GRID_SIZE);
-            }
-            if (curRect.y == container.getNode().getPosY()) {
-                // means have totally no other status or such on the top of the node in the NodeContainerFigure, then we
-                // add one more space on the top of the subjob
+        if (collapsed) {
+            Node subjobStartNode = this.getSubjobStartNode();
+            NodeContainer nodeContainer = subjobStartNode.getNodeContainer();
+            totalRectangle = nodeContainer.getNodeContainerRectangle();
 
-                // this could be done only once, but to simplify the calculation, just do for every node
-                curRect.setLocation(curRect.getLocation().x, curRect.getLocation().y - TalendEditor.GRID_SIZE);
-                curRect.setSize(curRect.getSize().width, curRect.getSize().height + TalendEditor.GRID_SIZE);
+            SubjobContainer subjobContainer = nodeContainer.getSubjobContainer();
+            boolean showTitle = (Boolean) subjobContainer.getPropertyValue(EParameterName.SHOW_SUBJOB_TITLE.getName());
+            int additionHeight = 3;
+            if (showTitle) {
+                String title = (String) subjobContainer.getPropertyValue(EParameterName.SUBJOB_TITLE.getName());
+                SimpleHtmlFigure titleFigure = new SimpleHtmlFigure();
+                titleFigure.setText("<b> " + title + "</b>"); //$NON-NLS-1$ //$NON-NLS-2$
+                Dimension titleSize = titleFigure.getPreferredSize();
+                additionHeight = titleSize.height;
             }
-            if (curRect.x == container.getNode().getPosX()) {
-                // means if the node container figure is just at the border of the size of the component
-                // then we add one more space on the left of the component, just to avoid have one subjob background
-                // "too small" (too close to component)
+            totalRectangle.y = totalRectangle.y - additionHeight;
+            totalRectangle.height = totalRectangle.height + additionHeight;
+        } else {
+            for (NodeContainer container : nodeContainers) {
+                Rectangle curRect = container.getNodeContainerRectangle();
 
-                // this could be done only once, but to simplify the calculation, just do for every node
-                curRect.setLocation(curRect.getLocation().x - TalendEditor.GRID_SIZE, curRect.getLocation().y);
-                curRect.setSize(curRect.getSize().width + TalendEditor.GRID_SIZE, curRect.getSize().height);
-            }
+                if ((curRect.x + curRect.width) == (container.getNode().getPosX() + container.getNode().getSize().width)) {
+                    curRect.setSize(curRect.getSize().width + TalendEditor.GRID_SIZE, curRect.getSize().height);
+                }
+                if ((curRect.y + curRect.height) == (container.getNode().getPosY() + container.getNode().getSize().height)) {
+                    curRect.setSize(curRect.getSize().width, curRect.getSize().height + TalendEditor.GRID_SIZE);
+                }
+                if (curRect.y == container.getNode().getPosY()) {
+                    // means have totally no other status or such on the top of the node in the NodeContainerFigure,
+                    // then we
+                    // add one more space on the top of the subjob
 
-            if (collapsed && totalRectangle == null) {
-                totalRectangle = curRect.getCopy();
-            } else if (!collapsed) {
+                    // this could be done only once, but to simplify the calculation, just do for every node
+                    curRect.setLocation(curRect.getLocation().x, curRect.getLocation().y - TalendEditor.GRID_SIZE);
+                    curRect.setSize(curRect.getSize().width, curRect.getSize().height + TalendEditor.GRID_SIZE);
+                }
+                if (curRect.x == container.getNode().getPosX()) {
+                    // means if the node container figure is just at the border of the size of the component
+                    // then we add one more space on the left of the component, just to avoid have one subjob background
+                    // "too small" (too close to component)
+
+                    // this could be done only once, but to simplify the calculation, just do for every node
+                    curRect.setLocation(curRect.getLocation().x - TalendEditor.GRID_SIZE, curRect.getLocation().y);
+                    curRect.setSize(curRect.getSize().width + TalendEditor.GRID_SIZE, curRect.getSize().height);
+                }
+
                 if (totalRectangle == null) {
                     totalRectangle = curRect.getCopy();
                 } else {
@@ -307,7 +321,6 @@ public class SubjobContainer extends Element implements ISubjobContainer {
                 }
             }
         }
-
         if (totalRectangle == null) {
             return null;
         }
@@ -503,6 +516,7 @@ public class SubjobContainer extends Element implements ISubjobContainer {
     @Override
     public void updateSubjobContainer() {
         fireStructureChange(UPDATE_SUBJOB_CONTENT, this);
+        fireStructureChange(UPDATE_SUBJOB_COLLAPS, this);
         refreshOutputConnections();
     }
 
@@ -545,9 +559,25 @@ public class SubjobContainer extends Element implements ISubjobContainer {
         Node subjobStartNode = this.getSubjobStartNode();
 
         List<Connection> connectionsToUpdate = new ArrayList<Connection>(outputs);
-        outputs = new ArrayList<Connection>();
+        outputs = new ArrayList<Connection>(); // ??? why reset new list?
 
-        if (!collapsed) {
+        if (collapsed) {
+            for (NodeContainer nodeContainer : this.nodeContainers) {
+                Node currentNode = nodeContainer.getNode();
+                if (currentNode.equals(subjobStartNode)) {
+                    // avoid subjobStartNode as it's not needed
+                    continue;
+                }
+                for (Connection connection : (List<Connection>) currentNode.getOutgoingConnections()) {
+                    if (connection.getLineStyle().hasConnectionCategory(IConnectionCategory.DEPENDENCY)
+                            && !subjobStartNode.equals(connection.getTarget().getDesignSubjobStartNode())) {
+                        connection.setSubjobConnection(true);
+                        outputs.add(connection);
+                    }
+                }
+            }
+            fireStructureChange(UPDATE_SUBJOB_CONNECTIONS, this);
+        } else {
             fireStructureChange(UPDATE_SUBJOB_CONNECTIONS, this);
 
             for (NodeContainer nodeContainer : this.nodeContainers) {
@@ -561,23 +591,9 @@ public class SubjobContainer extends Element implements ISubjobContainer {
                     }
                 }
             }
-            return;
+
         }
-        for (NodeContainer nodeContainer : this.nodeContainers) {
-            Node currentNode = nodeContainer.getNode();
-            if (currentNode.equals(subjobStartNode)) {
-                // avoid subjobStartNode as it's not needed
-                continue;
-            }
-            for (Connection connection : (List<Connection>) currentNode.getOutgoingConnections()) {
-                if (connection.getLineStyle().hasConnectionCategory(IConnectionCategory.DEPENDENCY)
-                        && !subjobStartNode.equals(connection.getTarget().getDesignSubjobStartNode())) {
-                    connection.setSubjobConnection(true);
-                    outputs.add(connection);
-                }
-            }
-            fireStructureChange(UPDATE_SUBJOB_CONNECTIONS, this);
-        }
+
     }
 
     /*

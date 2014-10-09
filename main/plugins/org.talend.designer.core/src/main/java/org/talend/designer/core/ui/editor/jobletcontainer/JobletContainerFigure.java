@@ -30,15 +30,19 @@ import org.talend.commons.ui.runtime.image.EImage;
 import org.talend.commons.ui.runtime.image.ImageProvider;
 import org.talend.commons.ui.utils.image.ColorUtils;
 import org.talend.commons.ui.utils.workbench.gef.SimpleHtmlFigure;
+import org.talend.core.model.process.IGEFProcess;
 import org.talend.core.model.process.IProcess;
 import org.talend.core.model.process.IProcess2;
 import org.talend.core.model.process.Problem.ProblemStatus;
 import org.talend.core.model.properties.Project;
+import org.talend.core.service.IDesignerCoreUIService;
+import org.talend.core.ui.CoreUIPlugin;
 import org.talend.designer.core.model.components.EParameterName;
 import org.talend.designer.core.ui.AbstractMultiPageTalendEditor;
 import org.talend.designer.core.ui.editor.cmd.PropertyChangeCommand;
 import org.talend.designer.core.ui.editor.nodes.Node;
 import org.talend.designer.core.ui.editor.process.Process;
+import org.talend.designer.core.ui.editor.subjobcontainer.SubjobContainer;
 import org.talend.designer.core.ui.views.problems.Problems;
 import org.talend.designer.core.utils.DesignerColorUtils;
 import org.talend.repository.ProjectManager;
@@ -126,7 +130,7 @@ public class JobletContainerFigure extends Figure {
         initJobletContainerColor();
 
         updateData();
-        initializejobletContainer(jobletContainer.getJobletContainerRectangle());
+        initializejobletContainer(jobletContainer.getNodeContainerRectangle());
         if (jobletContainer.getNode().isMapReduceStart()) {
             refreshNodes(false);
         }
@@ -145,8 +149,20 @@ public class JobletContainerFigure extends Figure {
         if (jobletContainer != null && !jobletContainer.isReadOnly()) {
             PropertyChangeCommand ppc = new PropertyChangeCommand(jobletContainer, EParameterName.COLLAPSED.getName(),
                     !jobletContainer.isCollapsed());
-            IProcess ipro = jobletContainer.getNode().getProcess();
-            ppc.execute();
+            IProcess process = jobletContainer.getNode().getProcess();
+
+            boolean executed = false;
+            if (process instanceof IGEFProcess) {
+                IDesignerCoreUIService designerCoreUIService = CoreUIPlugin.getDefault().getDesignerCoreUIService();
+                if (designerCoreUIService != null) {
+                    executed = designerCoreUIService.executeCommand((IGEFProcess) process, ppc);
+                }
+            }
+
+            if (!executed) {
+                ppc.execute();
+            }
+
             reSelection();
         }
     }
@@ -197,6 +213,8 @@ public class JobletContainerFigure extends Figure {
     boolean lastJobletRedState = false;
 
     public void refreshNodes(boolean isClear) {
+        initializejobletContainer(getBounds());
+
         if (this.jobletContainer.getNode().isJoblet()) {
             boolean isRed = new JobletUtil().isRed(this.jobletContainer);
             Project refProject = ProjectManager.getInstance().getProject(
@@ -236,10 +254,11 @@ public class JobletContainerFigure extends Figure {
                 }
             }
         } else if (this.jobletContainer.getNode().isMapReduce()) {
-            if (this.jobletContainer.getNode().isMapReduceStart() && mrFigures.isEmpty()) {
+            boolean mapReduceStart = this.jobletContainer.getNode().isMapReduceStart();
+            if (mapReduceStart && mrFigures.isEmpty()) {
                 initMRFigures();
             }
-            if (!this.jobletContainer.getNode().isMapReduceStart() && !mrFigures.isEmpty()) {
+            if (!mapReduceStart && !mrFigures.isEmpty()) {
                 Iterator<Entry<String, SimpleHtmlFigure>> ite = mrFigures.entrySet().iterator();
                 while (ite.hasNext()) {
                     Entry<String, SimpleHtmlFigure> entry = ite.next();
@@ -248,7 +267,7 @@ public class JobletContainerFigure extends Figure {
                 }
                 mrFigures.clear();
             }
-            if (!this.jobletContainer.getNode().isMapReduceStart()) {
+            if (!mapReduceStart) {
                 if (rectFig.isVisible()) {
                     rectFig.setVisible(false);
                 }
@@ -282,52 +301,88 @@ public class JobletContainerFigure extends Figure {
                 outlineFigure.setVisible(false);
             }
 
+            if (!mrFigures.isEmpty()) {
+                checkVisibleForMRProgressBar();
+
+                Iterator<Entry<String, SimpleHtmlFigure>> ite = mrFigures.entrySet().iterator();
+                while (ite.hasNext()) {
+                    Entry<String, SimpleHtmlFigure> entry = ite.next();
+                    String key = entry.getKey();
+                    SimpleHtmlFigure figure = entry.getValue();
+                    Double percent = new Double(0);
+                    if (key.startsWith(KEY_MAP)) {
+                        percent = jobletContainer.getPercentMap() * 10;
+                    }
+
+                    if (key.startsWith(KEY_REDUCE)) {
+                        percent = jobletContainer.getPercentReduce() * 10;
+                    }
+                    if (figure.isVisible()) {
+                        Integer i = Integer.parseInt(key.substring(key.indexOf("_") + 1)) + 1;
+                        boolean hun = percent.equals(new Double(10));
+                        Integer mrCount = this.jobletContainer.getNode().getMrJobInGroupCount();
+                        boolean refreshPro = hun && (mrCount.toString().equals(jobletContainer.getMrName()));
+                        if (i.toString().equals(jobletContainer.getMrName()) || isClear || refreshPro) {
+                            List object = figure.getChildren();
+                            for (Object o : object) {
+                                if (o instanceof RectangleFigure) {
+                                    setProgressData((RectangleFigure) o, percent, 8);
+                                }
+                            }
+                        }
+                    }
+
+                }
+            }
+        }
+    }
+
+    public void checkForJobletExpand() {
+        Node node = this.getJobletContainer().getNode();
+        Node subjobStartNode = (Node) node.getDesignSubjobStartNode();
+        SubjobContainer subjobContainer = subjobStartNode.getNodeContainer().getSubjobContainer();
+        boolean subjobCollapsed = subjobContainer.isCollapsed();
+        // subjob is collapsed, so do collapsed for joblet too.
+        if (subjobCollapsed && !this.getJobletContainer().isCollapsed()) {
+            doCollapse();
+        }
+        updateData();
+    }
+
+    public void checkVisibleForMRProgressBar() {
+        if (!mrFigures.isEmpty()) {
+            Node node = this.getJobletContainer().getNode();
+            Node subjobStartNode = (Node) node.getDesignSubjobStartNode();
+            SubjobContainer subjobContainer = subjobStartNode.getNodeContainer().getSubjobContainer();
+            boolean subjobCollapsed = subjobContainer.isCollapsed();
+
             Iterator<Entry<String, SimpleHtmlFigure>> ite = mrFigures.entrySet().iterator();
             while (ite.hasNext()) {
                 Entry<String, SimpleHtmlFigure> entry = ite.next();
                 String key = entry.getKey();
-                SimpleHtmlFigure value = entry.getValue();
-                Double percent = new Double(0);
+                SimpleHtmlFigure figure = entry.getValue();
                 if (key.startsWith(KEY_MAP)) {
                     // if (!"".equals(jobletContainer.getMrName()) && jobletContainer.getMrName() != null) {
-                    percent = jobletContainer.getPercentMap() * 10;
-                    if (isSubjobDisplay && !value.isVisible()) {
-                        value.setVisible(true);
+                    if (isSubjobDisplay && !figure.isVisible()) {
+                        figure.setVisible(true);
                     }
-
                     // }
                 }
 
                 if (key.startsWith(KEY_REDUCE)) {
-                    percent = jobletContainer.getPercentReduce() * 10;
                     if (this.jobletContainer.isMRGroupContainesReduce() && isSubjobDisplay) {
-                        if (!value.isVisible()) {
-                            value.setVisible(true);
+                        if (!figure.isVisible()) {
+                            figure.setVisible(true);
                         }
-                    } else if (value.isVisible()) {
-                        value.setVisible(false);
+                    } else if (figure.isVisible()) {
+                        figure.setVisible(false);
                     }
                 }
-
-                if (value.isVisible()) {
-                    Integer i = Integer.parseInt(key.substring(key.indexOf("_") + 1)) + 1;
-                    boolean hun = percent.equals(new Double(10));
-                    Integer mrCount = this.jobletContainer.getNode().getMrJobInGroupCount();
-                    boolean refreshPro = hun && (mrCount.toString().equals(jobletContainer.getMrName()));
-                    if (i.toString().equals(jobletContainer.getMrName()) || isClear || refreshPro) {
-                        List object = value.getChildren();
-                        for (Object o : object) {
-                            if (o instanceof RectangleFigure) {
-                                setProgressData((RectangleFigure) o, percent, 8);
-                            }
-                        }
-                    }
+                if (subjobCollapsed) { // if collapsed, don't display always.
+                    figure.setVisible(false);
                 }
-
             }
-
         }
-        initializejobletContainer(getBounds());
     }
 
     private Point lastLocation = null;
@@ -344,7 +399,7 @@ public class JobletContainerFigure extends Figure {
         Dimension preferedSize = titleFigure.getPreferredSize();
         preferedSize = preferedSize.getExpanded(0, 3);
 
-        collapseFigure.setLocation(new Point(location.x, location.y));
+        collapseFigure.setLocation(new Point(rectangle.x, rectangle.y));
         collapseFigure.setSize(preferedSize.height, preferedSize.height);
 
         titleFigure.setSize(preferedSize.width, preferedSize.height - 2);
@@ -379,7 +434,7 @@ public class JobletContainerFigure extends Figure {
             i = Integer.parseInt(key.substring(key.indexOf("_") + 1));
             int mry = progressHeight * i;
             int proWidth = value.getBounds().width;
-            int jcWidth = this.jobletContainer.getJobletContainerRectangle().width;
+            int jcWidth = this.jobletContainer.getNodeContainerRectangle().width;
             if (isSubjobDisplay) {
                 if (!this.jobletContainer.isMRGroupContainesReduce()) {
                     if (key.startsWith(KEY_MAP)) {
@@ -468,12 +523,14 @@ public class JobletContainerFigure extends Figure {
     }
 
     public void dispose() {
-        Iterator<Entry<String, SimpleHtmlFigure>> ite = mrFigures.entrySet().iterator();
-        while (ite.hasNext()) {
-            Entry<String, SimpleHtmlFigure> entry = ite.next();
-            SimpleHtmlFigure value = entry.getValue();
-            if (parentMRFigure.getChildren().contains(value)) {
-                parentMRFigure.remove(value);
+        if (parentMRFigure != null) {
+            Iterator<Entry<String, SimpleHtmlFigure>> ite = mrFigures.entrySet().iterator();
+            while (ite.hasNext()) {
+                Entry<String, SimpleHtmlFigure> entry = ite.next();
+                SimpleHtmlFigure value = entry.getValue();
+                if (parentMRFigure.getChildren().contains(value)) {
+                    parentMRFigure.remove(value);
+                }
             }
         }
     }
@@ -486,6 +543,10 @@ public class JobletContainerFigure extends Figure {
         showTitle = !jobletContainer.isCollapsed();
 
         title = (String) jobletContainer.getPropertyValue(EParameterName.SUBJOB_TITLE.getName());
+        Node node = this.getJobletContainer().getNode();
+        Node subjobStartNode = (Node) node.getDesignSubjobStartNode();
+        SubjobContainer subjobContainer = subjobStartNode.getNodeContainer().getSubjobContainer();
+        boolean subjobCollapsed = subjobContainer.isCollapsed();
 
         this.getChildren().remove(outlineFigure);
         this.getChildren().remove(rectFig);
@@ -494,20 +555,25 @@ public class JobletContainerFigure extends Figure {
 
         if (showTitle) {
             outlineFigure.add(titleFigure);
-            outlineFigure.add(collapseFigure);
+            if (!subjobCollapsed) {
+                outlineFigure.add(collapseFigure);
+            }
             add(rectFig, null, 0);
             add(outlineFigure, null, 1);
         } else {
             outlineFigure.add(titleFigure);
-            rectFig.add(collapseFigure);
+            if (!subjobCollapsed) {
+                rectFig.add(collapseFigure);
+            }
             add(outlineFigure, null, 0);
             add(rectFig, null, 1);
         }
 
-        if (this.jobletContainer.getNode().isMapReduceStart() && mrFigures.isEmpty()) {
+        boolean mapReduceStart = this.jobletContainer.getNode().isMapReduceStart();
+        if (mapReduceStart && mrFigures.isEmpty()) {
             initMRFigures();
         }
-        if (!this.jobletContainer.getNode().isMapReduceStart() && !mrFigures.isEmpty()) {
+        if (!mapReduceStart && !mrFigures.isEmpty()) {
             Iterator<Entry<String, SimpleHtmlFigure>> ite = mrFigures.entrySet().iterator();
             while (ite.hasNext()) {
                 Entry<String, SimpleHtmlFigure> entry = ite.next();
@@ -516,7 +582,7 @@ public class JobletContainerFigure extends Figure {
             }
             mrFigures.clear();
         }
-        if (this.jobletContainer.getNode().isMapReduceStart()) {
+        if (mapReduceStart) {
             Iterator<Entry<String, SimpleHtmlFigure>> ite = mrFigures.entrySet().iterator();
             while (ite.hasNext()) {
                 Entry<String, SimpleHtmlFigure> entry = ite.next();
@@ -525,7 +591,7 @@ public class JobletContainerFigure extends Figure {
             }
         }
 
-        if (!this.jobletContainer.getNode().isMapReduceStart() && !this.jobletContainer.getNode().isJoblet()) {
+        if (!mapReduceStart && !this.jobletContainer.getNode().isJoblet()) {
             rectFig.setVisible(false);
             outlineFigure.setVisible(false);
         }

@@ -33,7 +33,8 @@ public class JobletContainerPart extends NodeContainerPart {
     protected IFigure createFigure() {
         IFigure layoutFigure = getLayer(TalendScalableFreeformRootEditPart.MAP_REDUCE_LAYER);
 
-        JobletContainerFigure JobletContainerFigure = new JobletContainerFigure((JobletContainer) this.getModel(), layoutFigure);
+        JobletContainer model = (JobletContainer) this.getModel();
+        JobletContainerFigure JobletContainerFigure = new JobletContainerFigure(model, layoutFigure);
         Node node = ((NodeContainer) getModel()).getNode();
         JobletContainerFigure.updateStatus(node.getStatus());
 
@@ -56,13 +57,17 @@ public class JobletContainerPart extends NodeContainerPart {
     @Override
     public void activate() {
         super.activate();
-        ((JobletContainer) getModel()).addPropertyChangeListener(this);
+        JobletContainer jobletContainer = (JobletContainer) getModel();
+        jobletContainer.addPropertyChangeListener(this);
+        jobletContainer.getSubjobContainer().addPropertyChangeListener(this);
     }
 
     @Override
     public void deactivate() {
         super.deactivate();
-        ((JobletContainer) getModel()).removePropertyChangeListener(this);
+        JobletContainer jobletContainer = (JobletContainer) getModel();
+        jobletContainer.removePropertyChangeListener(this);
+        jobletContainer.getSubjobContainer().removePropertyChangeListener(this);
     }
 
     @Override
@@ -95,7 +100,7 @@ public class JobletContainerPart extends NodeContainerPart {
             return;
         }
 
-        Rectangle rectangle = ((JobletContainer) this.getModel()).getJobletContainerRectangle();
+        Rectangle rectangle = ((JobletContainer) this.getModel()).getNodeContainerRectangle();
         if (rectangle == null) {
             return;
         }
@@ -125,8 +130,20 @@ public class JobletContainerPart extends NodeContainerPart {
     public void propertyChange(PropertyChangeEvent changeEvent) {
         String prop = changeEvent.getPropertyName();
         boolean needUpdateSubjob = false;
-        if (prop.equals(EParameterName.HINT.getName())) {
-            Node node = ((NodeContainer) getModel()).getNode();
+        Node curNode = ((JobletContainer) getModel()).getNode();
+        if (SubjobContainer.UPDATE_SUBJOB_COLLAPS.equals(prop)) {
+            if (getFigure() instanceof JobletContainerFigure) {
+                JobletContainerFigure cFigure = ((JobletContainerFigure) getFigure());
+                if (curNode.isMapReduce()) {
+                    cFigure.checkVisibleForMRProgressBar();
+                }
+                if (curNode.isJoblet()) {
+                    cFigure.checkForJobletExpand();
+                }
+            }
+
+            // } else if (prop.equals(EParameterName.HINT.getName())) {
+            // Node node = ((NodeContainer) getModel()).getNode();
             // ((JobletContainerFigure) figure).setInfoHint(node.getShowHintText());
         } else if (JobletContainer.UPDATE_JOBLET_CONTENT.equals(prop)) {
             refresh();
@@ -157,7 +174,7 @@ public class JobletContainerPart extends NodeContainerPart {
                 } else {
                     ((JobletContainerFigure) getFigure()).refreshNodes(false);
                 }
-                if (((JobletContainer) getModel()).getNode().isMapReduce()) {
+                if (curNode.isMapReduce()) {
                     JobletContainer jCon = (JobletContainer) getModel();
                     if (jCon.getNode().isMapReduceStart()) {
                         jCon.updateJobletNodes(true);
@@ -171,7 +188,7 @@ public class JobletContainerPart extends NodeContainerPart {
             refreshVisuals();
         } else { // can only be UPDATE_SUBJOB_DATA, need to modify if some others are added
             if (getFigure() instanceof JobletContainerFigure) {
-                if (((JobletContainer) getModel()).getNode().isMapReduce()) {
+                if (curNode.isMapReduce()) {
                     JobletContainer jCon = (JobletContainer) getModel();
                     if (jCon.getNode().isMapReduceStart()) {
                         jCon.updateJobletNodes(true);

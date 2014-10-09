@@ -114,73 +114,71 @@ public class JobletContainer extends NodeContainer {
         return union;
     }
 
-    /**
-     * DOC hwang Comment method "getJobletContainerRectangle".
-     * 
-     * @return
-     */
-    public Rectangle getJobletContainerRectangle() {
-        Rectangle totalRectangle = null;
-        boolean collapsed = isCollapsed();
-        boolean mapStart = this.getNode().isMapReduceStart();
+    @Override
+    public Rectangle getNodeContainerRectangle() {
+        boolean subjobCollapsed = false;
+        INode designSubjobStartNode = this.getNode().getDesignSubjobStartNode();
+        if (designSubjobStartNode instanceof Node) {
+            subjobCollapsed = ((Node) designSubjobStartNode).getNodeContainer().getSubjobContainer().isCollapsed();
+        }
 
-        if ((!collapsed || mapStart) && nodeContainers.size() > 0) {
-            for (NodeContainer container : nodeContainers) {
-                Rectangle curRect = container.getNodeContainerRectangle();
-                if (node.getNodeContainer() instanceof JobletContainer) {
-                    String title = (String) node.getNodeContainer().getPropertyValue(EParameterName.SUBJOB_TITLE.getName());
-                    SimpleHtmlFigure titleFigure = new SimpleHtmlFigure();
-                    titleFigure.setText("<b> " + title + "</b>"); //$NON-NLS-1$ //$NON-NLS-2$
-                    Dimension preferedSize = titleFigure.getPreferredSize();
-                    if (preferedSize.width > curRect.width) {
-                        curRect.setSize(preferedSize.width + 6, curRect.height);
+        if (subjobCollapsed) { // if subjob is collapsed, only return current one.
+            return super.getNodeContainerRectangle();
+        }
+        //
+        Rectangle totalRectangle = super.getNodeContainerRectangle();
+        if (this.getNode().isMapReduce()) {
+            // if(jobletCollapsed){ //for MR, always collapsed.
+            boolean mapStart = this.getNode().isMapReduceStart();
+
+            if (mapStart) {
+                Integer count = this.getNode().getMrJobInGroupCount();
+                Image image = ImageProvider.getImage(ECoreImage.MRGREEBAR);
+                int progressHeight = image.getBounds().height + 1;
+                if (count != null) {
+                    if (count == 1) {
+                        totalRectangle.setSize(totalRectangle.width, totalRectangle.height + 6);
+                    } else if (count > 1) {
+                        totalRectangle.setSize(totalRectangle.width, totalRectangle.height + progressHeight * (count - 1) + 10);
                     }
                 }
-
-                if (this.getNode().isMapReduceStart()) {
-                    Integer count = this.getNode().getMrJobInGroupCount();
-                    Image image = ImageProvider.getImage(ECoreImage.MRGREEBAR);
-                    int progressHeight = image.getBounds().height + 1;
-                    if (count != null) {
-                        if (count == 1) {
-                            curRect.setSize(curRect.width, curRect.height + 6);
-                        } else if (count > 1) {
-                            curRect.setSize(curRect.width, curRect.height + progressHeight * (count - 1) + 10);
+                if (!nodeContainers.isEmpty()) {
+                    for (NodeContainer container : nodeContainers) {
+                        if (container == this) { // ignore current one.
+                            continue;
                         }
+                        Rectangle curRect = container.getNodeContainerRectangle();
+                        totalRectangle = totalRectangle.getUnion(curRect);
                     }
+                    // totalRectangle.setLocation(jobletNodeRec.getLocation());
+                    // totalRectangle.x = totalRectangle.x - EXPEND_SIZE * 2;
+                    totalRectangle.y = totalRectangle.y - EXPEND_SIZE * 2;
+                    totalRectangle.height = totalRectangle.height + EXPEND_SIZE * 4;
 
                 }
-
-                if (totalRectangle == null) {
-                    totalRectangle = curRect.getCopy();
-                } else {
-                    totalRectangle = totalRectangle.getUnion(curRect);
-                }
-                // }
-
             }
-            // totalRectangle.setLocation(jobletNodeRec.getLocation());
-            // totalRectangle.x = totalRectangle.x - EXPEND_SIZE * 2;
-            totalRectangle.y = totalRectangle.y - EXPEND_SIZE * 2;
-            totalRectangle.height = totalRectangle.height + EXPEND_SIZE * 4;
+            // }
+        } else if (!isCollapsed()) {
 
-        } else if (node != null) {
-            NodeContainer container = node.getNodeContainer();
-            Rectangle curRect = container.getNodeContainerRectangle();
-            if (collapsed) {
-                totalRectangle = curRect.getCopy();
-            } else {
-                if (totalRectangle == null) {
-                    totalRectangle = curRect.getCopy();
-                } else {
+            String title = (String) this.getPropertyValue(EParameterName.SUBJOB_TITLE.getName());
+            SimpleHtmlFigure titleFigure = new SimpleHtmlFigure();
+            titleFigure.setText("<b> " + title + "</b>"); //$NON-NLS-1$ //$NON-NLS-2$
+            Dimension preferedSize = titleFigure.getPreferredSize();
+            totalRectangle.x = totalRectangle.x - preferedSize.height;
+            // totalRectangle.width=totalRectangle.width+preferedSize.width;
+
+            if (!nodeContainers.isEmpty()) {
+                for (NodeContainer container : nodeContainers) {
+                    Rectangle curRect = container.getNodeContainerRectangle();
                     totalRectangle = totalRectangle.getUnion(curRect);
                 }
+                // totalRectangle.setLocation(jobletNodeRec.getLocation());
+                // totalRectangle.x = totalRectangle.x - EXPEND_SIZE * 2;
+                totalRectangle.y = totalRectangle.y - EXPEND_SIZE * 2;
+                totalRectangle.height = totalRectangle.height + EXPEND_SIZE * 4;
             }
         }
 
-        if (totalRectangle == null) {
-            return null;
-        }
         if (jobletRectangle != null) {
             if ((Math.abs(jobletRectangle.width - totalRectangle.width) != 0) || this.nodeContainers.size() == 1) {
                 if (jobletRectangle.x > totalRectangle.x) {
@@ -204,9 +202,9 @@ public class JobletContainer extends NodeContainer {
 
         }
 
-        changeWidth(totalRectangle);
         jobletRectangle = totalRectangle.getCopy();
         return totalRectangle;
+
     }
 
     public int getRightChangeWidth() {
@@ -768,87 +766,6 @@ public class JobletContainer extends NodeContainer {
 
     public void setMrName(String mrName) {
         this.mrName = mrName;
-    }
-
-    private void changeWidth(Rectangle totalRectangle) {
-        if (!this.node.isMapReduce()) {
-            return;
-        }
-        Rectangle oracleRec = totalRectangle.getCopy();
-        boolean subjobCollapsed = this.node.getNodeContainer().getSubjobContainer().isCollapsed();
-        int temWidth = 114;
-        if (isMRGroupContainesReduce() && !subjobCollapsed) {
-            temWidth = 240;
-        }
-        if (totalRectangle.width < temWidth && this.getNode().isMapReduceStart()) {
-            Integer distance = null;
-            for (NodeContainer nc : this.getSubjobContainer().getNodeContainers()) {
-                if (nc.getNode().getUniqueName().equals(this.getNode().getUniqueName())) {
-                    continue;
-                }
-                if (this.getNode().getMrGroupId() != null && nc.getNode().getMrGroupId() != null
-                        && this.getNode().getMrGroupId().equals(nc.getNode().getMrGroupId())) {
-                    continue;
-                }
-                int w = nc.getNodeContainerRectangle().x - totalRectangle.x;
-                if (w <= 0) {
-                    continue;
-                }
-                if (totalRectangle.y + totalRectangle.height < nc.getNodeContainerRectangle().y) {
-                    continue;
-                }
-                if (totalRectangle.y > nc.getNodeContainerRectangle().y + nc.getNodeContainerRectangle().height) {
-                    continue;
-                }
-
-                if (distance == null) {
-                    distance = w;
-                } else if (w < distance) {
-                    distance = w;
-                }
-                if (totalRectangle.contains(nc.getNodeContainerRectangle().getLocation())) {
-                    distance = w;
-                }
-            }
-            // if (this.getNodeContainers().size() == 1) {
-            // if (this.getNode().isMrContainsReduce() && temWidth == 240 && (temWidth >
-            // this.getNodeContainerRectangle().width)) {
-            // int dis = temWidth - this.getNodeContainerRectangle().width;
-            // if (totalRectangle.x > dis / 2) {
-            // totalRectangle.x = totalRectangle.x - dis / 2;
-            // if (distance != null) {
-            // if (distance < this.getNodeContainerRectangle().width) {
-            // distance = this.getNodeContainerRectangle().width;
-            // }
-            // distance = distance + dis / 2;
-            // }
-            // }
-            // }
-            // } else
-            if (temWidth == 240 && (temWidth > this.getNodeContainerRectangle().width)) {
-                int dis = temWidth - oracleRec.width;
-                if (totalRectangle.x > dis / 2) {
-                    totalRectangle.x = totalRectangle.x - dis / 2;
-                    if (distance != null) {
-                        if (distance < this.getNodeContainerRectangle().width) {
-                            distance = this.getNodeContainerRectangle().width;
-                        }
-                        distance = distance + dis / 2;
-                    }
-                }
-            }
-
-            // if (distance == null) {
-            totalRectangle.width = temWidth;
-            // } else if (distance >= temWidth) {
-            // totalRectangle.width = temWidth;
-            // } else if (distance < totalRectangle.width) {
-            // return;
-            // } else {
-            // totalRectangle.width = distance;
-            // }
-        }
-
     }
 
     public boolean isMRGroupContainesReduce() {
