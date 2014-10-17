@@ -496,7 +496,9 @@ public class JobSettingsView extends ViewPart implements IJobSettingsView, ISele
             if (service != null
                     && service.isProjectInSvnMode()
                     && (((IRepositoryViewObject) obj).getRepositoryObjectType() == ERepositoryObjectType.PROCESS || ((IRepositoryViewObject) obj)
-                            .getRepositoryObjectType() == ERepositoryObjectType.JOBLET)) {
+                            .getRepositoryObjectType() == ERepositoryObjectType.JOBLET)
+                    || ((IRepositoryViewObject) obj).getRepositoryObjectType() == ERepositoryObjectType.PROCESS_MR
+                    || ((IRepositoryViewObject) obj).getRepositoryObjectType() == ERepositoryObjectType.valueOf("PROCESS_STORM")) {
                 category.add(EComponentCategory.SVNHISTORY);
             }
         } else if (obj instanceof IEditorPart) {
