@@ -890,20 +890,32 @@ public class PropertyChangeCommand extends Command {
     }
 
     private void refreshMR(String propName) {
-        if (!(elem instanceof Node)) {
-            return;
-        }
-        Node node = (Node) elem;
-        if (!node.isMapReduce()) {
-            return;
-        }
-        if (!propName.equals("MAP_ONLY") && !propName.equals("REPLICATED_JOIN")
-                && !propName.equals(EParameterName.GROUPBYS.getName())) {
-            return;
+        if (elem instanceof Node) {
+            Node node = (Node) elem;
+            if (!node.isMapReduce()) {
+                return;
+            }
+            if (!propName.equals("MAP_ONLY") && !propName.equals("REPLICATED_JOIN")
+                    && !propName.equals(EParameterName.GROUPBYS.getName())) {
+                return;
+            }
+
+            ((IProcess2) node.getProcess()).getGeneratingNodes();
+            node.refreshNodeContainer();
+        } else if (elem instanceof IProcess2) {
+            IProcess2 process = (IProcess2) elem;
+            for (INode inode : process.getGraphicalNodes()) {
+                Node node = (Node) inode;
+                if (!node.isMapReduceStart()) {
+                    return;
+                }
+                if (!propName.equals("DISTRIBUTION")) {
+                    return;
+                }
+                node.refreshNodeContainer();
+            }
         }
 
-        ((IProcess2) node.getProcess()).getGeneratingNodes();
-        node.refreshNodeContainer();
     }
 
 }

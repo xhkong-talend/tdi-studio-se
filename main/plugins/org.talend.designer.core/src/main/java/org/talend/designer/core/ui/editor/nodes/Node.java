@@ -4585,6 +4585,16 @@ public class Node extends Element implements IGraphicalNode {
         return false;
     }
 
+    public boolean isProgressBarNeeded() {
+        boolean needBar = true;
+        if (GlobalServiceRegister.getDefault().isServiceRegistered(IMRProcessService.class)) {
+            IMRProcessService mrService = (IMRProcessService) GlobalServiceRegister.getDefault().getService(
+                    IMRProcessService.class);
+            needBar = mrService.isProgressBarNeeded(process);
+        }
+        return needBar;
+    }
+
     public void defineAsSubjobMapReduceStart() {
         if ((this.getMrGroupId() == null) || (!this.isActivate())) {
             this.isMapReduceStart = false;

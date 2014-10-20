@@ -252,6 +252,12 @@ public class JobletContainerFigure extends Figure {
                 String key = entry.getKey();
                 SimpleHtmlFigure value = entry.getValue();
                 Double percent = new Double(0);
+
+                if (!this.jobletContainer.getNode().isProgressBarNeeded()) {
+                    value.setVisible(false);
+                    continue;
+                }
+
                 if (key.startsWith(KEY_MAP)) {
                     // if (!"".equals(jobletContainer.getMrName()) && jobletContainer.getMrName() != null) {
                     percent = jobletContainer.getPercentMap() * 10;
