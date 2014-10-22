@@ -18,10 +18,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
+import javax.crypto.BadPaddingException;
+
 import org.apache.commons.lang.ArrayUtils;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.ui.IEditorReference;
 import org.eclipse.ui.PlatformUI;
+import org.talend.commons.exception.ExceptionHandler;
+import org.talend.commons.utils.PasswordEncryptUtil;
 import org.talend.commons.utils.VersionUtils;
 import org.talend.core.CorePlugin;
 import org.talend.core.context.Context;
@@ -240,12 +244,26 @@ public class ElementParameter2ParameterType {
                                         }
                                     }
                                 }
+                                IElementParameter tmpParam = null;
+                                for (Object o : param.getListItemsValue()) {
+                                    if (o instanceof IElementParameter) {
+                                        IElementParameter tableParam = (IElementParameter) o;
+                                        if (tableParam.getName().equals(elementValue.getElementRef())) {
+                                            tmpParam = tableParam;
+                                            break;
+                                        }
+                                    }
+                                }
                                 if (found) {
                                     if ((lineValues == null) || (lineValues.get(elementValue.getElementRef()) != null)) {
                                         lineValues = new HashMap<String, Object>();
                                         tableValues.add(lineValues);
                                     }
-                                    lineValues.put(elementValue.getElementRef(), elementValue.getValue());
+                                    String elemValue = elementValue.getValue();
+                                    if (tmpParam != null && EParameterFieldType.PASSWORD.equals(tmpParam.getFieldType())) {
+                                        elemValue = getRawValue(elemValue, tmpParam.getFieldType().getName());
+                                    }
+                                    lineValues.put(elementValue.getElementRef(), elemValue);
                                     if (elementValue.getType() != null) {
                                         lineValues.put(elementValue.getElementRef() + IEbcdicConstant.REF_TYPE,
                                                 elementValue.getType());
@@ -253,6 +271,8 @@ public class ElementParameter2ParameterType {
                                 }
                             }
                             elemParam.setPropertyValue(pTypeName, tableValues);
+                        } else if (param.getFieldType().equals(EParameterFieldType.PASSWORD)) {
+                            param.setValue(getRawValue(pType.getValue(), param.getFieldType().getName()));
                         } else if (param.getFieldType().equals(EParameterFieldType.ENCODING_TYPE)) {
                             // fix for bug 2193
                             boolean setToCustom = false;
@@ -514,6 +534,23 @@ public class ElementParameter2ParameterType {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private static String getRawValue(String value, String fileType) {
+        if (value != null && value.length() > 0 && fileType.equalsIgnoreCase("PASSWORD")) {
+            String decrypt = null;
+            try {
+                decrypt = PasswordEncryptUtil.decryptPassword(value);
+            } catch (BadPaddingException e) {
+                ExceptionHandler.process(e);
+            } catch (Exception e) {
+                ExceptionHandler.process(e);
+            }
+            if (decrypt != null) {
+                return decrypt;
+            }
+        }
+        return value;
     }
 
 }
