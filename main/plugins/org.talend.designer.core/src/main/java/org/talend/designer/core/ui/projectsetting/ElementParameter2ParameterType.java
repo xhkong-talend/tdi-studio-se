@@ -18,8 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
-import javax.crypto.BadPaddingException;
-
 import org.apache.commons.lang.ArrayUtils;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.ui.IEditorReference;
@@ -261,7 +259,7 @@ public class ElementParameter2ParameterType {
                                     }
                                     String elemValue = elementValue.getValue();
                                     if (tmpParam != null && EParameterFieldType.PASSWORD.equals(tmpParam.getFieldType())) {
-                                        elemValue = getRawValue(elemValue, tmpParam.getFieldType().getName());
+                                        elemValue = getRawValue(elemValue, tmpParam.getFieldType());
                                     }
                                     lineValues.put(elementValue.getElementRef(), elemValue);
                                     if (elementValue.getType() != null) {
@@ -272,7 +270,7 @@ public class ElementParameter2ParameterType {
                             }
                             elemParam.setPropertyValue(pTypeName, tableValues);
                         } else if (param.getFieldType().equals(EParameterFieldType.PASSWORD)) {
-                            param.setValue(getRawValue(pType.getValue(), param.getFieldType().getName()));
+                            param.setValue(getRawValue(pType.getValue(), param.getFieldType()));
                         } else if (param.getFieldType().equals(EParameterFieldType.ENCODING_TYPE)) {
                             // fix for bug 2193
                             boolean setToCustom = false;
@@ -536,18 +534,19 @@ public class ElementParameter2ParameterType {
         }
     }
 
-    private static String getRawValue(String value, String fileType) {
-        if (value != null && value.length() > 0 && fileType.equalsIgnoreCase("PASSWORD")) {
-            String decrypt = null;
+    private static String getRawValue(String value, EParameterFieldType fileType) {
+        if (value != null && value.length() > 0 && fileType.equals(EParameterFieldType.PASSWORD)) {
+
             try {
-                decrypt = PasswordEncryptUtil.decryptPassword(value);
-            } catch (BadPaddingException e) {
-                ExceptionHandler.process(e);
+                int ind = value.lastIndexOf(PasswordEncryptUtil.ENCRYPT_KEY);
+                if (ind != -1) {
+                    String encryptedPart = new StringBuilder(value).replace(ind, ind + PasswordEncryptUtil.ENCRYPT_KEY.length(),
+                            "").toString(); //$NON-NLS-1$
+                    String decryptedValue = PasswordEncryptUtil.decryptPassword(encryptedPart);
+                    return decryptedValue;
+                }
             } catch (Exception e) {
                 ExceptionHandler.process(e);
-            }
-            if (decrypt != null) {
-                return decrypt;
             }
         }
         return value;
