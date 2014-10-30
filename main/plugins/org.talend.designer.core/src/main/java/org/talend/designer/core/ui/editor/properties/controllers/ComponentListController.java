@@ -309,23 +309,26 @@ public class ComponentListController extends AbstractElementPropertySectionContr
             Object value = param.getValue();
             if (!componentUniqueNames.contains(value)) {
                 String newValue = null;
-                if ((componentUniqueNames.size() > 0)) {
-                    if (value == null || value.equals("")) { //$NON-NLS-1$
-                        elem.setPropertyValue(getParameterName(param), componentValueList[0]);
-                        if (elem instanceof Node) {
-                            Node node = (Node) elem;
-                            node.checkAndRefreshNode();
-                            ((IProcess2) node.getProcess()).setProcessModified(true);
-                        } else if (elem instanceof Connection) {
-                            ((IProcess2) ((Connection) elem).getSource().getProcess()).setProcessModified(true);
-                        }
-                    } else {
-                        newValue = componentValueList[0];
+                if (!param.isDynamicSettings()) {
+                    if ((componentUniqueNames.size() > 0)) {
+                        if (value == null || value.equals("")) { //$NON-NLS-1$
+                            elem.setPropertyValue(getParameterName(param), componentValueList[0]);
+                            if (elem instanceof Node) {
+                                Node node = (Node) elem;
+                                node.checkAndRefreshNode();
+                                ((IProcess2) node.getProcess()).setProcessModified(true);
+                            } else if (elem instanceof Connection) {
+                                ((IProcess2) ((Connection) elem).getSource().getProcess()).setProcessModified(true);
+                            }
+                        } else {
+                            newValue = componentValueList[0];
 
+                        }
+                    } else { // removed the old value.
+                        newValue = "";//$NON-NLS-1$
                     }
-                } else { // removed the old value.
-                    newValue = "";//$NON-NLS-1$
                 }
+
                 if (!("".equals(newValue)) && newValue != null) { //$NON-NLS-1$
                     IEditorPart part = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor();
                     if (part instanceof AbstractMultiPageTalendEditor) {
