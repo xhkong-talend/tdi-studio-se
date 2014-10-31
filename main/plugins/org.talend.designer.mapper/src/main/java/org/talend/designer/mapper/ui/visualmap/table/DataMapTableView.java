@@ -1854,20 +1854,21 @@ public abstract class DataMapTableView extends Composite implements IDataMapTabl
 
         id.append(mapperManager.getAbstractMapComponent().getUniqueName() + "=>"); //$NON-NLS-1$
 
-        TableItem[] items = tableViewerCreator.getTable().getSelection();
-        if (items.length == 1) {
-            Object item = items[0].getData();
-            if (item instanceof AbstractInOutTableEntry) {
-                AbstractInOutTableEntry entry = (AbstractInOutTableEntry) item;
-                id.append(entry.getParent().getName() + "=>");//$NON-NLS-1$
-                id.append(entry.getMetadataColumn().getLabel());
-            } else if (item instanceof VarTableEntry) {
-                VarTableEntry entry = (VarTableEntry) item;
-                id.append(entry.getParent().getName() + "=>");//$NON-NLS-1$
-                id.append(entry.getName());
-            }
+        // TDI-3065:Expression Builder for Var in tMap does not show Var name correctly
+        // TableItem[] items = tableViewerCreator.getTable().getSelection();
+        // if (items.length == 1) {
+        // Object item = items[0].getData();
+        // if (item instanceof AbstractInOutTableEntry) {
+        // AbstractInOutTableEntry entry = (AbstractInOutTableEntry) item;
+        //                id.append(entry.getParent().getName() + "=>");//$NON-NLS-1$
+        // id.append(entry.getMetadataColumn().getLabel());
+        // } else if (item instanceof VarTableEntry) {
+        // VarTableEntry entry = (VarTableEntry) item;
+        //                id.append(entry.getParent().getName() + "=>");//$NON-NLS-1$
+        // id.append(entry.getName());
+        // }
 
-        }
+        // }
 
         cellEditor.setOwnerId(id.toString());
         if (!needInitProposals) {
