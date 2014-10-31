@@ -187,179 +187,182 @@ import org.talend.repository.ui.dialog.RepositoryReviewDialog;
  */
 public abstract class DataMapTableView extends Composite implements IDataMapTableView, PropertyChangeListener {
 
-    public static final String REPOSITORY = "Repository";
+    public static final String                              REPOSITORY                                 = "Repository";
 
-    public static final String BUILT_IN = "Built-In";
+    public static final String                              BUILT_IN                                   = "Built-In";
 
-    private final Point realToolbarSize = new Point(0, 0);
+    private final Point                                     realToolbarSize                            = new Point(0, 0);
 
-    private Table tableForEntries;
+    private Table                                           tableForEntries;
 
-    private final ResizeHelper resizeHelper = new ResizeHelper();
+    private final ResizeHelper                              resizeHelper                               = new ResizeHelper();
 
-    protected MapperManager mapperManager;
+    protected MapperManager                                 mapperManager;
 
-    protected TableViewerCreator tableViewerCreatorForColumns;
+    protected TableViewerCreator                            tableViewerCreatorForColumns;
 
-    protected IDataMapTable abstractDataMapTable;
+    protected IDataMapTable                                 abstractDataMapTable;
 
-    private Composite headerComposite;
+    private Composite                                       headerComposite;
 
-    private Label nameLabel;
+    private Label                                           nameLabel;
 
-    private ToolItem minimizeButton;
+    private ToolItem                                        minimizeButton;
 
-    protected ToolItem condensedItem;
+    protected ToolItem                                      condensedItem;
 
-    protected int heightForRestore;
+    protected int                                           heightForRestore;
 
-    protected Layout parentLayout;
+    protected Layout                                        parentLayout;
 
-    protected TableViewerCreator tableViewerCreatorForFilters;
+    protected TableViewerCreator                            tableViewerCreatorForFilters;
 
-    protected TableViewerCreator tableViewerCreatorForGlobalMap;
+    protected TableViewerCreator                            tableViewerCreatorForGlobalMap;
 
-    protected TableViewerCreator mapSettingViewerCreator;
+    protected TableViewerCreator                            mapSettingViewerCreator;
 
-    protected Table tableForConstraints;
+    protected Table                                         tableForConstraints;
 
-    protected Table tableForGlobalMap;
+    protected Table                                         tableForGlobalMap;
 
-    protected Table mapSettingTable;
+    protected Table                                         mapSettingTable;
 
-    private boolean executeSelectionEvent = true;
+    private boolean                                         executeSelectionEvent                      = true;
 
-    protected ToolBar toolBarActions;
+    protected ToolBar                                       toolBarActions;
 
-    private ExpressionProposalProvider expressionProposalProvider;
+    private ExpressionProposalProvider                      expressionProposalProvider;
 
-    protected Point expressionEditorTextSelectionBeforeFocusLost;
+    protected Point                                         expressionEditorTextSelectionBeforeFocusLost;
 
-    protected Text lastExpressionEditorTextWhichLostFocus;
+    protected Text                                          lastExpressionEditorTextWhichLostFocus;
 
-    protected Composite centerComposite;
+    protected Composite                                     centerComposite;
 
-    private Text columnExpressionTextEditor;
+    private Text                                            columnExpressionTextEditor;
 
-    private Text constraintExpressionTextEditor;
+    private Text                                            constraintExpressionTextEditor;
 
-    private Cursor currentCursor;
+    private Cursor                                          currentCursor;
 
-    private final ExpressionColorProvider expressionColorProvider;
+    private final ExpressionColorProvider                   expressionColorProvider;
 
-    private Listener showErrorMessageListener;
+    private Listener                                        showErrorMessageListener;
 
-    protected boolean forceExecuteSelectionEvent;
+    protected boolean                                       forceExecuteSelectionEvent;
 
-    private AbstractExtendedTableViewer<IColumnEntry> extendedTableViewerForColumns;
+    private AbstractExtendedTableViewer<IColumnEntry>       extendedTableViewerForColumns;
 
     protected AbstractExtendedTableViewer<FilterTableEntry> extendedTableViewerForFilters;
 
-    protected AbstractExtendedTableViewer<GlobalMapEntry> extendedTableViewerForGlobalMap;
+    protected AbstractExtendedTableViewer<GlobalMapEntry>   extendedTableViewerForGlobalMap;
 
-    protected AbstractExtendedTableViewer<GlobalMapEntry> extendedTableViewerForMapSetting;
+    protected AbstractExtendedTableViewer<GlobalMapEntry>   extendedTableViewerForMapSetting;
 
-    private static Image imageKey;
+    private static Image                                    imageKey;
 
-    private static Image imageEmpty;
+    private static Image                                    imageEmpty;
 
-    private static int constraintCounter = 0;
+    private static int                                      constraintCounter                          = 0;
 
-    protected static final int TIME_BEFORE_NEW_REFRESH_BACKGROUND = 150;
+    protected static final int                              TIME_BEFORE_NEW_REFRESH_BACKGROUND         = 150;
 
-    protected static final int OFFSET_HEIGHT_TRIGGER = 15;
+    protected static final int                              OFFSET_HEIGHT_TRIGGER                      = 15;
 
-    protected static final int COLUMN_EXPRESSION_SIZE_WEIGHT = 60;
+    protected static final int                              COLUMN_EXPRESSION_SIZE_WEIGHT              = 60;
 
-    protected static final int COLUMN_NAME_SIZE_WEIGHT = 40;
+    protected static final int                              COLUMN_NAME_SIZE_WEIGHT                    = 40;
 
-    protected static final int ADJUST_WIDTH_VALUE = 0;
+    protected static final int                              ADJUST_WIDTH_VALUE                         = 0;
 
-    private static final int HEADER_HEIGHT = 23;
+    private static final int                                HEADER_HEIGHT                              = 23;
 
-    public static final String ID_NAME_COLUMN = "ID_NAME_COLUMN"; //$NON-NLS-1$
+    public static final String                              ID_NAME_COLUMN                             = "ID_NAME_COLUMN";                //$NON-NLS-1$
 
-    public static final String PREVIEW_COLUMN = "PREVIEW_COLUMN"; //$NON-NLS-1$
+    public static final String                              PREVIEW_COLUMN                             = "PREVIEW_COLUMN";                //$NON-NLS-1$
 
-    public static final String ID_OPERATOR = "ID_OPERATOR"; //$NON-NLS-1$
+    public static final String                              ID_OPERATOR                                = "ID_OPERATOR";                   //$NON-NLS-1$
 
-    public static final String ID_EXPRESSION_COLUMN = "ID_EXPRESSION_COLUMN"; //$NON-NLS-1$
+    public static final String                              ID_EXPRESSION_COLUMN                       = "ID_EXPRESSION_COLUMN";          //$NON-NLS-1$
 
-    public static final String MAP_SETTING_COLUMN = "MAP_SETTING_COLUMN"; //$NON-NLS-1$
+    public static final String                              MAP_SETTING_COLUMN                         = "MAP_SETTING_COLUMN";            //$NON-NLS-1$
 
-    public static final String MATCH_MODEL_SETTING = "Match Model"; //$NON-NLS-1$
+    public static final String                              MATCH_MODEL_SETTING                        = "Match Model";                   //$NON-NLS-1$
 
-    public static final String LOOKUP_MODEL_SETTING = "Lookup Model"; //$NON-NLS-1$
+    public static final String                              LOOKUP_MODEL_SETTING                       = "Lookup Model";                  //$NON-NLS-1$
 
-    public static final String JOIN_MODEL_SETTING = "Join Model"; //$NON-NLS-1$
+    public static final String                              JOIN_MODEL_SETTING                         = "Join Model";                    //$NON-NLS-1$
 
-    public static final String PERSISTENCE_MODEL_SETTING = "Store temp data"; //$NON-NLS-1$
+    public static final String                              PERSISTENCE_MODEL_SETTING                  = "Store temp data";               //$NON-NLS-1$
 
-    public static final String OUTPUT_REJECT = "Catch output reject"; //$NON-NLS-1$
+    public static final String                              OUTPUT_REJECT                              = "Catch output reject";           //$NON-NLS-1$
 
-    public static final String LOOK_UP_INNER_JOIN_REJECT = "Catch lookup inner join reject"; //$NON-NLS-1$
+    public static final String                              LOOK_UP_INNER_JOIN_REJECT                  = "Catch lookup inner join reject"; //$NON-NLS-1$
 
-    public static final String SCHEMA_TYPE = "Schema Type"; //$NON-NLS-1$
+    public static final String                              SCHEMA_TYPE                                = "Schema Type";                   //$NON-NLS-1$
 
-    public static final String SCHEMA_ID = "Schema Id"; //$NON-NLS-1$
+    public static final String                              SCHEMA_ID                                  = "Schema Id";                     //$NON-NLS-1$
 
-    public static final String SCHEMA_SETTING_COLUMN = "Schema Setting Column"; //$NON-NLS-1$
+    public static final String                              SCHEMA_SETTING_COLUMN                      = "Schema Setting Column";         //$NON-NLS-1$
 
-    public static final String SCHEMA_ID_SETTING_COLUMN = "Schema ID Setting Column"; //$NON-NLS-1$
+    public static final String                              SCHEMA_ID_SETTING_COLUMN                   = "Schema ID Setting Column";      //$NON-NLS-1$
 
-    public static final String COLUMN_NAME = "Column"; //$NON-NLS-1$
+    public static final String                              COLUMN_NAME                                = "Column";                        //$NON-NLS-1$
 
-    protected GridData tableForConstraintsGridData;
+    protected GridData                                      tableForConstraintsGridData;
 
-    protected GridData tableForSchemaIDGridData;
+    protected GridData                                      tableForSchemaIDGridData;
 
-    protected GridData tableForGlobalMapGridData;
+    protected GridData                                      tableForGlobalMapGridData;
 
-    protected GridData tableForMapSettingGridData;
+    protected GridData                                      tableForMapSettingGridData;
 
-    private ExpressionProposalProvider expressionProposalProviderForExpressionFilter;
+    private ExpressionProposalProvider                      expressionProposalProviderForExpressionFilter;
 
-    private UnnotifiableColorStyledText expressionFilterText;
+    private UnnotifiableColorStyledText                     expressionFilterText;
 
-    private Button openExpressionBuilder; // hywang add for 9225
+    private Button                                          openExpressionBuilder;                                                        // hywang
+                                                                                                                                           // add
+                                                                                                                                           // for
+                                                                                                                                           // 9225
 
-    public static final String DEFAULT_EXPRESSION_FILTER = "<Type your filter expression>"; //$NON-NLS-1$ // DO NOT TRANSLATE IT !
+    public static final String                              DEFAULT_EXPRESSION_FILTER                  = "<Type your filter expression>"; //$NON-NLS-1$ // DO NOT TRANSLATE IT !
 
-    public static final String DEFAULT_POST_MATCHING_EXPRESSION_FILTER = "";
+    public static final String                              DEFAULT_POST_MATCHING_EXPRESSION_FILTER    = "";
 
     //        Messages.getString("DataMapTableView.defaultPostMatchingFilterExpression"); //$NON-NLS-1$
 
-    public static final String DEFAULT_OUT_EXPRESSION_FILTER = "";
+    public static final String                              DEFAULT_OUT_EXPRESSION_FILTER              = "";
 
     //     Messages.getString("DataMapTableView.defaultOutputFilterExpression"); //$NON-NLS-1$
 
-    private static final String EXPRESSION_FILTER_ENTRY = "EXPRESSION_FILTER_ENTRY"; //$NON-NLS-1$
+    private static final String                             EXPRESSION_FILTER_ENTRY                    = "EXPRESSION_FILTER_ENTRY";       //$NON-NLS-1$
 
-    private String previousTextForExpressionFilter;
+    private String                                          previousTextForExpressionFilter;
 
-    private ContentProposalAdapterExtended proposalForExpressionFilterText;
+    private ContentProposalAdapterExtended                  proposalForExpressionFilterText;
 
-    private ExecutionLimiterImproved executionLimiterForCheckProblemsExpressionFilter;
+    private ExecutionLimiterImproved                        executionLimiterForCheckProblemsExpressionFilter;
 
-    private ExecutionLimiterImproved executionLimiterForExpressionFilterSetText = null;
+    private ExecutionLimiterImproved                        executionLimiterForExpressionFilterSetText = null;
 
-    private ContentProposalAdapterExtended expressionProposalStyledText;
+    private ContentProposalAdapterExtended                  expressionProposalStyledText;
 
-    private ToolItem activateFilterCheck;
+    private ToolItem                                        activateFilterCheck;
 
-    private boolean previousStateCheckFilter;
+    private boolean                                         previousStateCheckFilter;
 
-    private IExpressionBuilderDialogController dialog;
+    private IExpressionBuilderDialogController              dialog;
 
-    private boolean customSized;
+    private boolean                                         customSized;
 
-    protected int changedOptions = 0;
+    protected int                                           changedOptions                             = 0;
 
-    private Color color = null;
+    private Color                                           color                                      = null;
 
-    protected Color previewColor = null;
+    protected Color                                         previewColor                               = null;
 
-    private boolean needInitProposals = false;
+    private boolean                                         needInitProposals                          = false;
 
     /**
      * doc
@@ -1849,18 +1852,18 @@ public abstract class DataMapTableView extends Composite implements IDataMapTabl
 
         StringBuffer id = new StringBuffer();
 
-        id.append(mapperManager.getAbstractMapComponent().getLabel() + "=>"); //$NON-NLS-1$
+        id.append(mapperManager.getAbstractMapComponent().getUniqueName() + "=>"); //$NON-NLS-1$
 
         TableItem[] items = tableViewerCreator.getTable().getSelection();
         if (items.length == 1) {
             Object item = items[0].getData();
             if (item instanceof AbstractInOutTableEntry) {
                 AbstractInOutTableEntry entry = (AbstractInOutTableEntry) item;
-                id.append(entry.getParent().getName() + "=>"); //$NON-NLS-1$
+                id.append(entry.getParent().getName() + "=>");//$NON-NLS-1$
                 id.append(entry.getMetadataColumn().getLabel());
             } else if (item instanceof VarTableEntry) {
                 VarTableEntry entry = (VarTableEntry) item;
-                id.append(entry.getParent().getName() + "=>"); //$NON-NLS-1$
+                id.append(entry.getParent().getName() + "=>");//$NON-NLS-1$
                 id.append(entry.getName());
             }
 
@@ -2372,12 +2375,15 @@ public abstract class DataMapTableView extends Composite implements IDataMapTabl
             openExpressionBuilder.setVisible(table.isActivateExpressionFilter());
             openExpressionBuilder.addSelectionListener(new SelectionListener() {
 
-                IService expressionBuilderDialogService = GlobalServiceRegister.getDefault().getService(
-                        IExpressionBuilderDialogService.class);
+                IService                           expressionBuilderDialogService = GlobalServiceRegister
+                                                                                          .getDefault()
+                                                                                          .getService(
+                                                                                                  IExpressionBuilderDialogService.class);
 
-                IExpressionBuilderDialogController dialogForTable = ((IExpressionBuilderDialogService) expressionBuilderDialogService)
-                        .getExpressionBuilderInstance(DataMapTableView.this.getCenterComposite(), null,
-                                mapperManager.getAbstractMapComponent());
+                IExpressionBuilderDialogController dialogForTable                 = ((IExpressionBuilderDialogService) expressionBuilderDialogService).getExpressionBuilderInstance(
+                                                                                          DataMapTableView.this
+                                                                                                  .getCenterComposite(), null,
+                                                                                          mapperManager.getAbstractMapComponent());
 
                 public void widgetDefaultSelected(SelectionEvent e) {
                 }
@@ -2908,11 +2914,11 @@ public abstract class DataMapTableView extends Composite implements IDataMapTabl
      */
     class ExpressionEditorToMapperStyledTextKeyListener implements ExtendedModifyListener, KeyListener {
 
-        private final Control textWidget;
+        private final Control           textWidget;
 
         private final StyledTextHandler textTarget;
 
-        private boolean modifyListenerAllowed;
+        private boolean                 modifyListenerAllowed;
 
         /**
          * DOC amaumont TextKeyListener constructor comment.
@@ -2972,7 +2978,7 @@ public abstract class DataMapTableView extends Composite implements IDataMapTabl
      */
     class TextCellEditorToMapperStyledTextKeyListener implements KeyListener {
 
-        private final Control textWidget;
+        private final Control           textWidget;
 
         private final StyledTextHandler textTarget;
 
@@ -3093,7 +3099,7 @@ public abstract class DataMapTableView extends Composite implements IDataMapTabl
      */
     class CustomDialogCellEditor extends DialogCellEditor {
 
-        private CellValueType type;
+        private CellValueType             type;
 
         private final Map<String, String> oldMappingMap = new HashMap<String, String>();
 

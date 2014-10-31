@@ -68,33 +68,33 @@ import org.xml.sax.SAXException;
  */
 public class ExpressionBuilderDialog extends TrayDialog implements IExpressionBuilderDialogController {
 
-    private static final int EXPORT_ID = IDialogConstants.CLIENT_ID + 22;
+    private static final int             EXPORT_ID          = IDialogConstants.CLIENT_ID + 22;
 
-    private static final int IMPORT_ID = IDialogConstants.CLIENT_ID + 21;
+    private static final int             IMPORT_ID          = IDialogConstants.CLIENT_ID + 21;
 
-    protected static TestComposite testComposite;
+    protected static TestComposite       testComposite;
 
     protected static ExpressionComposite expressionComposite;
 
-    protected static CategoryComposite categoryComposite;
+    protected static CategoryComposite   categoryComposite;
 
-    protected CategoryManager manager = new CategoryManager();
+    protected CategoryManager            manager            = new CategoryManager();
 
-    protected final IExpressionDataBean dataBean;
+    protected final IExpressionDataBean  dataBean;
 
-    protected String defaultExpression = ""; //$NON-NLS-1$
+    protected String                     defaultExpression  = "";                             //$NON-NLS-1$
 
-    protected List<Variable> defaultVariables;
+    protected List<Variable>             defaultVariables;
 
-    private Composite container;
+    private Composite                    container;
 
-    private final INode component;
+    private final INode                  component;
 
-    private final String nodeStyle;
+    private final String                 nodeStyle;
 
-    private String expressionForTable = null;
+    private String                       expressionForTable = null;
 
-    protected static boolean isESCClose = true;
+    protected static boolean             isESCClose         = true;
 
     /**
      * Create the dialog
@@ -382,6 +382,7 @@ public class ExpressionBuilderDialog extends TrayDialog implements IExpressionBu
      * 
      * @see org.eclipse.jface.dialogs.Dialog#okPressed()
      */
+    @Override
     protected void okPressed() {
         String expression = null;
         int startInx = nodeStyle.indexOf("-") + 2;//$NON-NLS-1$ 
@@ -414,29 +415,32 @@ public class ExpressionBuilderDialog extends TrayDialog implements IExpressionBu
      * 
      * @see org.talend.expressionbuilder.ui.IExpressionBuilderDialogController#openDialog()
      */
+    @Override
     public void openDialog(Object obj) {
         if (obj instanceof IExpressionDataBean) {
 
             List<Variable> vars = new ArrayList<Variable>();
             IExpressionDataBean bean = (IExpressionDataBean) obj;
             setDefaultExpression(bean.getExpression());
-            if (bean.getVariables() != null) {
-                vars.addAll(bean.getVariables());
-            }
 
             ExpressionPersistance persistance = ExpressionPersistance.getInstance();
             persistance.setOwnerId(bean.getOwnerId());
             persistance.setPath(getExpressionStorePath());
-            for (Variable var1 : persistance.loadExpression().getVariables()) {
-                boolean needAdd = true;
-                for (Variable var2 : vars) {
-                    if (var1.getName() != null && var1.getName().equals(var2.getName())) {
-                        needAdd = false;
-                        break;
+            List<Variable> varList = new ArrayList<Variable>(persistance.loadExpression().getVariables());
+            vars.addAll(varList);
+
+            if (bean.getVariables() != null) {
+                for (Variable var1 : bean.getVariables()) {
+                    boolean needAdd = true;
+                    for (Variable var2 : varList) {
+                        if (var1.getName() != null && var1.getName().equals(var2.getName())) {
+                            needAdd = false;
+                            break;
+                        }
                     }
-                }
-                if (var1.getName() != null && needAdd) {
-                    vars.add(var1);
+                    if (var1.getName() != null && needAdd) {
+                        vars.add(var1);
+                    }
                 }
             }
             addVariables(vars);
@@ -451,6 +455,7 @@ public class ExpressionBuilderDialog extends TrayDialog implements IExpressionBu
      * 
      * @see org.talend.expressionbuilder.ui.IExpressionBuilderDialogController#setDefaultExpression(java.lang.String)
      */
+    @Override
     public void setDefaultExpression(String expression) {
         defaultExpression = expression;
     }
@@ -460,6 +465,7 @@ public class ExpressionBuilderDialog extends TrayDialog implements IExpressionBu
      * 
      * @see org.talend.expressionbuilder.ui.IExpressionBuilderDialogController#setVariables(java.util.List)
      */
+    @Override
     public void addVariables(List<Variable> variables) {
         defaultVariables = variables;
     }
@@ -512,6 +518,7 @@ public class ExpressionBuilderDialog extends TrayDialog implements IExpressionBu
 
     }
 
+    @Override
     public String getExpressionForTable() {
         return this.expressionForTable;
     }
