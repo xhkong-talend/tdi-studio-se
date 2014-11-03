@@ -394,10 +394,10 @@ public class ExpressionBuilderDialog extends TrayDialog implements IExpressionBu
             sub = nodeStyle;
         }
         if (sub.equals("tRowGenerator")) { //$NON-NLS-1$
-            expression = expressionComposite.getReplaceExpression();
+            expression = expressionComposite.getReplaceExpression().trim();
             expressionForTable = expression; // hywang add for 9225
         } else {
-            expression = expressionComposite.getExpression();
+            expression = expressionComposite.getExpression().trim();
             expressionForTable = expression;
         }
         if (dataBean != null) {
