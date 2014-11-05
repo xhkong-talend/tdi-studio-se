@@ -15,17 +15,11 @@
     boolean bDeleteFromServer = "true".equals(ElementParameterParser.getValue(node, "__DELETE_FROM_SERVER__"));
     List<Map<String, String>> filterList = (List<Map<String,String>>)ElementParameterParser.getObjectValue(node, "__ADVANCED_FILTER__");
     String protocol = ElementParameterParser.getValue(node, "__PROTOCOL__");
-    
-		if (filterList.size() > 0) {
-    %>
-			}
-    <%
-    	}
-    	
+
 		if(isLog4jEnabled){
 			%>
 			log.debug("<%=cid%> - Retrieving the record " + nb_email_<%=cid %> + ".");
-			<%		
+			<%
 		}
 		
 		if ("pop3".equals(protocol)) {
@@ -48,8 +42,9 @@
       			}
 	<%
 		}%>
-			}
-	}
+			} <% /* catch end */ %>
+		System.out.println("The counter_<%=cid %>th mail download successed.");
+	} <% /* for end */ %>
 
 	if (folder_<%=cid %> != null) {
 		<%if (bDeleteFromServer) {%>

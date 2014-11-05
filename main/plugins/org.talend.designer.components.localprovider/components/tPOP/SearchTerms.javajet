@@ -1,0 +1,139 @@
+<%
+	  for(Map<String,String> map: filterList){
+	  		String fileItem = map.get("FILTER_TIEM");
+	  		String pattern = map.get("PATTERN");
+	  		if("From".equalsIgnoreCase(fileItem)){
+	  			%>
+	  			   class FromFilter_<%= cid %> extends javax.mail.search.SearchTerm{
+	  			   		private String from;
+	  			   		private FromFilter_<%= cid %>(){}
+	  			   		public FromFilter_<%= cid %>(String from){
+	  			   			this.from = from;
+	  			   		}
+	  			   		public boolean match(javax.mail.Message msg){
+	  			   			javax.mail.Address[] addrArr;
+	  			   			try{
+	  			   				addrArr = msg.getFrom();
+	  			   			}catch(javax.mail.MessagingException e){
+	  			   				throw new RuntimeException("Failed to get mail sender info.");
+	  			   			}
+	  			   			for(javax.mail.Address addr: addrArr){
+	  			   					if(addr.toString().contains(this.from)){
+	  			   						  return true;
+	  			   					}
+	  			   			}
+	  			   						  return false;
+	  			   		}
+	  			   }
+	  			<%
+	  		}else if("To".equalsIgnoreCase(fileItem)){
+	  			  %>
+	  			  class ToFilter_<%= cid %> extends javax.mail.search.SearchTerm{
+	  			  		private String to;
+	  			  		private ToFilter_<%= cid %>(){}
+	  			  		public ToFilter_<%= cid %>(String to){
+	  			  			this.to = to;
+	  			  		}
+	  			  		public boolean match(javax.mail.Message msg){
+	  			  			javax.mail.Address[] addrArr;
+	  			  			try{
+	  			  				addrArr = msg.getAllRecipients();
+	  			  			}catch(javax.mail.MessagingException e){
+	  			  				throw new RuntimeException("Failed to get all recipients info.");
+	  			  			}
+	  			  			for(javax.mail.Address addr: addrArr){
+	  			  					if(addr.toString().contains(this.to)){
+	  			  						  return true;
+	  			  					}
+	  			  			}
+	  			  						  return false;
+	  			  		}
+	  			  }
+	  			  <%
+	  		}else if("Subject".equalsIgnoreCase(fileItem)){
+	  			  %>
+	  			  class SubjectFilter_<%= cid %> extends javax.mail.search.SearchTerm{
+	  			  		private String subject;
+	  			  		private SubjectFilter_<%= cid %>(){}
+	  			  		public SubjectFilter_<%= cid %>(String subject){
+	  			  			this.subject = subject;
+	  			  		}
+	  			  		public boolean match(javax.mail.Message msg){
+	  			  			String subJt;
+	  			  			try{
+	  			  				subJt = msg.getSubject();
+	  			  				subJt = subJt != null ? subJt : "";
+	  			  			}catch(javax.mail.MessagingException e){
+	  			  				throw new RuntimeException("Failed to get email subject info.");
+	  			  			}
+	  			  			return subJt.contains(this.subject);
+	  			  		}
+	  			  }
+	  			  <%
+	  		}else if("AfterDate".equalsIgnoreCase(fileItem)){
+		  		%>
+		  		class AfterDateFilter_<%= cid %> extends javax.mail.search.SearchTerm{
+		  				private java.util.Date baseDate;
+		  				private AfterDateFilter_<%= cid %>(){}
+		  				public AfterDateFilter_<%= cid %>(String baseDateStr){
+		  				    if(baseDateStr == null || "".equals(baseDateStr)){
+		  				    	throw new IllegalArgumentException("Bad argument for AfterDateFilter.");
+		  				    }
+		  					try{
+		  					  baseDate = ParserUtils.parseTo_Date(baseDateStr, "dd-MM-yyyy");
+		  					}catch(java.lang.Exception e){
+		  					  baseDate = ParserUtils.parseTo_Date(baseDateStr, "dd-MM-yyyy HH:mm:ss");
+		  					}
+		  				}
+		  				public boolean match(javax.mail.Message msg){
+		  					    java.util.Date sentDate;
+		  					    java.util.Date receivedDate;
+		  					    try{
+		  					    	sentDate = msg.getSentDate();
+		  					    	receivedDate = msg.getReceivedDate();//Pop3 not support this.
+		  					    }catch(MessagingException e){
+		  					    	throw new RuntimeException("Failed to get email sent date or receive date info.");
+		  					    }
+		  					    boolean afterBaseDate = sentDate.after(this.baseDate);
+		  					    afterBaseDate = (receivedDate == null ? false : receivedDate.after(this.baseDate)) || afterBaseDate;
+		  					    return afterBaseDate;
+		  				}
+		  		}
+		  		<%
+	  		}else if("BeforeDate".equalsIgnoreCase(fileItem)){
+	  		%>
+	  		class BeforeDateFilter_<%= cid %> extends javax.mail.search.SearchTerm{
+	  				private java.util.Date baseDate;
+	  				private BeforeDateFilter_<%= cid %>(){}
+	  				public BeforeDateFilter_<%= cid %>(String baseDateStr){
+	  				    if(baseDateStr == null || "".equals(baseDateStr)){
+	  				    	throw new IllegalArgumentException("Bad argument for AfterDateFilter.");
+	  				    }
+	  					try{
+	  					  baseDate = ParserUtils.parseTo_Date(baseDateStr, "dd-MM-yyyy");
+	  					}catch(java.lang.Exception e){
+	  					  baseDate = ParserUtils.parseTo_Date(baseDateStr, "dd-MM-yyyy HH:mm:ss");
+	  					}
+	  				}
+	  				public boolean match(javax.mail.Message msg){
+	  					    java.util.Date sentDate;
+	  					    java.util.Date receivedDate;
+	  					    try{
+	  					    	sentDate = msg.getSentDate();
+	  					    	receivedDate = msg.getReceivedDate();//Pop3 not support this.
+	  					    }catch(MessagingException e){
+	  					    	throw new RuntimeException("Failed to get email sent date or receive date info.");
+	  					    }
+	  					    boolean afterBaseDate = sentDate.before(this.baseDate);
+	  					    afterBaseDate = (receivedDate == null ? false : receivedDate.before(this.baseDate)) || afterBaseDate;
+	  					    return afterBaseDate;
+	  				}
+	  		}
+	  		<%
+	  		}else{
+	  		%>
+	  		     System.err.println("Unsupported compare term.");
+	  		<%
+	  		}
+	 }
+	 %>

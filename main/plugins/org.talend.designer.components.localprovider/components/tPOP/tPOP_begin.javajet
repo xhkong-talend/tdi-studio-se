@@ -26,7 +26,9 @@ List<Map<String, String>> filterList = (List<Map<String,String>>)ElementParamete
 String condition = ElementParameterParser.getValue(node, "__FILTER_RELATION__");
 boolean useSSL = "true".equals(ElementParameterParser.getValue(node, "__USE_SSL__"));
 boolean isLog4jEnabled = ("true").equals(ElementParameterParser.getValue(node.getProcess(), "__LOG4J_ACTIVATE__"));
-%>  
+%>
+	<%@ include file="SearchTerms.javajet"%>
+
 	String server_<%=cid %> = <%=host %>;
 	String mbox_<%=cid%> = "INBOX";
 	String user_<%=cid %> = <%=username %>;
@@ -120,92 +122,90 @@ boolean isLog4jEnabled = ("true").equals(ElementParameterParser.getValue(node.ge
 
 	try {
 		folder_<%=cid %>.open(javax.mail.Folder.READ_WRITE);
+		System.out.println("There are "+folder_<%=cid %>.getMessageCount()+" emails in your mail box.");
 	} catch (java.lang.Exception e){
 		<%if(isLog4jEnabled){%>
 			log.warn("<%=cid%> - " + e.getMessage());
 		<%}%>
 		folder_<%=cid %>.open(javax.mail.Folder.READ_ONLY);
 	}
-	javax.mail.Message[] msgs_<%=cid %> = folder_<%=cid %>.getMessages();
+
+		  java.util.List<javax.mail.search.SearchTerm> searchTermList_<%= cid %> = new java.util.ArrayList<javax.mail.search.SearchTerm>();
+	      <%
+	  			for (int i = 0;i < filterList.size(); i++) {
+	  				String filterItem = filterList.get(i).get("FILTER_TIEM");
+	  				String filterptn = filterList.get(i).get("PATTERN");
+
+	  				if ("Subject".equals(filterItem)){
+	               	        %>
+		        			javax.mail.search.SearchTerm filter_<%= cid %>_<%= i %> = new SubjectFilter_<%= cid %>(<%= filterptn %>);
+	               	        <%
+	    			} else if ("From".equals(filterItem)) {
+	               	        %>
+		        			javax.mail.search.SearchTerm filter_<%= cid %>_<%= i %> = new FromFilter_<%= cid %>(<%= filterptn %>);
+	               	        <%
+	  				} else if ("To".equals(filterItem)) {
+	               	        %>
+		        			javax.mail.search.SearchTerm filter_<%= cid %>_<%= i %> = new ToFilter_<%= cid %>(<%= filterptn %>);
+	               	        <%
+	    			} else if("AfterDate".equalsIgnoreCase(filterItem)){
+	               	        %>
+		        			javax.mail.search.SearchTerm filter_<%= cid %>_<%= i %> = new AfterDateFilter_<%= cid %>(<%= filterptn %>);
+	               	        <%
+	  				}else if("BeforeDate".equalsIgnoreCase(filterItem)){
+	               	        %>
+		        			javax.mail.search.SearchTerm filter_<%= cid %>_<%= i %> = new BeforeDateFilter_<%= cid %>(<%= filterptn %>);
+	               	        <%
+	  				}else{
+		  					%>
+		  					System.err.println("Unsupported compare term.");
+		  					<%
+	  				}
+			  				%>
+			  				   searchTermList_<%= cid %>.add(filter_<%= cid %>_<%= i %>);
+			  				<%
+	  			}
+	  			%>
+	  			    javax.mail.search.SearchTerm[] searchTArr_<%= cid %> = new javax.mail.search.SearchTerm[searchTermList_<%= cid %>.size()];
+	  			<% 
+			    	if("&&".equals(condition)){
+	  			    	%>
+	  			    	 javax.mail.search.AndTerm  term_<%= cid %> = new javax.mail.search.AndTerm(searchTermList_<%= cid %>.toArray(searchTArr_<%= cid %>));
+	  			    	<%
+			    	}else if("||".equals(condition)){
+	  			    	%>
+	  			    	 javax.mail.search.OrTerm  term_<%= cid %> = new javax.mail.search.OrTerm(searchTermList_<%= cid %>.toArray(searchTArr_<%= cid %>));
+	  			    	<%
+			    	}else{
+			    		%>
+			    		   System.err.println("Unsupported compare term.");
+			    		<%
+			    	}
+	  			 %>
+	  System.out.println("Executing the filter,it will take several minutes it depend on your network and mail size.");
+	  javax.mail.Message[] msgs_<%= cid %> = folder_<%=cid %>.search(term_<%= cid %>);
+	  javax.mail.FetchProfile fp_<%= cid %> = new javax.mail.FetchProfile();
+	  fp_<%= cid %>.add(javax.mail.FetchProfile.Item.ENVELOPE);
+	  folder_<%=cid %>.fetch(msgs_<%= cid %>, fp_<%= cid %>);
 
 	<%if(isLog4jEnabled){%>
 		log.info("<%=cid%> - Retrieving mails from server.");
 	<%}%>
+
+	System.out.println("Begin to download mail.");
 	for (int counter_<%=cid %> = 0; counter_<%=cid %> < msgs_<%=cid %>.length; counter_<%=cid %>++) {
 		<%if ("false".equals(allEmails)) {%>
 			if(nb_email_<%=cid%> >= <%=maxEmails%>) break; 
-		<%}%>
-		javax.mail.Message message_<%=cid %> = msgs_<%=cid %>[counter_<%=cid %>];
-  
+		<% } %>
+
+		javax.mail.Message message_<%=cid %> = msgs_<%=cid %>[counter_<%=cid %>];  
 		try {
-			boolean isMatch_<%=cid%> = <%=("&&").equals(condition) ? "true" : "false"%>;
-  
-    <%
-			for (int i = 0;i < filterList.size(); i++) {
-				String filterItem = filterList.get(i).get("FILTER_TIEM");
-				String filterptn = filterList.get(i).get("PATTERN");
-  
-				if ("Subject".equals(filterItem)) {
-      %>
-			        java.util.regex.Pattern pattern_<%=i%>_<%=cid %> = java.util.regex.Pattern.compile(<%=filterptn%>);
-			        java.util.regex.Matcher matcher_<%=i%>_<%=cid %> = pattern_<%=i%>_<%=cid %>.matcher(message_<%=cid %>.getSubject()==null?"":message_<%=cid %>.getSubject());
-			        isMatch_<%=cid%> = isMatch_<%=cid%> <%=condition%> matcher_<%=i%>_<%=cid %>.find();
-      <%
-  				} else if ("From".equals(filterItem)) {
-      %>
-			        java.util.regex.Pattern pattern_<%=i%>_<%=cid %> = java.util.regex.Pattern.compile(<%=filterptn%>);
-			        java.util.regex.Matcher matcher_<%=i%>_<%=cid %> = pattern_<%=i%>_<%=cid %>.matcher(message_<%=cid %>.getFrom()[0]==null?"":message_<%=cid %>.getFrom()[0].toString());
-			        isMatch_<%=cid%> = isMatch_<%=cid%> <%=condition%> matcher_<%=i%>_<%=cid %>.find();
-      <%
-				} else if ("To".equals(filterItem)) {
-      %>
-			        java.util.regex.Pattern pattern_<%=i%>_<%=cid %> = java.util.regex.Pattern.compile(<%=filterptn%>);
-			        java.util.regex.Matcher matcher_<%=i%>_<%=cid %> = null;
-					javax.mail.Address[] addr_<%=i%>_<%=cid%> = message_<%=cid %>.getAllRecipients();
-					boolean matcherFind_<%=i%>_<%=cid%> = false;
-					for(int matcher_<%=cid%> = 0;matcher_<%=cid%> < addr_<%=i%>_<%=cid%>.length;matcher_<%=cid%>++){
-						matcher_<%=i%>_<%=cid %> = pattern_<%=i%>_<%=cid %>.matcher(addr_<%=i%>_<%=cid%>[matcher_<%=cid%>]==null?"":addr_<%=i%>_<%=cid%>[matcher_<%=cid%>].toString());
-						matcherFind_<%=i%>_<%=cid%> = matcher_<%=i%>_<%=cid %>.find()||matcherFind_<%=i%>_<%=cid%>;
-						if(matcherFind_<%=i%>_<%=cid%>){
-							break;
-						}
-					}
-			        isMatch_<%=cid%> = isMatch_<%=cid%> <%=condition%> matcherFind_<%=i%>_<%=cid%>;
-      <%
-  				} else {
-      %>
-    				java.util.Date date_<%=i%>_<%=cid%> = null;
-  
-			        try {
-			          date_<%=i%>_<%=cid%> = ParserUtils.parseTo_Date(<%=filterptn%>, "dd-MM-yyyy HH:mm:ss");
-			        } catch (java.lang.Exception e){
-			          date_<%=i%>_<%=cid%> = ParserUtils.parseTo_Date(<%=filterptn%>, "dd-MM-yyyy");
-			        }
-			  
-			        if (date_<%=i%>_<%=cid%> != null) {
-			          isMatch_<%=cid%> = isMatch_<%=cid%> <%=condition%> (message_<%=cid %>.getSentDate()!=null && message_<%=cid %>.getSentDate().<%if ("BeforeDate".equals(filterItem)){%>before<%}else if("AfterDate".equals(filterItem)){%>after<%}%>(date_<%=i%>_<%=cid%>));
-			        }
-      <%
-				}
-			}
-          
-    		if (filterList.size()>0){
-    %>
-				if (isMatch_<%=cid%>) {
-    <%
-    		}
-    
-    		if (bDeleteFromServer){
-    %> 
-     			message_<%=cid %>.setFlag(javax.mail.Flags.Flag.DELETED, true);
-    		<%}%>
+    		<% if (bDeleteFromServer){ %> 
+     			message_<%=cid %>.setFlag(javax.mail.Flags.Flag.DELETED, true);//Pop3 not support
+    		<% } %>
 			    String filename_<%=cid %> = <%=filenamePattern %>;
 			    java.io.File file_<%=cid %> = new java.io.File(<%=outputDirectory %>, filename_<%=cid %>);
 			    java.io.OutputStream os_<%=cid %> = new java.io.FileOutputStream(file_<%=cid %>);
-			    
-<%
-   				 //for bug TDI-21323
-%> 
 			    message_<%=cid %>.writeTo(os_<%=cid %>);
 			    os_<%=cid %>.close();
 			    nb_email_<%=cid %>++;
