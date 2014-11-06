@@ -759,17 +759,17 @@ for (int i_<%=cid %>=0; i_<%=cid %><= lastTableLine_<%=cid%>; i_<%=cid %>++) {
     boolean isNumber_<%=cid%>=false;
     tempLine_<%=cid %> = lr_<%=cid %>.readLine();
     int emptyLineNum_<%=cid%> =0;//The number of empty block
-    boolean isFirstEmptyLine = false;//Is the first empty line of empty block
+    boolean isFirstEmptyLine_<%=cid%> = false;//Is the first empty line of empty block
 for (int i_<%=cid %>=lastTableLine_<%=cid%>+2; i_<%=cid %><= countLines_<%=cid %>; i_<%=cid %>++) {
     tempLine_<%=cid %> = lr_<%=cid %>.readLine();
     if(tempLine_<%=cid %>.trim().length()>0){
         if(emptyLineNum_<%=cid%>==2){
             break;
         }
-        isFirstEmptyLine = false;
+        isFirstEmptyLine_<%=cid%> = false;
         continue;//skip rows now empty
-    }else if (!isFirstEmptyLine){//skip empty rows 
-        isFirstEmptyLine = true;
+    }else if (!isFirstEmptyLine_<%=cid%>){//skip empty rows 
+        isFirstEmptyLine_<%=cid%> = true;
         emptyLineNum_<%=cid%>++;
     }
 }

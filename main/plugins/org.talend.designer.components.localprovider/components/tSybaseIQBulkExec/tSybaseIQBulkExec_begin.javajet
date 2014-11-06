@@ -137,37 +137,37 @@ int deletedCount_<%=cid%> = 0;
 }
 %>
 
-		StringBuilder loadingCols = new StringBuilder();
+		StringBuilder loadingCols_<%=cid%> = new StringBuilder();
 <%
 if(columnList != null && columnList.size() > 0) {
 %>
-    	loadingCols.append("(");
+    	loadingCols_<%=cid%>.append("(");
 <%
     int sizeColumns = columnList.size();
     for (int i = 0; i < sizeColumns; i++) {
         IMetadataColumn column = columnList.get(i);
 %>
-        loadingCols.append("<%=column.getOriginalDbColumnName()%>" + " ");
+        loadingCols_<%=cid%>.append("<%=column.getOriginalDbColumnName()%>" + " ");
 <%
 		
         if(i != sizeColumns - 1) {
         	if(useFixedLength==true){
 %>
-		loadingCols.append("ASCII(" + <%=column.getLength()%> + "),");
+		loadingCols_<%=cid%>.append("ASCII(" + <%=column.getLength()%> + "),");
 <%			}else{%>
-        loadingCols.append("'" + <%=field_separator.replaceAll("\\\\", "\\\\\\\\") %> + "'" + ",");
+        loadingCols_<%=cid%>.append("'" + <%=field_separator.replaceAll("\\\\", "\\\\\\\\") %> + "'" + ",");
 <%        	}
 		}else{
 			if(useFixedLength==true){
 %>
-		loadingCols.append("ASCII(" + <%=column.getLength()%> + ")");
+		loadingCols_<%=cid%>.append("ASCII(" + <%=column.getLength()%> + ")");
 <%			}else{ %>
-        	loadingCols.append("'" + <%=lines_separator.replaceAll("\\\\", "\\\\\\\\") %> + "'");
+        	loadingCols_<%=cid%>.append("'" + <%=lines_separator.replaceAll("\\\\", "\\\\\\\\") %> + "'");
 <%			}
       	}
     }
 %>
-    loadingCols.append(")");
+    loadingCols_<%=cid%>.append(")");
 <%
 }
 %> 
@@ -177,51 +177,51 @@ if(columnList != null && columnList.size() > 0) {
     
     //stmt_<%=cid %>.execute("SET TEMPORARY OPTION ALLOW_READ_CLIENT_FILE='ON'");//sybaseIQ 15 whether is set?
         
-    String strSQL = "LOAD TABLE " + tableName_<%=cid %> + loadingCols.toString() ;
+    String strSQL_<%=cid%> = "LOAD TABLE " + tableName_<%=cid %> + loadingCols_<%=cid%>.toString() ;
 <%
 	if ("jconn3.jar".equals(dbVersion)) {
 %>
-		strSQL +=" from '" + <%=fileName %> + "' ";
+		strSQL_<%=cid%> +=" from '" + <%=fileName %> + "' ";
 <%    
     } else {
 %>
-		strSQL +=" USING CLIENT FILE '" + <%=fileName %> + "' ";
+		strSQL_<%=cid%> +=" USING CLIENT FILE '" + <%=fileName %> + "' ";
 <%
     }
 %>
     
 <%if(useFixedLength==true){ %>
-     strSQL = strSQL + " row delimited by '" + <%=lines_separator.replaceAll("\\\\", "\\\\\\\\")%> + "'";    
-	 strSQL=strSQL + " quotes off";
+     strSQL_<%=cid%> = strSQL_<%=cid%> + " row delimited by '" + <%=lines_separator.replaceAll("\\\\", "\\\\\\\\")%> + "'";    
+	 strSQL_<%=cid%>=strSQL_<%=cid%> + " quotes off";
 <%}else{
 		if(useEnclosed){
 %>
-	strSQL=strSQL + " quotes on ";
+	strSQL_<%=cid%>=strSQL_<%=cid%> + " quotes on ";
 <%
 		}else{
 %>
-	strSQL=strSQL + " quotes off ";
+	strSQL_<%=cid%>=strSQL_<%=cid%> + " quotes off ";
 <%
 		}
 }
 %>
-    strSQL =strSQL + " escapes off ";
+    strSQL_<%=cid%> =strSQL_<%=cid%> + " escapes off ";
     
 <%
 	if (isIncludeHeader) {
 %>
-	strSQL =strSQL + " skip 1 ";
+	strSQL_<%=cid%> =strSQL_<%=cid%> + " skip 1 ";
 <%
 	}
 	if(isLog4jEnabled){
 	%>
-		log.info("<%=cid%> - Bulk load SQL:"+strSQL+".");
+		log.info("<%=cid%> - Bulk load SQL:"+strSQL_<%=cid%>+".");
 		log.info("<%=cid%> - Bulk loading data into <%=manager.getLProtectedChar()%>" + tableName_<%=cid%> + "<%=manager.getRProtectedChar()%>." );
 	<%
 	}
 %>
     
-    stmt_<%=cid %>.execute(strSQL);
+    stmt_<%=cid %>.execute(strSQL_<%=cid%>);
 
 <%
     log4jCodeGenerateUtil.logInfo(node,"info",cid+" - Bulk load has finished.");
