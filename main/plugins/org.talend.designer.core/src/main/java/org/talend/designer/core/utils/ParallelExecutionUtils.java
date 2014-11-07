@@ -590,4 +590,19 @@ public class ParallelExecutionUtils {
         }
         return null;
     }
+
+    public static IConnection getRepeatMergeSortCon(IConnection currentConn) {
+        Node previousSortNode = ParallelExecutionUtils.getFirstPreviousSortNode(currentConn.getSource());
+        if (previousSortNode != null) {
+            for (IConnection outConOfSort : previousSortNode.getOutgoingConnections()) {
+                if (outConOfSort.getElementParameter(EParameterName.PARTITIONER.getName()).getValue().equals(true)
+                        || outConOfSort.getElementParameter(EParameterName.REPARTITIONER.getName()).getValue().equals(true)) {
+                    if ((Boolean) outConOfSort.getElementParameter(MERGE_SORT).getValue()) {
+                        return outConOfSort;
+                    }
+                }
+            }
+        }
+        return null;
+    }
 }
