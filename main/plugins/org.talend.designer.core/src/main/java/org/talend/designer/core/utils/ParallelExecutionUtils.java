@@ -22,6 +22,12 @@ public class ParallelExecutionUtils {
 
     private static final String HASH_KEYS = "HASH_KEYS";
 
+    private static final String HASH_PARTION = "HASH_PARTITION";
+
+    private static final String MERGE_SORT = "IS_SORTING";
+
+    private static final String SPECIAL_SORT_COMPONENT = "tSortRow";
+
     public static boolean compareKeyPartions(IConnection parConnection, Node needToPar) {
         String partitioning = needToPar.getComponent().getPartitioning();
         boolean isSame = false;
@@ -63,7 +69,7 @@ public class ParallelExecutionUtils {
                         } else if (value instanceof Integer) {
                             Integer index = (Integer) value;
                             if (nodeElemForList.getListItemsDisplayName().length > index) {
-                                columnKeyValues.add((String) nodeElemForList.getListItemsDisplayName()[index]);
+                                columnKeyValues.add(nodeElemForList.getListItemsDisplayName()[index]);
                             }
                         }
                     }
@@ -105,7 +111,7 @@ public class ParallelExecutionUtils {
         if (parTableCon != null) {
             ((List) parTableCon.getValue()).clear();
             if (targetKeyColumnList.size() > 0) {
-                con.getElementParameter("HASH_PARTITION").setValue(true);
+                con.getElementParameter(HASH_PARTION).setValue(true);
 
                 Object[] itemCon = parTableCon.getListItemsValue();
                 String clumnKeyListName = "";
@@ -155,7 +161,7 @@ public class ParallelExecutionUtils {
                     } else if (value instanceof Integer) {
                         Integer index = (Integer) value;
                         if (clumnNodeList.getListItemsDisplayName().length > index) {
-                            columnKeyValues.add((String) clumnNodeList.getListItemsDisplayName()[index]);
+                            columnKeyValues.add(clumnNodeList.getListItemsDisplayName()[index]);
                         }
                     }
                 }
@@ -227,7 +233,7 @@ public class ParallelExecutionUtils {
         if (parTableCon != null) {
             if (conKeyColumnList.size() > 0) {
                 ((List) parTableCon.getValue()).clear();
-                con.getElementParameter("HASH_PARTITION").setValue(true);
+                con.getElementParameter(HASH_PARTION).setValue(true);
 
                 Object[] itemCon = parTableCon.getListItemsValue();
                 String clumnKeyListName = "";
@@ -253,7 +259,7 @@ public class ParallelExecutionUtils {
                     }
                 }
             } else {
-                con.getElementParameter("HASH_PARTITION").setValue(false);
+                con.getElementParameter(HASH_PARTION).setValue(false);
             }
         }
     }
@@ -531,5 +537,57 @@ public class ParallelExecutionUtils {
             }
         }
         return hasParallel;
+    }
+
+    public static void setMergeSortByConditions(IConnection currentReparCon) {
+        if (currentReparCon.getSource().getComponent().getName().equals(SPECIAL_SORT_COMPONENT)) {
+            currentReparCon.getElementParameter(MERGE_SORT).setValue(true);
+        } else {
+            Node previousSortNode = ParallelExecutionUtils.getFirstPreviousSortNode(currentReparCon.getSource());
+            for (IConnection outConOfSort : previousSortNode.getOutgoingConnections()) {
+                if ((Boolean) outConOfSort.getPropertyValue(EParameterName.PARTITIONER.getName())
+                        || (Boolean) outConOfSort.getPropertyValue(EParameterName.REPARTITIONER.getName())) {
+                    if ((Boolean) outConOfSort.getElementParameter(MERGE_SORT).getValue()) {
+                        currentReparCon.getElementParameter(MERGE_SORT).setValue(false);
+                    } else {
+                        currentReparCon.getElementParameter(MERGE_SORT).setValue(true);
+                    }
+                }
+            }
+        }
+    }
+
+    public static IConnection getPreviousMainCon(Node previousNode) {
+        for (IConnection con : previousNode.getIncomingConnections()) {
+            if (con.getLineStyle().equals(EConnectionType.FLOW_MAIN)) {
+                return con;
+            }
+        }
+        return null;
+    }
+
+    public static IConnection getFirstPreviousParCon(Node previousNode) {
+        for (IConnection con : previousNode.getIncomingConnections()) {
+            if ((con.getElementParameter(EParameterName.PARTITIONER.getName()) != null && con
+                    .getElementParameter(EParameterName.PARTITIONER.getName()).getValue().equals(true))
+                    || (con.getElementParameter(EParameterName.REPARTITIONER.getName()) != null && con
+                            .getElementParameter(EParameterName.REPARTITIONER.getName()).getValue().equals(true))) {
+                return con;
+            }
+        }
+        return null;
+    }
+
+    public static Node getFirstPreviousSortNode(INode previousNode) {
+        for (IConnection con : previousNode.getIncomingConnections()) {
+            if (con.getSource().getComponent().getName().equals(SPECIAL_SORT_COMPONENT)) {
+                if (con.getLineStyle().equals(EConnectionType.FLOW_MAIN)) {
+                    return (Node) con.getSource();
+                }
+            } else {
+                return getFirstPreviousSortNode(con.getSource());
+            }
+        }
+        return null;
     }
 }

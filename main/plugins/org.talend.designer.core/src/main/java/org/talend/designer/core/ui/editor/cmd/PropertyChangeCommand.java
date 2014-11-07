@@ -28,6 +28,7 @@ import org.talend.core.model.components.IComponent;
 import org.talend.core.model.metadata.IMetadataColumn;
 import org.talend.core.model.metadata.IMetadataTable;
 import org.talend.core.model.process.EParameterFieldType;
+import org.talend.core.model.process.IConnection;
 import org.talend.core.model.process.IContext;
 import org.talend.core.model.process.IElement;
 import org.talend.core.model.process.IElementParameter;
@@ -405,6 +406,13 @@ public class PropertyChangeCommand extends Command {
         //
         if (elem instanceof IGraphicalNode) {
             ((IGraphicalNode) elem).checkAndRefreshNode();
+        }
+
+        if (elem instanceof IConnection) {
+            IProcess process = ((IConnection) elem).getSource().getProcess();
+            if (process instanceof IProcess2) {
+                ((IProcess2) process).checkProcess();
+            }
         }
 
         // See feature 3902

@@ -53,6 +53,7 @@ public class SetParallelizationCommand extends Command {
         existParallelMap.clear();
         initParallelNodeMap();
         setParallelization(this.node);
+        setParallelParametersForConn();
         if (!isExistParalInSubjob(existParallelMap, node.getProcessStartNode(false))) {
             MessageDialog.openInformation(new Shell(), Messages.getString("Node.setPartitioning"),
                     Messages.getString("Node.nothingDoForPartitioning"));
@@ -132,7 +133,7 @@ public class SetParallelizationCommand extends Command {
                             } else if (value instanceof Integer) {
                                 Integer index = (Integer) value;
                                 if (nodeElemForList.getListItemsDisplayName().length > index) {
-                                    columnKeyValues.add((String) nodeElemForList.getListItemsDisplayName()[index]);
+                                    columnKeyValues.add(nodeElemForList.getListItemsDisplayName()[index]);
                                 }
                             }
                         }
@@ -289,6 +290,16 @@ public class SetParallelizationCommand extends Command {
             }
             if (node.getOutgoingConnections().size() > 0) {
                 setParallelization(node);
+            }
+        }
+    }
+
+    private void setParallelParametersForConn() {
+        for (IConnection conn : node.getProcess().getAllConnections(null)) {
+            boolean isRepar = (Boolean) conn.getPropertyValue(EParameterName.REPARTITIONER.getName());
+            if (isRepar) {
+                // set sort parameter for repartioner
+                ParallelExecutionUtils.setMergeSortByConditions(conn);
             }
         }
     }
