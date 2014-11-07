@@ -13,7 +13,7 @@ imports="
 " 
 skeleton="../templates/db_output_bulk.skeleton"
 %>
-
+<%@ include file="@{org.talend.designer.components.localprovider}/components/templates/Log4j/DBLogUtil.javajet"%>
 <%
     CodeGeneratorArgument codeGenArgument = (CodeGeneratorArgument) argument;
     INode node = (INode)codeGenArgument.getArgument();
@@ -35,8 +35,13 @@ skeleton="../templates/db_output_bulk.skeleton"
     String tableAction = ElementParameterParser.getValue(node,"__TABLE_ACTION__");
     
     boolean convertToUppercase = ("true").equals(ElementParameterParser.getValue(node, "__CONVERT_COLUMN_TABLE_TO_UPPERCASE__"));//??
+    dbLog = new DBLogUtil(node);
 %>
 java.sql.Connection conn_<%=cid%> = (java.sql.Connection)globalMap.get("<%=conn%>");
+<%
+    dbLog.conn().useExistConn("conn_"+cid+".getMetaData().getURL()", "conn_"+cid+".getMetaData().getUserName()");
+    dbLog.commit().logAutoCommit("conn_"+cid+".getAutoCommit()");
+%>
 java.sql.Statement stmt_<%=cid%> = conn_<%=cid%>.createStatement();
 <%
 List<IMetadataColumn> columnList = getColumnList(node);
@@ -55,48 +60,5 @@ if(columnList != null && columnList.size() > 0) {
         }
     }    
 }
-%><%
-	if(("true").equals(createTable)){
 %>
-String tableName_<%=cid%> = <%=tableName %>;
-<%
-        Manager manager = getManager(dbmsId, cid);
-        if(("DROP_CREATE").equals(tableAction)) {
-            %>
-            stmt_<%=cid%>.execute("<%=manager.getDropTableSQL()%>");
-            stmt_<%=cid%>.execute("<%=manager.getCreateTableSQL(stmtStructure)%>");
-            <%
-        } else if(("CREATE").equals(tableAction)) {
-            %>
-            stmt_<%=cid%>.execute("<%=manager.getCreateTableSQL(stmtStructure)%>");
-            <%
-        } else if(("CREATE_IF_NOT_EXISTS").equals(tableAction) || ("DROP_IF_EXISTS_AND_CREATE").equals(tableAction)) {
-            %>
-            java.sql.DatabaseMetaData dbMetaData_<%=cid%> = conn_<%=cid%>.getMetaData();
-            java.sql.ResultSet rsTable_<%=cid%> = dbMetaData_<%=cid%>.getTables(null, null, null, new String[]{"TABLE"});
-            boolean whetherExist_<%=cid%> = false;
-            while(rsTable_<%=cid%>.next()) {
-                String table_<%=cid%> = rsTable_<%=cid%>.getString("TABLE_NAME");
-                if(table_<%=cid%>.equalsIgnoreCase(<%=tableName%>)) {
-                    whetherExist_<%=cid%> = true;
-                    break;
-                }
-            }
-            <%
-            if(("CREATE_IF_NOT_EXISTS").equals(tableAction)) {
-                %>
-                if(!whetherExist_<%=cid%>) {
-                    stmt_<%=cid%>.execute("<%=manager.getCreateTableSQL(stmtStructure)%>");            
-                }                
-                <%
-            } else {
-                %>
-                if(whetherExist_<%=cid%>) {
-                    stmt_<%=cid%>.execute("<%=manager.getDropTableSQL()%>");
-                }
-                stmt_<%=cid%>.execute("<%=manager.getCreateTableSQL(stmtStructure)%>");                
-            <%
-            }
-        }
-    }
-%>
+<%@ include file="../templates/_tableActionForSQLTemplate.javajet"%>

@@ -5,7 +5,7 @@ imports="
 		org.talend.core.model.process.ElementParameterParser  
 " 
 %>
-
+<%@ include file="@{org.talend.designer.components.localprovider}/components/templates/Log4j/DBLogUtil.javajet"%>
 <%
     CodeGeneratorArgument codeGenArgument = (CodeGeneratorArgument) argument;
     INode node = (INode)codeGenArgument.getArgument();
@@ -17,7 +17,11 @@ imports="
     String connection = ElementParameterParser.getValue(node,"__CONNECTION_" + dbType + "__");
     
     String conn = "conn_" + connection;
-    
+    dbLog = new DBLogUtil(node);
 %>
 java.sql.Connection conn_<%=cid%> = (java.sql.Connection)globalMap.get("<%=conn%>");
+<%
+    dbLog.conn().useExistConn("conn_"+cid+".getMetaData().getURL()", "conn_"+cid+".getMetaData().getUserName()");
+    dbLog.commit().logAutoCommit("conn_"+cid+".getAutoCommit()");
+%>
 java.sql.Statement stmt_<%=cid%> = conn_<%=cid%>.createStatement();
