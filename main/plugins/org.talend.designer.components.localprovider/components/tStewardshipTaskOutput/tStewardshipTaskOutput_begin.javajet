@@ -51,13 +51,6 @@
 					}
 					%>
 					org.talend.datastewardship.server.task.creation.TaskLoadClient taskLoadClient_<%=cid%> = new org.talend.datastewardship.server.task.creation.TaskLoadClient(url_<%=cid%>,<%=username%>,decryptedPassword_<%=cid%>);
-					<%
-					if(isLog4jEnabled){
-					%>	
-						log.info("<%=cid%> - Got successfully.");
-					<%
-					}
-					%>
 					org.talend.stewardship.Record record_<%=cid%> = null;
 					boolean targetRecordExisted_<%=cid%> = false;
 					<%//For TDI-26345
