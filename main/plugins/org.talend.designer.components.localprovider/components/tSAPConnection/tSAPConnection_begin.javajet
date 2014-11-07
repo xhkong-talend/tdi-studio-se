@@ -236,6 +236,7 @@
 	%>
     
 	org.talend.sap.ISAPConnection connection_<%=cid%> = org.talend.sap.impl.SAPConnectionFactory.getInstance().createConnection(properties_<%=cid%>);
+	connection_<%=cid%>.beginTransaction();
 	globalMap.put("conn_<%=cid %>", connection_<%=cid%>);
 <%}%>
 	

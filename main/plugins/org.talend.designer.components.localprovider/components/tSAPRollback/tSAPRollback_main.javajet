@@ -47,7 +47,12 @@ imports="
 	    }catch (java.lang.Exception e_<%=cid%>) {
 			com.sap.mw.jco.JCO.releaseClient(client_<%=cid %>);
 		    throw new RuntimeException(e_<%=cid%>.getMessage());
-		}	
+		}
+		
+		<%if(close){%>
+    	com.sap.mw.jco.JCO.releaseClient(client_<%=cid %>);
+		<%}%>
+	}
 <%}else if(VERSION_SAP3.equals(version)){%>
 	com.sap.conn.jco.JCoDestination dest_<%=cid%> = (com.sap.conn.jco.JCoDestination)globalMap.get("<%=conn%>");
 <%	
@@ -74,7 +79,7 @@ imports="
 	{
 		com.sap.conn.jco.JCoRepository repository_<%=cid %> = dest_<%=cid%>.getRepository();
 		
-		com.sap.conn.jco.JCoFunctionTemplate functionTemplate_<%=cid %> = repository_<%=cid %>.getFunctionTemplate("BAPI_TRANSACTION_COMMIT");
+		com.sap.conn.jco.JCoFunctionTemplate functionTemplate_<%=cid %> = repository_<%=cid %>.getFunctionTemplate("BAPI_TRANSACTION_ROLLBACK");
 		
 		com.sap.conn.jco.JCoFunction function_<%=cid %> = functionTemplate_<%=cid %>.getFunction();
 		
@@ -84,13 +89,28 @@ imports="
 			com.sap.conn.jco.JCoContext.end(dest_<%=cid%>);
 		    throw new RuntimeException(e_<%=cid%>.getMessage());
 		}
-<%}%>
+		
 		<%if(close){%>
-			<%if(VERSION_SAP2.equals(version)){%>
-		    	com.sap.mw.jco.JCO.releaseClient(client_<%=cid %>);
-		    <%}else if(VERSION_SAP3.equals(version)){%>
-				com.sap.conn.jco.JCoContext.end(dest_<%=cid%>);
-			<%}%>
+		com.sap.conn.jco.JCoContext.end(dest_<%=cid%>);
 		<%}%>
 	}
-
+<%} else {%>
+	org.talend.sap.ISAPConnection connection_<%=cid%> = (org.talend.sap.ISAPConnection)globalMap.get("<%=conn%>");
+	if(connection_<%=cid%>!=null && connection_<%=cid%>.isAlive()) {
+		org.talend.sap.ISAPTransaction transaction_<%=cid%> = connection_<%=cid%>.getTransaction();
+		if(transaction_<%=cid%>!=null && transaction_<%=cid%>.isAlive()) {
+			try {
+	     		transaction_<%=cid%>.rollback();
+	    	} catch (org.talend.sap.exception.SAPException e_<%=cid%>) {
+	    		connection_<%=cid%>.close();
+	    		throw new RuntimeException(e_<%=cid%>.getMessage());
+		    }
+		}
+		
+		<%if(close){%>
+		connection_<%=cid%>.close();
+		<%} else {//begin a new transaction for next commit or rollback%>
+		connection_<%=cid%>.beginTransaction();
+		<%}%>
+	}
+<%}%>
