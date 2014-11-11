@@ -148,6 +148,8 @@
                 REQUIRED_IF="GENERATION_MODE == 'XERCES'" />
 			<IMPORT NAME="Java_talendSAX" MODULE="TalendSAX.jar" UrlPath="platform:/plugin/org.talend.libraries.xml/lib/TalendSAX.jar"
 				REQUIRED_IF="GENERATION_MODE == 'SAX'" />
+			<IMPORT NAME="xpathutil" MODULE="xpathutil-1.0.0.jar" UrlPath="platform:/plugin/org.talend.libraries.xml/lib/xpathutil-1.0.0.jar"
+				REQUIRED_IF="(GENERATION_MODE == 'DOM4J') OR (GENERATION_MODE == 'XERCES')" />
 		</IMPORTS>
 	</CODEGENERATION>
 

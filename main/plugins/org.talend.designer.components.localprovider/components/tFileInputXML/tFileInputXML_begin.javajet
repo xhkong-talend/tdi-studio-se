@@ -88,6 +88,10 @@ class TalendPrefixResolver_<%=cid%> implements org.apache.xml.utils.PrefixResolv
     
 	private java.util.List<String> defualtNSPath = new java.util.ArrayList<String>();
 	
+	public java.util.List<String> getDefualtNSPath() {
+		return defualtNSPath;
+	}
+	
     public String getBaseIdentifier() {
         return null;
     }
@@ -141,28 +145,6 @@ class TalendPrefixResolver_<%=cid%> implements org.apache.xml.utils.PrefixResolv
         return hasDefaultPrefix;
     }
     
-    public int[] getDefaulNSIndex(String path, String loopPath){
-		String fullPath = loopPath;
-    	if(!path.equals(fullPath)){
-        	for (String tmp : path.split("/")) {
-        		if (("..").equals(tmp)) {
-                    fullPath = fullPath.substring(0, fullPath.lastIndexOf("/"));
-                } else {
-                    fullPath += "/" + tmp;
-                }
-        	}
-        }
-    	int[] indexs = new int[fullPath.split("/").length - 1];
-        java.util.Arrays.fill(indexs, -1);
-        int length = 0;
-        for (int i = 0; i < defualtNSPath.size(); i++) {
-            if (defualtNSPath.get(i).length() > length && fullPath.startsWith(defualtNSPath.get(i))) {
-                java.util.Arrays.fill(indexs, defualtNSPath.get(i).split("/").length - 2, indexs.length, i);
-                length = defualtNSPath.get(i).length();
-            }
-        }
-    	return indexs;
-    }
 }
 
 class XML_API_<%=cid%>{
@@ -189,172 +171,42 @@ class XML_API_<%=cid%>{
         return false;
     }
 
+	private final org.talend.xpath.XPathUtil util = new  org.talend.xpath.XPathUtil();
+
 	public void initXPath(org.w3c.dom.Node root){
 		pr= new TalendPrefixResolver_<%=cid%>();
     	hasDefaultNS = pr.countNSMap(root);
+    	util.setDefaultNSPath(pr.getDefualtNSPath());
 	}
 
 //==============add for feature 10753 start================================
 	org.apache.xpath.objects.XObject obj = null;
 	
 	public int getNodeType(org.w3c.dom.Node node, String xpath) throws javax.xml.transform.TransformerException{
-		obj = org.apache.xpath.XPathAPI.eval(node, addDefaultNSPrefix(xpath), pr);
+		obj = org.apache.xpath.XPathAPI.eval(node, util.addDefaultNSPrefix(xpath,loopPath), pr);
 		return obj.getType();
 	}
 	
 	public String getNodeString(org.w3c.dom.Node node, String xpath) throws javax.xml.transform.TransformerException{
 		if(obj==null){
-			obj = org.apache.xpath.XPathAPI.eval(node, addDefaultNSPrefix(xpath), pr);
+			obj = org.apache.xpath.XPathAPI.eval(node, util.addDefaultNSPrefix(xpath,loopPath), pr);
 		}
 		return obj.str();
 	}
 
     public org.w3c.dom.Node getSingleNode(org.w3c.dom.Node node, String xpath) throws javax.xml.transform.TransformerException {
     	if(obj==null){
-        	obj = org.apache.xpath.XPathAPI.eval(node, addDefaultNSPrefix(xpath), pr);
+        	obj = org.apache.xpath.XPathAPI.eval(node, util.addDefaultNSPrefix(xpath,loopPath), pr);
         }
         return obj.nodelist().item(0);
     }
 //=====================end=================================================
 
     public org.w3c.dom.NodeList getNodeList(org.w3c.dom.Node node, String xpath) throws javax.xml.transform.TransformerException {
-        org.apache.xpath.objects.XObject obj = org.apache.xpath.XPathAPI.eval(node, addDefaultNSPrefix(xpath), pr);
+        org.apache.xpath.objects.XObject obj = org.apache.xpath.XPathAPI.eval(node, util.addDefaultNSPrefix(xpath), pr);
         return obj.nodelist();
     }
     
-    private final String LITERAL = "TALEND_LITERAL";
-	private java.util.regex.Pattern literalPattern = null; 
-	private java.util.Map<String,String> resultCache;
-	
-	private String removeLiterals(String path, List<String> literals) {
-		if(path == null || "".equals(path)) {
-			return path;
-		}
-		
-		if(literalPattern == null) {
-			literalPattern = java.util.regex.Pattern.compile("'([^']*)'|\"([^\"]*)\"");
-    	}
-		
-		java.util.regex.Matcher matcher = literalPattern.matcher(path);
-		StringBuffer sb = new StringBuffer();
-		
-		while(matcher.find()) {
-			literals.add(path.substring(matcher.start()+1,matcher.end()-1));
-			if(matcher.group(1)!=null) {
-				matcher.appendReplacement(sb, "'" + LITERAL + "'");
-			} else {
-				matcher.appendReplacement(sb, "\"" + LITERAL + "\"");
-			}
-		}
-		
-		return matcher.appendTail(sb).toString();
-	}
-	
-	private String resetLiterals(String xpathExpression,List<String> literals) {
-		if(literals.isEmpty()) {
-			return xpathExpression;
-		}
-		
-		int start = 0;
-        int end = xpathExpression.indexOf(LITERAL, start);
-        if (end == -1) {
-            return xpathExpression;
-        }
-		
-        StringBuilder sb = new StringBuilder();
-        java.util.Iterator<String> iterator = literals.iterator();
-        
-        while (end != -1 && iterator.hasNext()) {
-        	sb.append(xpathExpression.substring(start, end)).append(iterator.next());
-            start = end + LITERAL.length();
-            end = xpathExpression.indexOf(LITERAL, start);
-        }
-        sb.append(xpathExpression.substring(start));
-		return sb.toString();
-	}
-	
-    private String addDefaultNSPrefix(String xpathExpression) {
-    	if (!hasDefaultNS) {
-    		return xpathExpression;
-    	}
-    	
-    	if(resultCache == null) {
-    		resultCache = new java.util.HashMap<String,String>();
-    	}
-    	
-    	String resultXpathExpression = resultCache.get(xpathExpression);
-		if(resultXpathExpression!=null) {
-    		return resultXpathExpression;
-    	}
-	    
-		List<String> literals = new java.util.ArrayList<String>();
-		resultXpathExpression = removeLiterals(xpathExpression,literals);
-		
-		resultXpathExpression = addDefaultNSPrefixForLocationXPathExpression(resultXpathExpression);
-		
-		resultXpathExpression = resetLiterals(resultXpathExpression, literals);
-		
-    	resultCache.put(xpathExpression,resultXpathExpression);
-    	return resultXpathExpression;
-    }
-    
-    private String addDefaultNSPrefixForLocationXPathExpression(String path) {
-        StringBuffer newPath = new StringBuffer();
-        int[] indexs= pr.getDefaulNSIndex(path,loopPath);
-        String[] pathStrs = path.split("/");
-        for (int i = 0; i < pathStrs.length; i++) {
-            String tmp = pathStrs[i];
-            if (newPath.length() > 0) {
-                newPath.append("/");
-            }
-            if (tmp.length() > 0 && tmp.indexOf(":") == -1 && tmp.indexOf(".") == -1 /*&& tmp.indexOf("@") == -1*/) {
-                int index = indexs[i + indexs.length - pathStrs.length];
-                if (index >= 0) {
-                	//==== add by wliu to support both filter and functions==
-					if(tmp.indexOf("[")>0 && tmp.indexOf("]")>tmp.indexOf("[")){//include filter
-						String tmpStr=replaceElementWithNS(tmp,"pre"+index+":");
-						newPath.append(tmpStr);
-					}else{
-						if(tmp.indexOf("@") != -1 || tmp.indexOf("(")<tmp.indexOf(")")){  // include attribute
-							newPath.append(tmp);
-						}else{
-					//==add end=======	
-                    		newPath.append("pre").append(index).append(":").append(tmp);
-                    	}
-                    }                    
-                } else {
-                    newPath.append(tmp);
-                }
-            } else {
-                newPath.append(tmp);
-            }
-        }
-        return newPath.toString();
-    }
-
-	private String matches = "@*\\b[a-z|A-Z|_]+[[-]*\\w]*\\b[^'\"|^\\(]";
-    private java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(matches);
-    
-	private String replaceElementWithNS(String global, String pre){
-
-        java.util.regex.Matcher match = pattern.matcher(global);
-        StringBuffer sb = new StringBuffer();
-        match.reset();
-        while (match.find()) {
-            String group = match.group();
-            String tmp = "";
-            if (group.toLowerCase().matches("\\b(div|mod|and|or)\\b.*") || group.matches("@.*")) {
-                tmp = group;
-            } else {
-                tmp = tmp + pre + group;
-            }
-            match.appendReplacement(sb, tmp);
-        }
-        match.appendTail(sb);
-        
-        return sb.toString();
-	}    
-
 }
 
 <%if("true".equals(useSeparator)){%>
@@ -505,162 +357,20 @@ class NameSpaceTool_<%=cid%> {
         }
     }
     
-    private final String LITERAL = "TALEND_LITERAL";
-	private java.util.regex.Pattern literalPattern = null; 
-	private java.util.Map<String,String> resultCache;
-	
-	private String removeLiterals(String path, List<String> literals) {
-		if(path == null || "".equals(path)) {
-			return path;
-		}
-		
-		if(literalPattern == null) {
-			literalPattern = java.util.regex.Pattern.compile("'([^']*)'|\"([^\"]*)\"");
-    	}
-		
-		java.util.regex.Matcher matcher = literalPattern.matcher(path);
-		StringBuffer sb = new StringBuffer();
-		
-		while(matcher.find()) {
-			literals.add(path.substring(matcher.start()+1,matcher.end()-1));
-			if(matcher.group(1)!=null) {
-				matcher.appendReplacement(sb, "'" + LITERAL + "'");
-			} else {
-				matcher.appendReplacement(sb, "\"" + LITERAL + "\"");
-			}
-		}
-		
-		return matcher.appendTail(sb).toString();
-	}
-	
-	private String resetLiterals(String xpathExpression,List<String> literals) {
-		if(literals.isEmpty()) {
-			return xpathExpression;
-		}
-		
-		int start = 0;
-        int end = xpathExpression.indexOf(LITERAL, start);
-        if (end == -1) {
-            return xpathExpression;
-        }
-		
-        StringBuilder sb = new StringBuilder();
-        java.util.Iterator<String> iterator = literals.iterator();
-        
-        while (end != -1 && iterator.hasNext()) {
-        	sb.append(xpathExpression.substring(start, end)).append(iterator.next());
-            start = end + LITERAL.length();
-            end = xpathExpression.indexOf(LITERAL, start);
-        }
-        sb.append(xpathExpression.substring(start));
-		return sb.toString();
-	}
-	
-	public String addDefaultNSPrefix(String xpathExpression, String loopPath) {
-	    if (defualtNSPath.size() < 1) {
-        	return xpathExpression;
-    	}
-	    
-    	if(resultCache == null) {
-    		resultCache = new java.util.HashMap<String,String>();
-    	}
-    	
-    	String resultXpathExpression = resultCache.get(xpathExpression);
-		if(resultXpathExpression!=null) {
-    		return resultXpathExpression;
-    	}
-	    
-		List<String> literals = new java.util.ArrayList<String>();
-		resultXpathExpression = removeLiterals(xpathExpression,literals);
-		
-		resultXpathExpression = addDefaultNSPrefixForLocationXPathExpression(resultXpathExpression,loopPath);
-		
-		resultXpathExpression = resetLiterals(resultXpathExpression, literals);
-		
-    	resultCache.put(xpathExpression,resultXpathExpression);
-    	return resultXpathExpression;
-	}
+    private final org.talend.xpath.XPathUtil util = new  org.talend.xpath.XPathUtil();
     
-    public String addDefaultNSPrefixForLocationXPathExpression(String path, String loopPath) {
-    	String fullPath = loopPath;
-    	if(!path.equals(fullPath)){
-        	for (String tmp : path.split("/")) {
-        		if (("..").equals(tmp)) {
-                    fullPath = fullPath.substring(0, fullPath.lastIndexOf("/"));
-                } else {
-                    fullPath += "/" + tmp;
-                }
-        	}
-        }
-        int size = fullPath.split("/").length - 1;
-        if(size<0) {
-        	return fullPath;
-        }
-    	int[] indexs = new int[size];
-        java.util.Arrays.fill(indexs, -1);
-        int length = 0;
-        for (int i = 0; i < defualtNSPath.size(); i++) {
-            if (defualtNSPath.get(i).length() > length && fullPath.startsWith(defualtNSPath.get(i))) {
-                java.util.Arrays.fill(indexs, defualtNSPath.get(i).split("/").length - 2, indexs.length, i);
-                length = defualtNSPath.get(i).length();
-            }
-        }
-
-        StringBuilder newPath = new StringBuilder();
-        String[] pathStrs = path.split("/");
-        for (int i = 0; i < pathStrs.length; i++) {
-            String tmp = pathStrs[i];
-            if (newPath.length() > 0) {
-                newPath.append("/");
-            }
-            if (tmp.length() > 0 && tmp.indexOf(":") == -1 && tmp.indexOf(".") == -1 /*&& tmp.indexOf("@") == -1*/) {
-                int index = indexs[i + indexs.length - pathStrs.length];
-                if (index >= 0) {
-                	//==== add by wliu to support both filter and functions==
-					if(tmp.indexOf("[")>0 && tmp.indexOf("]")>tmp.indexOf("[")){//include filter
-						String tmpStr=replaceElementWithNS(tmp,"pre"+index+":");
-						newPath.append(tmpStr);
-					}else{
-						if(tmp.indexOf("@") != -1 || tmp.indexOf("(")<tmp.indexOf(")")){  // include attribute
-							newPath.append(tmp);
-						}else{
-					//==add end=======	
-                    		newPath.append("pre").append(index).append(":").append(tmp);
-                    	}
-                    }                    
-                } else {
-                    newPath.append(tmp);
-                }
-            } else {
-                newPath.append(tmp);
-            }
-        }
-        return newPath.toString();
+    {
+    	util.setDefaultNSPath(defualtNSPath);
     }
-
-	private String matches = "@*\\b[a-z|A-Z|_]+[[-]*\\w]*\\b[^'\"|^\\(]";
-    private java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(matches);
     
-	private String replaceElementWithNS(String global, String pre){
-
-        java.util.regex.Matcher match = pattern.matcher(global);
-        StringBuffer sb = new StringBuffer();
-        match.reset();
-        while (match.find()) {
-            String group = match.group();
-            String tmp = "";
-            if (group.toLowerCase().matches("\\b(div|mod|and|or)\\b.*") || group.matches("@.*")) {
-                tmp = group;
-            } else {
-                tmp = tmp + pre + group;
-            }
-            match.appendReplacement(sb, tmp);
-        }
-        match.appendTail(sb);
-        
-        return sb.toString();
-	}    
-
+	public String addDefaultNSPrefix(String path) {
+		return util.addDefaultNSPrefix(path);
+	}
+	
+	public String addDefaultNSPrefix(String relativeXpression, String basePath) {
+		return util.addDefaultNSPrefix(relativeXpression,basePath);
+	}
+    
 }
 
 class XML_API_<%=cid%>{
@@ -827,7 +537,7 @@ NameSpaceTool_<%=cid%> nsTool_<%=cid%> = new NameSpaceTool_<%=cid%>();
 nsTool_<%=cid%>.countNSMap(doc_<%=cid%>.getRootElement());
 java.util.HashMap<String,String> xmlNameSpaceMap_<%=cid%> = nsTool_<%=cid%>.xmlNameSpaceMap;  
 
-org.dom4j.XPath x_<%=cid%> = doc_<%=cid%>.createXPath(nsTool_<%=cid%>.addDefaultNSPrefix(<%=loopQuery%>,<%=loopQuery%>));  
+org.dom4j.XPath x_<%=cid%> = doc_<%=cid%>.createXPath(nsTool_<%=cid%>.addDefaultNSPrefix(<%=loopQuery%>));  
 x_<%=cid%>.setNamespaceURIs(xmlNameSpaceMap_<%=cid%>); 
 <%if(("true").equals(ignore_NS_Str)){%>
 org.jaxen.NamespaceContext namespaceContext_<%=cid%> = new org.jaxen.NamespaceContext() {
