@@ -336,6 +336,12 @@ DB Type of the column:<%=column.getLabel()%> should be X, 1, 2, 3, 9, B, T
 		    <%}%>
 			while((iReadOffset_<%=cid %> = fs_<%=cid %>.read(bb_row_<%=cid %>))!= -1){
 				bbRecord_<%=cid %> = java.nio.ByteBuffer.wrap(bb_row_<%=cid %>);
+				nb_line_<%= cid %> ++;
+
+				<%if(isLog4jEnabled){%>
+					log.debug("<%=cid%> - Retrieving the record " + nb_line_<%= cid %> + ".");
+				<%}%>
+
 <%
 				if (conn.getLineStyle().hasConnectionCategory(IConnectionCategory.MAIN)) {//------BBB1
 					IMetadataTable justMetadata = conn.getMetadataTable();

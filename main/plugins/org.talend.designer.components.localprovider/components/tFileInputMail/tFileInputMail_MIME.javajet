@@ -230,6 +230,9 @@
 							path<%=cid%> =<%=directory%>;
 						}
 	                    path<%=cid%> = path<%=cid%> + attachfileName<%=cid%>;
+	                    <% if(isLog4jEnabled){ %>
+		                    	log.info("<%= cid %> - Extracted attachment: '"+attachfileName<%=cid%>+"'.");
+	                    <% } %>
 	                    java.io.File attachFile  = new java.io.File(path<%=cid%>);
 	                    out<%=cid%> = new java.io.BufferedOutputStream(new java.io.FileOutputStream(attachFile));
 	                    in<%=cid%> = new java.io.BufferedInputStream(mpart<%=cid%>.getInputStream());
