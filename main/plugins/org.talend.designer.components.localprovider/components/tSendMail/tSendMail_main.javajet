@@ -220,4 +220,30 @@ boolean isLog4jEnabled = ("true").equals(ElementParameterParser.getValue(node.ge
 			<%}%>
   			System.err.println(e.toString());
 		<%}%>
+	}finally{
+		props_<%=cid %>.remove("mail.smtp.host");
+		props_<%=cid %>.remove("mail.smtp.port");
+		<% 
+		if (setLocalhost){
+		%>
+			props_<%=cid %>.remove("mail.smtp.localhost");
+		<% 
+		}
+		%>
+		props_<%=cid %>.remove("mail.mime.encodefilename");
+		<% 
+			if (startTLS){
+		%>
+			props_<%=cid %>.remove("mail.smtp.starttls.enable");
+		<%
+		}
+		if (ifSSL){
+		%>  
+			props_<%=cid %>.remove("mail.smtp.socketFactory.class");
+			props_<%=cid %>.remove("mail.smtp.socketFactory.fallback");
+			props_<%=cid %>.remove("mail.smtp.socketFactory.port");
+		<%
+		}
+		%>
+		props_<%=cid %>.remove("mail.smtp.auth");     
 	}
