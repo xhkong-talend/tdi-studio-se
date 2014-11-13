@@ -197,4 +197,18 @@ public class XPathUtilTest extends TestCase {
 		assertEquals(".",util.addDefaultNSPrefix(".","/"));
 	}
 	
+	@Test
+	public void test17() {
+		XPathUtil util = new XPathUtil();
+		util.setDefaultNSPath(defualtNSPath);
+		assertEquals("pre0:root//pre0:loop",util.addDefaultNSPrefix("/root//loop"));
+	}
+	
+	@Test
+	public void test18() {
+		XPathUtil util = new XPathUtil();
+		util.setDefaultNSPath(defualtNSPath);
+		assertEquals("pre0:a//pre0:b",util.addDefaultNSPrefix("/a//b","/root/loop"));
+	}
+	
 }

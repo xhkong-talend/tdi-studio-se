@@ -142,7 +142,7 @@ public class XPathUtil {
 		String currentAbsolutePath = absolutePath;
 		if ("..".equals(step)) {
 			currentAbsolutePath = currentAbsolutePath.substring(0, currentAbsolutePath.lastIndexOf("/"));
-		} else if(".".equals(step) || step.isEmpty()) {
+		} else if(".".equals(step)) {
 			//do nothing
 		} else if("/".equals(currentAbsolutePath)) {
 			currentAbsolutePath += step;
