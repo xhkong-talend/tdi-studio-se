@@ -225,8 +225,7 @@ public abstract class AbstractPreferenceComposite extends MultipleThreadDynamicC
      */
     protected void setMainCompositeEnable(boolean enabled) {
         Control[] controls = getComposite().getChildren();
-        for (int i = 0; i < controls.length; i++) {
-            Control control = controls[i];
+        for (Control control : controls) {
             if (control != topComposite) {
                 if (control instanceof Composite) {
                     if (control instanceof CCombo) {
@@ -249,6 +248,8 @@ public abstract class AbstractPreferenceComposite extends MultipleThreadDynamicC
             Object data = t.getData(TypedTextCommandExecutor.PARAMETER_NAME);
             if (data != null && data instanceof String) {
                 if (((String) data).equals("PARALLELIZE_UNIT_SIZE")) {
+                    return;
+                } else if (((String) data).equals("PASS")) {
                     return;
                 }
             }
@@ -285,16 +286,16 @@ public abstract class AbstractPreferenceComposite extends MultipleThreadDynamicC
 
     private void setEditable(Composite parent, boolean editable) {
         Control[] children = parent.getChildren();
-        for (int i = 0; i < children.length; i++) {
-            if (children[i] instanceof Composite) {
-                if (children[i] instanceof CCombo) {
-                    setTextEnable(children[i], editable, editable);
+        for (Control element : children) {
+            if (element instanceof Composite) {
+                if (element instanceof CCombo) {
+                    setTextEnable(element, editable, editable);
                 }
-                setEditable((Composite) children[i], editable);
-            } else if (children[i] instanceof Button) {
-                setTextEnable(children[i], editable, editable);
+                setEditable((Composite) element, editable);
+            } else if (element instanceof Button) {
+                setTextEnable(element, editable, editable);
             } else {
-                setTextEnable(children[i], editable, true);
+                setTextEnable(element, editable, true);
             }
         }
     }
@@ -354,6 +355,7 @@ public abstract class AbstractPreferenceComposite extends MultipleThreadDynamicC
 
     MouseListener listenerSelection = new MouseAdapter() {
 
+        @Override
         public void mouseDown(MouseEvent e) {
             if (inUseProjectSettingMode(elem, section, EParameterName.STATANDLOG_USE_PROJECT_SETTINGS)
                     || inUseProjectSettingMode(elem, section, EParameterName.IMPLICITCONTEXT_USE_PROJECT_SETTINGS)) {
@@ -381,10 +383,12 @@ public abstract class AbstractPreferenceComposite extends MultipleThreadDynamicC
     private void addButtonListeners() {
         reloadBtn.addSelectionListener(new SelectionListener() {
 
+            @Override
             public void widgetSelected(SelectionEvent e) {
                 onReloadButtonClick();
             }
 
+            @Override
             public void widgetDefaultSelected(SelectionEvent e) {
                 widgetSelected(e);
             }
@@ -392,10 +396,12 @@ public abstract class AbstractPreferenceComposite extends MultipleThreadDynamicC
 
         saveBtn.addSelectionListener(new SelectionListener() {
 
+            @Override
             public void widgetSelected(SelectionEvent e) {
                 onSaveButtonClick();
             }
 
+            @Override
             public void widgetDefaultSelected(SelectionEvent e) {
                 widgetSelected(e);
             }
@@ -412,6 +418,7 @@ public abstract class AbstractPreferenceComposite extends MultipleThreadDynamicC
                  * @see
                  * org.eclipse.swt.events.SelectionListener#widgetDefaultSelected(org.eclipse.swt.events.SelectionEvent)
                  */
+                @Override
                 public void widgetDefaultSelected(SelectionEvent e) {
 
                 }
@@ -421,11 +428,13 @@ public abstract class AbstractPreferenceComposite extends MultipleThreadDynamicC
                  * 
                  * @see org.eclipse.swt.events.SelectionListener#widgetSelected(org.eclipse.swt.events.SelectionEvent)
                  */
+                @Override
                 public void widgetSelected(SelectionEvent e) {
                     // zli for bug 12335
                     final ProgressDialog progress = new ProgressDialog(PlatformUI.getWorkbench().getActiveWorkbenchWindow()
                             .getShell()) {
 
+                        @Override
                         public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
 
                             IWorkbenchPage activePage = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
@@ -641,7 +650,7 @@ public abstract class AbstractPreferenceComposite extends MultipleThreadDynamicC
             message = Messages.getString("ReloadFromProjectSettingsMessages"); //$NON-NLS-1$
         }
 
-        boolean isOK = MessageDialog.openConfirm(Display.getDefault().getActiveShell(), dialogTitle, message); //$NON-NLS-1$
+        boolean isOK = MessageDialog.openConfirm(Display.getDefault().getActiveShell(), dialogTitle, message);
         if (isOK) {
             onReloadPreference();
 
@@ -683,7 +692,7 @@ public abstract class AbstractPreferenceComposite extends MultipleThreadDynamicC
         } else {
             message = Messages.getString("SaveToProjectSettingsMessage"); //$NON-NLS-1$
         }
-        boolean isOK = MessageDialog.openConfirm(Display.getDefault().getActiveShell(), dialogTitle, message); //$NON-NLS-1$       
+        boolean isOK = MessageDialog.openConfirm(Display.getDefault().getActiveShell(), dialogTitle, message);
         if (isOK) {
             onSavePreference();
         }
@@ -806,10 +815,12 @@ public abstract class AbstractPreferenceComposite extends MultipleThreadDynamicC
 
         @Override
         protected void okPressed() {
-            if (noUseProjectSettingsButton.getSelection())
+            if (noUseProjectSettingsButton.getSelection()) {
                 setOptionValue("noUseProjectSettings"); //$NON-NLS-1$
-            if (updateProjectSettingsButton.getSelection())
+            }
+            if (updateProjectSettingsButton.getSelection()) {
                 setOptionValue("updateProjectSettings");//$NON-NLS-1$
+            }
 
             super.okPressed();
         }
