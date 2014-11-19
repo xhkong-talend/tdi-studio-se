@@ -12,6 +12,7 @@ imports="
 	java.util.Map
 "
 %>
+<%@ include file="../templates/Log4j/Log4jFileUtil.javajet"%>
 <%
 CodeGeneratorArgument codeGenArgument = (CodeGeneratorArgument) argument;
 INode node = (INode)codeGenArgument.getArgument();
@@ -109,13 +110,16 @@ if(hasDataLink){//HSS_____0
     if(i==0){
 %>
 <%=incomingName %>List_<%=cid %>.add(<%=incomingName %>_<%=cid %>);
-
+nb_line_<%=cid %> ++;
 <%
 	}else{
 		
 %>
 <%=incomingName %>Map_<%=cid %>.put(String.valueOf(<%=incomingName %>.<%=schemas.get(i).get("KEY_COLUMN") %>), <%=incomingName %>_<%=cid %>);
+nb_line_<%=cid %> ++;
 <%
 	}
+	
+	log4jFileUtil.debugWriteData(node);
 }//HSS_____0
 %>

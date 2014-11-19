@@ -50,6 +50,8 @@
 	String checkDateStr = ElementParameterParser.getValue(node,"__CHECK_DATE__");
 	boolean checkDate = (checkDateStr!=null&&!("").equals(checkDateStr))?("true").equals(checkDateStr):false;
 	
+	final boolean isLog4jEnabled = ("true").equals(ElementParameterParser.getValue(node.getProcess(), "__LOG4J_ACTIVATE__"));
+	
 	List<Map<String, String>> schemas_o = (List<Map<String,String>>)ElementParameterParser.getObjectValue(node, "__SCHEMAS__");
 	
 	List<Map<String, String>> schemas = new java.util.ArrayList<Map<String, String>>();
@@ -455,9 +457,7 @@ String key_<%=schema.get("SCHEMA") %>_<%=schema.get("PARENT_ROW") %>_<%=cid %> =
 					nb_line_parseError_<%=cid%>++;
 					throw e;
 <%
-					}
-					else {
-						if (rejectConnName != null) {
+					} else if (rejectConnName != null) {
 %>
 					nb_line_rejected_<%=cid%>++;
 					nb_line_parseError_<%=cid%>++;
@@ -466,8 +466,11 @@ String key_<%=schema.get("SCHEMA") %>_<%=schema.get("PARENT_ROW") %>_<%=cid %> =
 					<%=rejectConnName%>.errorMessage = e.getMessage() + " - Line: " + tos_count_<%=node.getUniqueName() %>; 
 					<%=rejectConnName%>.line = row_<%=cid %>;
 <%
-						} //if rejectConnName is not empty
-					} //if not die on error
+					} else if(isLog4jEnabled) {
+%>
+					log.error("<%=cid%> - " + e.getMessage());
+<%
+					}
 %>
 				} //catch				
 			} //if header matches
@@ -492,6 +495,10 @@ String key_<%=schema.get("SCHEMA") %>_<%=schema.get("PARENT_ROW") %>_<%=cid %> =
 				<%=rejectConnName%>.errorCode = 2;
 				<%=rejectConnName%>.errorMessage = "Unknown header value '" + header_<%=cid%> + "'";
 				<%=rejectConnName%>.line = row_<%=cid %>;
+<%
+	} else if(isLog4jEnabled) {
+%>
+				log.error("<%=cid%> - Unknown header value '" + header_<%=cid%> + "'");
 <%
 	}
 %>
