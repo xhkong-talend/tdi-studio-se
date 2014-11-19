@@ -742,11 +742,7 @@ class LogUtil_<%=cid%>{
 int lastTableLine_<%=cid%> = 0;//Line Number of the last table name
 while ((tempLine_<%=cid %> = lr_<%=cid %>.readLine() )!= null) {
     countLines_<%=cid %>++;
-    <%if(("UPDATE").equals(data_action)) {%>
-    if(tempLine_<%=cid %>.toUpperCase().indexOf((tableName_<%=cid%>).toUpperCase())>-1){
-    <%}else{%>
-    if(tempLine_<%=cid %>.toUpperCase().indexOf((<%=table%>).toUpperCase())>-1){
-    <%}%>
+    if(tempLine_<%=cid %>.toUpperCase().indexOf("TABLE "+(tableName_<%=cid%>).toUpperCase())>-1){
         lastTableLine_<%=cid%> = countLines_<%=cid %>;
     }
 }
@@ -762,7 +758,7 @@ for (int i_<%=cid %>=0; i_<%=cid %><= lastTableLine_<%=cid%>; i_<%=cid %>++) {
     boolean isFirstEmptyLine_<%=cid%> = false;//Is the first empty line of empty block
 for (int i_<%=cid %>=lastTableLine_<%=cid%>+2; i_<%=cid %><= countLines_<%=cid %>; i_<%=cid %>++) {
     tempLine_<%=cid %> = lr_<%=cid %>.readLine();
-    if(tempLine_<%=cid %>.trim().length()>0){
+    if(tempLine_<%=cid %>!=null && tempLine_<%=cid %>.trim().length()>0){
         if(emptyLineNum_<%=cid%>==2){
             break;
         }
