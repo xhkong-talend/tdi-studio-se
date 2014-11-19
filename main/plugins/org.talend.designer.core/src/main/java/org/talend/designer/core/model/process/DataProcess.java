@@ -2546,6 +2546,10 @@ public class DataProcess implements IGeneratingProcess {
             }
         }
         for (IConnection connection : node.getOutgoingConnections()) {
+            if(connection.getLineStyle() == EConnectionType.ON_SUBJOB_OK || connection.getLineStyle() == EConnectionType.ON_SUBJOB_ERROR) {
+                continue;
+            }
+            
             if (connection.isActivate()) {
                 if (!hasSingleMergeComponent(connection.getTarget(), checkedNodes, mergeFound || merge)) {
                     return false;
