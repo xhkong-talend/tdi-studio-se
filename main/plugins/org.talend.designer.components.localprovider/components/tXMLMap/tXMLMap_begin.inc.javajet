@@ -650,33 +650,50 @@ if(valueMap.get("<%=currEleName%>")!=null) {//open if 8080
 	}
 	
 	private void createElement(String currEleName, OutputTreeNode node, String parentName){
-		int index = 0;
-		index = node.getName().indexOf(":");
-		if(index>0 && hasParent(node)){
 %>
-		org.dom4j.Element <%=currEleName%>;
-		if (<%=parentName%>.getNamespaceForPrefix("<%=node.getName().substring(0,index)%>") == null) {
-            <%=currEleName%> = <%=parentName%>.addElement("<%=node.getName().substring(index+1)%>");
-        } else {
-        	<%=currEleName%> = <%=parentName%>.addElement("<%=node.getName()%>");
-        }
+		org.dom4j.Element <%=currEleName%> = null;
 <%
-		}else{
-			if(node.isMain() && (node.isGroup() || (node.isLoop() && !isRoot(node)))) {
+		int index = node.getName().indexOf(":");
+		if(node.isMain() && (node.isGroup() || node.isLoop())) {
+			if(index>0 && hasParent(node)){
 %>
-				org.dom4j.Element <%=currEleName%> = org.dom4j.DocumentHelper.createElement("<%=node.getName()%>");
-				<%=parentName%>.elements().add(orderHelper.getInsertLocation(<%=XMLOrderUtil.getCurrPos(node) %>,<%=XMLOrderUtil.getCurrOrder(node) %>),<%=currEleName%>);
+				if (<%=parentName%>.getNamespaceForPrefix("<%=node.getName().substring(0,index)%>") == null) {
+		            <%=currEleName%> = org.dom4j.DocumentHelper.createElement("<%=node.getName().substring(index+1)%>");
+		        } else {
+		        	<%=currEleName%> = org.dom4j.DocumentHelper.createElement("<%=node.getName()%>");
+		        }
 <%
 			} else {
 %>
-				org.dom4j.Element <%=currEleName%> = <%=parentName%>.addElement("<%=node.getName()%>");
-		
+				<%=currEleName%> = org.dom4j.DocumentHelper.createElement("<%=node.getName()%>");
+<%
+			}
+			
+			if(isRoot(node)) {
+%>
+				<%=parentName%>.add(<%=currEleName%>);
+<%
+			} else {
+%>
+				<%=parentName%>.elements().add(orderHelper.getInsertLocation(<%=XMLOrderUtil.getCurrPos(node) %>,<%=XMLOrderUtil.getCurrOrder(node) %>),<%=currEleName%>);
+<%
+			}
+		} else {
+			if(index>0 && hasParent(node)){
+%>
+				if (<%=parentName%>.getNamespaceForPrefix("<%=node.getName().substring(0,index)%>") == null) {
+		            <%=currEleName%> = <%=parentName%>.addElement("<%=node.getName().substring(index+1)%>");
+		        } else {
+		        	<%=currEleName%> = <%=parentName%>.addElement("<%=node.getName()%>");
+		        }
+<%
+			} else {
+%>
+				<%=currEleName%> = <%=parentName%>.addElement("<%=node.getName()%>");
 <%
 			}
 		}
-%>
 		
-<%
 		if(node.isGroup() || node.isMain()){
 %>
 		subTreeRootParent = <%=currEleName%>;
