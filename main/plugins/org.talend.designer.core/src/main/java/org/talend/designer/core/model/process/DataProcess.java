@@ -2546,10 +2546,11 @@ public class DataProcess implements IGeneratingProcess {
             }
         }
         for (IConnection connection : node.getOutgoingConnections()) {
-            if(connection.getLineStyle() == EConnectionType.ON_SUBJOB_OK || connection.getLineStyle() == EConnectionType.ON_SUBJOB_ERROR) {
+            if (connection.getLineStyle() == EConnectionType.ON_SUBJOB_OK
+                    || connection.getLineStyle() == EConnectionType.ON_SUBJOB_ERROR) {
                 continue;
             }
-            
+
             if (connection.isActivate()) {
                 if (!hasSingleMergeComponent(connection.getTarget(), checkedNodes, mergeFound || merge)) {
                     return false;
@@ -2827,7 +2828,7 @@ public class DataProcess implements IGeneratingProcess {
         asyncOutNode.setActivate(connection.isActivate());
         asyncOutNode.setStart(false);
         asyncOutNode.setDesignSubjobStartNode(refNode.getDesignSubjobStartNode());
-        IMetadataTable newMetadata = connection.getMetadataTable().clone();
+        IMetadataTable newMetadata = refNode.getMetadataList().get(0).clone();// connection.getMetadataTable().clone();
         newMetadata.setTableName("tAsyncOut_" + suffix); //$NON-NLS-1$
         asyncOutNode.getMetadataList().remove(0);
         asyncOutNode.getMetadataList().add(newMetadata);
@@ -2871,7 +2872,7 @@ public class DataProcess implements IGeneratingProcess {
         asyncInNode.setActivate(connection.isActivate());
         asyncInNode.setStart(true);
         asyncInNode.setDesignSubjobStartNode(asyncInNode);
-        newMetadata = connection.getMetadataTable().clone();
+        newMetadata = refNode.getMetadataList().get(0).clone(); // connection.getMetadataTable().clone();
         newMetadata.setTableName("tAsyncIn_" + suffix); //$NON-NLS-1$
         asyncInNode.getMetadataList().remove(0);
         asyncInNode.getMetadataList().add(newMetadata);
