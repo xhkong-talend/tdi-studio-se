@@ -73,7 +73,7 @@
       NUM_ROW="100"
       SHOW="false"
    		 >
-      <DEFAULT>false</DEFAULT>
+      <DEFAULT>true</DEFAULT>
     </PARAMETER>
 
       

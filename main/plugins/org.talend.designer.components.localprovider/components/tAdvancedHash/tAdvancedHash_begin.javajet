@@ -116,7 +116,7 @@
 			   			
 			   <%
 			   	String globalName = "globalMap";
-			   	if (includeParallelComps && !(hashConfiguration != null && hashConfiguration.isPersistent() || bSortOnDisk) && !isOneOfReloadLookupMode) {
+			   	if (includeParallelComps && !isOneOfReloadLookupMode) {
 					
 					if (partitionNode != null) {
 			   			if (!includeParallelCompsInDSubProcess) {
@@ -138,6 +138,11 @@
 			   			if (globalMap_<%=partitionNode.getUniqueName() %>.get("tHash_Lookup_<%=connectionName%>") == null) { 
 			   	<%
     					}
+			   		} else {
+			   	%>
+			   		{{
+			   		missing the component:tPartition
+			   	<%
 			   		}
 			   	}
 				if (hashConfiguration != null && hashConfiguration.isPersistent() || bSortOnDisk) {

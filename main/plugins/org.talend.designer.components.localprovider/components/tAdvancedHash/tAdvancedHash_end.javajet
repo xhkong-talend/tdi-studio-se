@@ -48,8 +48,6 @@
             			}
 					}
 				} 
-				memoryStorage = !(hashConfiguration != null && hashConfiguration.isPersistent() || bSortOnDisk);
-            
 			boolean includeParallelComps = false;
    			INode partitionNode = validTarget.getDesignSubjobStartNode();
    			if ("tCollector".equals(partitionNode.getComponent().getName())) {
@@ -64,27 +62,27 @@
 %>
 tHash_Lookup_<%=connectionName%>.endPut();
 <%
-			if (includeParallelComps && memoryStorage && !isOneOfReloadLookupMode) {
+			if (includeParallelComps && !isOneOfReloadLookupMode) {
 				if (!includeParallelCompsInDSubProcess) {
 %>
 	if (mapsList_<%=cid%> != null) {
-			for (java.util.concurrent.ConcurrentHashMap<String,Object> map : mapsList_<%=cid%>) {
-					org.talend.designer.components.lookup.memory.ConcurrentAdvancedMemoryLookup
-			   							<<%=connectionName%>Struct> tmp = (org.talend.designer.components.lookup.memory.ConcurrentAdvancedMemoryLookup
-			   							<<%=connectionName%>Struct>)tHash_Lookup_<%=connectionName%>;
-				if (globalMap != map) {
+		for (java.util.concurrent.ConcurrentHashMap<String,Object> map : mapsList_<%=cid%>) {
+				org.talend.designer.components.lookup.memory.ConcurrentAdvancedMemoryLookup
+		   							<<%=connectionName%>Struct> tmp = (org.talend.designer.components.lookup.memory.ConcurrentAdvancedMemoryLookup
+		   							<<%=connectionName%>Struct>)tHash_Lookup_<%=connectionName%>;
+			if (globalMap != map) {
+			
 				
-					
-					//map.put("MAP_POPULATED_<%=connectionName%>",Boolean.TRUE);			   							
-					
-					map.put("tHash_Lookup_<%=connectionName%>",new org.talend.designer.components.lookup.memory.ConcurrentAdvancedMemoryLookup
-			   							<<%=connectionName%>Struct>(tmp));			   							
-			   		while (map.get("tHash_Lookup_<%=connectionName%>") == null) {
-			   			Thread.sleep(1);
-			   		}
-			   	
-				} 
-			}
+				//map.put("MAP_POPULATED_<%=connectionName%>",Boolean.TRUE);			   							
+				
+				map.put("tHash_Lookup_<%=connectionName%>",new org.talend.designer.components.lookup.memory.ConcurrentAdvancedMemoryLookup
+		   							<<%=connectionName%>Struct>(tmp));			   							
+		   		while (map.get("tHash_Lookup_<%=connectionName%>") == null) {
+		   			Thread.sleep(1);
+		   		}
+		   	
+			} 
+		}
 
 	}
 <%
