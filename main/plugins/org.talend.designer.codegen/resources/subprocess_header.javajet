@@ -1141,12 +1141,50 @@ public void <%=subTree.getName() %>Process(final java.util.Map<String, Object> g
 %>
 					
 <%
-	// Call for RUN AFTER links
-	for (String after : subTree.getAfterSubProcesses()) {
+		if (subTree.getAfterSubProcesses().size() > 0) {
+    		IConnection firstLookup = null;
+    		INode tPartitionerNode = null;
+    		for (INode node : subTree.getNodes()) {
+    			if (node.getUniqueName().startsWith("tCollector")) {
+    				List<? extends IConnection> startsConns = NodeUtil.getIncomingConnections(node, EConnectionType.STARTS);
+    				if (startsConns != null && startsConns.size() > 0 ) {
+    					tPartitionerNode = startsConns.get(0).getSource();
+    					break;
+    				}
+    			}
+    		}
+			if (tPartitionerNode != null) {
+				for (INode node : subTree.getNodes()) {
+//					System.out.println(node.getUniqueName()+"==");
+					if (node.isVirtualGenerateNode() || node.getComponent().getName().equals("tMap")) {
+						List<? extends IConnection> lookups = node.getIncomingConnections();
+						for (IConnection lookup : lookups) {
+//							System.out.println(lookup.getName() + "\t" + lookup.getLineStyle().getName());
+							if (lookup.getLineStyle() == EConnectionType.FLOW_REF) {
+								firstLookup = lookup;
+								break;
+							}
+						}
+					}
+				}
+%>
+		synchronized (globalMap.get("EXECUTOR_SERVICE_<%=tPartitionerNode.getUniqueName() %>")) {
+			if (globalMap.get("tHash_Lookup_<%=firstLookup==null? "" : firstLookup.getName()%>") == null) {
+<%
+    		}
+    		// Call for RUN AFTER links
+    		for (String after : subTree.getAfterSubProcesses()) {
 %>
 		<%=after %>Process(globalMap);
 <%
-	}
+			}
+			if (tPartitionerNode != null) {
+%>
+			}
+		}
+<%
+			}
+		}
 	}//isParallelize
 %>
 

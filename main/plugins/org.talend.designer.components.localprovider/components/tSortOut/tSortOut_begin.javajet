@@ -835,7 +835,7 @@ if (bCreateDir){
 org.talend.designer.components.tsort.io.sortimpl.FlowSorterIterator<<%=rowName %>StructILightSerializable> iterator_<%=cid %> = new org.talend.designer.components.tsort.io.sortimpl.FlowSorterIterator<<%=rowName %>StructILightSerializable>();
 iterator_<%=cid %>.setBufferSize(<%=bufferSize %>);
 iterator_<%=cid %>.setILightSerializable(new <%=rowName %>StructILightSerializable());
-iterator_<%=cid %>.workDirectory = <%=tempDirectory %> + "/" + jobName + "<%=cid %> _" + Thread.currentThread().getId() + "_" + pid;
+iterator_<%=cid %>.workDirectory = <%=tempDirectory %> + "/" + jobName + "<%=cid %>_" + Thread.currentThread().getId() + "_" + pid;
 iterator_<%=cid %>.initPut("");
 
 <%

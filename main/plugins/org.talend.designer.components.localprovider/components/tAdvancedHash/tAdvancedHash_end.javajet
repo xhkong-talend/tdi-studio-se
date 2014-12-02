@@ -49,23 +49,25 @@
 					}
 				} 
 				memoryStorage = !(hashConfiguration != null && hashConfiguration.isPersistent() || bSortOnDisk);
-			}
             
 			boolean includeParallelComps = false;
-			List<? extends INode> listPartitions= node.getProcess().getNodesOfType("tPartitioner");
-			if (listPartitions!=null && listPartitions.size() > 0 ) {
+   			INode partitionNode = validTarget.getDesignSubjobStartNode();
+   			if ("tCollector".equals(partitionNode.getComponent().getName())) {
 				includeParallelComps = true;
+			}
+			
+			boolean includeParallelCompsInDSubProcess = false; // for the lookupSubprocess
+			INode partition = node.getDesignSubjobStartNode();
+			if ("tCollector".equals(partition.getComponent().getName()) ) {
+				includeParallelCompsInDSubProcess = true;
 			}
 %>
 tHash_Lookup_<%=connectionName%>.endPut();
 <%
 			if (includeParallelComps && memoryStorage && !isOneOfReloadLookupMode) {
+				if (!includeParallelCompsInDSubProcess) {
 %>
-java.util.List<java.util.concurrent.ConcurrentHashMap<String,Object>> mapsList_<%=cid%> = 
-	(java.util.List<java.util.concurrent.ConcurrentHashMap<String,Object>>)globalMap.get("THREAD_MAPS_"+jobName);
 	if (mapsList_<%=cid%> != null) {
-	
-
 			for (java.util.concurrent.ConcurrentHashMap<String,Object> map : mapsList_<%=cid%>) {
 					org.talend.designer.components.lookup.memory.ConcurrentAdvancedMemoryLookup
 			   							<<%=connectionName%>Struct> tmp = (org.talend.designer.components.lookup.memory.ConcurrentAdvancedMemoryLookup
@@ -85,6 +87,9 @@ java.util.List<java.util.concurrent.ConcurrentHashMap<String,Object>> mapsList_<
 			}
 
 	}
+<%
+				}
+%>
 
 } 
 } catch (java.lang.Exception ex) {
@@ -95,10 +100,8 @@ java.util.List<java.util.concurrent.ConcurrentHashMap<String,Object>> mapsList_<
 	throw er;
 }
 
-}//end synchronized
-
-
 <%
+			}
 			
 			}
 		}

@@ -6,6 +6,7 @@
         org.talend.core.model.process.ElementParameterParser 
 		java.util.List
 		java.util.ArrayList
+		org.talend.core.model.process.EConnectionType
 		org.talend.core.model.process.IHashableInputConnections
 		org.talend.core.model.process.IHashConfiguration
 		org.talend.core.model.process.IHashableColumn
@@ -94,26 +95,55 @@
 					
 					boolean isAllRows = "ALL_ROWS".equals(matchingModeStr);
 					
-					boolean includeParallelComps = false;
-					List<? extends INode> listPartitions= node.getProcess().getNodesOfType("tPartitioner");
-					if (listPartitions!=null && listPartitions.size() > 0 ) {
-						includeParallelComps = true;
+					boolean includeParallelComps = false; // for the subtree
+		   			// find the closed partitioner component in the main process instead of the lookup process
+		   			INode partitionNode = validTarget.getDesignSubjobStartNode();
+		   			if ("tCollector".equals(partitionNode.getComponent().getName())) {
+		   				includeParallelComps = true;
+		   				partitionNode = partitionNode.getIncomingConnections(EConnectionType.STARTS).get(0).getSource();
+		   			} else {
+		   				partitionNode = null;
+		   			}
+					
+					boolean includeParallelCompsInDSubProcess = false; // for the lookupSubprocess
+    				INode tCollectorNode = node.getDesignSubjobStartNode();
+					if ("tCollector".equals(tCollectorNode.getComponent().getName()) ) {
+						includeParallelCompsInDSubProcess = true;
 					}
 			   %>
 			   		org.talend.designer.components.lookup.common.ICommonLookup.MATCHING_MODE matchingModeEnum_<%=connectionName%> = 
 			   			org.talend.designer.components.lookup.common.ICommonLookup.MATCHING_MODE.<%= matchingModeStr %>;
 			   			
-			   <%if (includeParallelComps && !(hashConfiguration != null && hashConfiguration.isPersistent() || bSortOnDisk) && !isOneOfReloadLookupMode) {%>
-			   synchronized(this) {
+			   <%
+			   	String globalName = "globalMap";
+			   	if (includeParallelComps && !(hashConfiguration != null && hashConfiguration.isPersistent() || bSortOnDisk) && !isOneOfReloadLookupMode) {
+					
+					if (partitionNode != null) {
+			   			if (!includeParallelCompsInDSubProcess) {
+			   %>
 			   		try {  
 			   		if (globalMap.get("tHash_Lookup_<%=connectionName%>") == null) {
+                        java.util.List<java.util.concurrent.ConcurrentHashMap<String,Object>> mapsList_<%=cid%> = 
+                        	(java.util.List<java.util.concurrent.ConcurrentHashMap<String,Object>>)globalMap.get("THREAD_MAPS_<%=partitionNode.getUniqueName() %>_"+jobName);
 			   		
 			   <%
+			   			} else {
+        					globalName = "globalMap_" + partitionNode.getUniqueName();
+			   	%>
+			   		java.util.List<java.util.concurrent.ConcurrentHashMap<String, Object>> mapsList_<%=cid%> = 
+			   		(java.util.List<java.util.concurrent.ConcurrentHashMap<String, Object>>) globalMap.get("THREAD_MAPS_<%=partitionNode.getUniqueName() %>_" + jobName);
+			   		java.util.concurrent.ConcurrentHashMap<String, Object> globalMap_<%=partitionNode.getUniqueName() %> = 
+			   			mapsList_<%=cid%>.get((Integer)globalMap.get("<%=tCollectorNode.getUniqueName() %>" + "_THREAD_ID"));
+			   		try {  
+			   			if (globalMap_<%=partitionNode.getUniqueName() %>.get("tHash_Lookup_<%=connectionName%>") == null) { 
+			   	<%
+    					}
+			   		}
 			   	}
 				if (hashConfiguration != null && hashConfiguration.isPersistent() || bSortOnDisk) {
 				%>
 					org.talend.designer.components.lookup.persistent.Persistent<%= isAllRows ? "" : "Sorted" %>LookupManager<<%=connectionName%>Struct> tHash_Lookup_<%=connectionName%> = 
-	   					new org.talend.designer.components.lookup.persistent.Persistent<%= isAllRows ? "" : "Sorted" %>LookupManager<<%=connectionName%>Struct>(matchingModeEnum_<%=connectionName%>, <%= tempFolder %> + "/"+ jobName +"_tMapData_" + pid +"_Lookup_<%=connectionName%>_"
+	   					new org.talend.designer.components.lookup.persistent.Persistent<%= isAllRows ? "" : "Sorted" %>LookupManager<<%=connectionName%>Struct>(matchingModeEnum_<%=connectionName%>, <%= tempFolder %> + "/"+ jobName +"_tMapData_" + Thread.currentThread().getId() + "_" + pid +"_Lookup_<%=connectionName%>_"
 	   					, new org.talend.designer.components.persistent.IRowCreator() {
 	   						public <%=connectionName%>Struct createRowInstance() {
 	   							return new <%=connectionName%>Struct();
@@ -126,7 +156,7 @@
 
 	   				tHash_Lookup_<%=connectionName%>.initPut();
 
-		   	   	   globalMap.put("tHash_Lookup_<%=connectionName%>", tHash_Lookup_<%=connectionName%>);
+		   	   	   	<%=globalName %>.put("tHash_Lookup_<%=connectionName%>", tHash_Lookup_<%=connectionName%>);
 		   	   	   
 	   			<%	
 	   			} else {
@@ -144,7 +174,7 @@
 	   			<%
 	   				}
 	   			%>			   
-		   	   	   globalMap.put("tHash_Lookup_<%=connectionName%>", tHash_Lookup_<%=connectionName%>);
+		   	   	   <%=globalName%>.put("tHash_Lookup_<%=connectionName%>", tHash_Lookup_<%=connectionName%>);
 		   	   	   
 				<%
 				}
