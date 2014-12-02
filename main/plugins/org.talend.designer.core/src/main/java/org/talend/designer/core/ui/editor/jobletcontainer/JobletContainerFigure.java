@@ -206,18 +206,7 @@ public class JobletContainerFigure extends Figure {
         if (this.jobletContainer.getNode().isJoblet()) {
             refreshForJoblet();
         } else if (this.jobletContainer.getNode().isMapReduce()) {
-            if (this.jobletContainer.getNode().isMapReduceStart() && mrFigures.isEmpty()) {
-                initMRFigures();
-            }
-            if (!this.jobletContainer.getNode().isMapReduceStart() && !mrFigures.isEmpty()) {
-                Iterator<Entry<String, SimpleHtmlFigure>> ite = mrFigures.entrySet().iterator();
-                while (ite.hasNext()) {
-                    Entry<String, SimpleHtmlFigure> entry = ite.next();
-                    SimpleHtmlFigure value = entry.getValue();
-                    getChildren().remove(value);
-                }
-                mrFigures.clear();
-            }
+            refreshMRFigures(null);
             if (!this.jobletContainer.getNode().isMapReduceStart()) {
                 if (rectFig.isVisible()) {
                     rectFig.setVisible(false);
@@ -391,18 +380,8 @@ public class JobletContainerFigure extends Figure {
         outlineFigure.setForegroundColor(ColorUtils.getCacheColor(new RGB(220, 120, 120)));
         outlineFigure.setSize(rectangle.width, preferedSize.height);
 
-        if (this.jobletContainer.getNode().isMapReduceStart() && mrFigures.isEmpty()) {
-            initMRFigures();
-        }
-        if (!this.jobletContainer.getNode().isMapReduceStart() && !mrFigures.isEmpty()) {
-            Iterator<Entry<String, SimpleHtmlFigure>> ite = mrFigures.entrySet().iterator();
-            while (ite.hasNext()) {
-                Entry<String, SimpleHtmlFigure> entry = ite.next();
-                SimpleHtmlFigure value = entry.getValue();
-                getChildren().remove(value);
-            }
-            mrFigures.clear();
-        }
+        refreshMRFigures(null);
+
         Iterator<Entry<String, SimpleHtmlFigure>> ite = mrFigures.entrySet().iterator();
         int i = 0;
         while (ite.hasNext()) {
@@ -503,13 +482,8 @@ public class JobletContainerFigure extends Figure {
     }
 
     public void dispose() {
-        Iterator<Entry<String, SimpleHtmlFigure>> ite = mrFigures.entrySet().iterator();
-        while (ite.hasNext()) {
-            Entry<String, SimpleHtmlFigure> entry = ite.next();
-            SimpleHtmlFigure value = entry.getValue();
-            if (parentMRFigure.getChildren().contains(value)) {
-                parentMRFigure.remove(value);
-            }
+        if (this.parentMRFigure != null) {
+            this.parentMRFigure.getChildren().clear();
         }
     }
 
@@ -538,18 +512,8 @@ public class JobletContainerFigure extends Figure {
             add(outlineFigure, null, 0);
             add(rectFig, null, 1);
         }
-        if (this.jobletContainer.getNode().isMapReduceStart() && mrFigures.isEmpty()) {
-            initMRFigures();
-        }
-        if (!this.jobletContainer.getNode().isMapReduceStart() && !mrFigures.isEmpty()) {
-            Iterator<Entry<String, SimpleHtmlFigure>> ite = mrFigures.entrySet().iterator();
-            while (ite.hasNext()) {
-                Entry<String, SimpleHtmlFigure> entry = ite.next();
-                SimpleHtmlFigure value = entry.getValue();
-                parentMRFigure.remove(value);
-            }
-            mrFigures.clear();
-        }
+        refreshMRFigures(parentMRFigure);
+
         if (jobletContainer.getSubjobContainer() != null && !jobletContainer.getSubjobContainer().isCollapsed()) {
             if (this.jobletContainer.getNode().isMapReduceStart()) {
                 Iterator<Entry<String, SimpleHtmlFigure>> ite = mrFigures.entrySet().iterator();
@@ -781,6 +745,35 @@ public class JobletContainerFigure extends Figure {
             mrGroupColor = defaultSubjobColor;
         } else {
             mrGroupColor = green;
+        }
+    }
+
+    private void refreshMRFigures(IFigure parentMRFigure) {
+        if (!this.jobletContainer.getNode().isMapReduce()) {
+            return;
+        }
+        if (this.jobletContainer.getNode().isMapReduceStart()) {
+            if (mrFigures.isEmpty()) {
+                initMRFigures();
+            } else if (mrFigures.size() / 2 != this.jobletContainer.getNode().getMrJobInGroupCount()) {
+                this.parentMRFigure.getChildren().clear();
+                mrFigures.clear();
+                initMRFigures();
+            }
+
+        }
+        if (!this.jobletContainer.getNode().isMapReduceStart() && !mrFigures.isEmpty()) {
+            Iterator<Entry<String, SimpleHtmlFigure>> ite = mrFigures.entrySet().iterator();
+            while (ite.hasNext()) {
+                Entry<String, SimpleHtmlFigure> entry = ite.next();
+                SimpleHtmlFigure value = entry.getValue();
+                if (parentMRFigure != null && parentMRFigure.getChildren().contains(value)) {
+                    parentMRFigure.remove(value);
+                } else {
+                    getChildren().remove(value);
+                }
+            }
+            mrFigures.clear();
         }
     }
 

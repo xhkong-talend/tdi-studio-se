@@ -33,6 +33,7 @@ import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.graphics.ImageData;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.talend.commons.CommonsPlugin;
 import org.talend.commons.exception.PersistenceException;
@@ -4744,7 +4745,20 @@ public class Node extends Element implements IGraphicalNode {
     }
 
     public void setMrJobInGroupCount(Integer mrJobInGroupCount) {
-        this.mrJobInGroupCount = mrJobInGroupCount;
+        if (this.mrJobInGroupCount == null) {
+            this.mrJobInGroupCount = mrJobInGroupCount;
+            return;
+        }
+        if (mrJobInGroupCount != this.mrJobInGroupCount) {
+            this.mrJobInGroupCount = mrJobInGroupCount;
+            Display.getDefault().asyncExec(new Runnable() {
+
+                @Override
+                public void run() {
+                    refreshNodeContainer();
+                }
+            });
+        }
     }
 
     public Integer getMrJobIDInGroup() {
