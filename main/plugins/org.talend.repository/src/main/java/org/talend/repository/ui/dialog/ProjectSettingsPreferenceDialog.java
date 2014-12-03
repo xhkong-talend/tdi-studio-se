@@ -117,6 +117,7 @@ public class ProjectSettingsPreferenceDialog extends PreferenceDialog {
         // excute a workUnit to do svn commite
         RepositoryWorkUnit repositoryWorkUnit = new RepositoryWorkUnit(ProjectManager.getInstance().getCurrentProject(), "") { //$NON-NLS-1$
 
+            @Override
             public void run() throws PersistenceException {
                 // do nothing
             }
@@ -193,13 +194,15 @@ public class ProjectSettingsPreferenceDialog extends PreferenceDialog {
         fileDialog.setFilterExtensions(files);
 
         String path = fileDialog.open();
-        if (!new File(path).exists()
-                || MessageDialog.openConfirm(getShell(), Messages.getString("ProjectSettingsPreferenceDialog.overwriteTitle"), //$NON-NLS-1$
-                        Messages.getString("ProjectSettingsPreferenceDialog.overwriteMessage"))) { //$NON-NLS-1$
-            ExportProjectSettings settings = new ExportProjectSettings(path);
-            settings.saveProjectSettings();
+        if (path != null) {
+            if (!new File(path).exists()
+                    || MessageDialog.openConfirm(getShell(),
+                            Messages.getString("ProjectSettingsPreferenceDialog.overwriteTitle"), //$NON-NLS-1$
+                            Messages.getString("ProjectSettingsPreferenceDialog.overwriteMessage"))) { //$NON-NLS-1$
+                ExportProjectSettings settings = new ExportProjectSettings(path);
+                settings.saveProjectSettings();
+            }
         }
-
     }
 
     private void showErrorMessage() {
@@ -213,6 +216,7 @@ public class ProjectSettingsPreferenceDialog extends PreferenceDialog {
 
             private boolean errorOccurred;
 
+            @Override
             public void run() {
                 errorOccurred = false;
                 boolean hasFailedOK = false;
@@ -245,6 +249,7 @@ public class ProjectSettingsPreferenceDialog extends PreferenceDialog {
                 }
             }
 
+            @Override
             public void handleException(Throwable e) {
                 errorOccurred = true;
 
