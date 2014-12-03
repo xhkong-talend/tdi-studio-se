@@ -48,6 +48,8 @@
             			}
 					}
 				} 
+				memoryStorage = !(hashConfiguration != null && hashConfiguration.isPersistent() || bSortOnDisk);
+            
 			boolean includeParallelComps = false;
    			INode partitionNode = validTarget.getDesignSubjobStartNode();
    			if ("tCollector".equals(partitionNode.getComponent().getName())) {
@@ -64,6 +66,7 @@ tHash_Lookup_<%=connectionName%>.endPut();
 <%
 			if (includeParallelComps && !isOneOfReloadLookupMode) {
 				if (!includeParallelCompsInDSubProcess) {
+					if (memoryStorage) {
 %>
 	if (mapsList_<%=cid%> != null) {
 		for (java.util.concurrent.ConcurrentHashMap<String,Object> map : mapsList_<%=cid%>) {
@@ -85,10 +88,6 @@ tHash_Lookup_<%=connectionName%>.endPut();
 		}
 
 	}
-<%
-				}
-%>
-
 } 
 } catch (java.lang.Exception ex) {
 	globalMap.put("THREADS_HAVE_ERROR",ex);
@@ -97,10 +96,23 @@ tHash_Lookup_<%=connectionName%>.endPut();
 	globalMap.put("THREADS_HAVE_ERROR",er);
 	throw er;
 }
-
 <%
+					}
+				} else {
+%>
+}
+} catch (java.lang.Exception ex) {
+	globalMap.put("THREADS_HAVE_ERROR",ex);
+	throw ex;
+} catch (Error er) {
+	globalMap.put("THREADS_HAVE_ERROR",er);
+	throw er;
+}
+<%
+				}
 			}
-			
+%>
+<%
 			}
 		}
 	}

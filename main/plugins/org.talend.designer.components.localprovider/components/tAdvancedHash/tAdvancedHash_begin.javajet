@@ -120,6 +120,7 @@
 					
 					if (partitionNode != null) {
 			   			if (!includeParallelCompsInDSubProcess) {
+			   				if (!(hashConfiguration != null && hashConfiguration.isPersistent() || bSortOnDisk)) {
 			   %>
 			   		try {  
 			   		if (globalMap.get("tHash_Lookup_<%=connectionName%>") == null) {
@@ -127,6 +128,7 @@
                         	(java.util.List<java.util.concurrent.ConcurrentHashMap<String,Object>>)globalMap.get("THREAD_MAPS_<%=partitionNode.getUniqueName() %>_"+jobName);
 			   		
 			   <%
+			   				}
 			   			} else {
         					globalName = "globalMap_" + partitionNode.getUniqueName();
 			   	%>
