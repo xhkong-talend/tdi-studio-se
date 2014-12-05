@@ -678,7 +678,12 @@ public class JobSettingsView extends ViewPart implements IJobSettingsView, ISele
                 }
                 String title = repositoryObject.getLabel();
                 if (allowVerchange) {
-                    title = repositoryObject.getLabel() + " " + repositoryObject.getVersion(); //$NON-NLS-1$
+                    if (repositoryObject.getVersion() != null) {
+                        title = repositoryObject.getLabel() + " " + repositoryObject.getVersion(); //$NON-NLS-1$
+                    } else {
+                        title = repositoryObject.getLabel();
+                    }
+
                 }
 
                 setElement(repositoryObject, type + SEPARATOR + title, ImageProvider.getImage(repositoryNode.getIcon()));
