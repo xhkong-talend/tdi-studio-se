@@ -116,32 +116,36 @@ for (int i=0;i<mapping.size();i++) {
 		try {
 			value_<%=cid%> = compiledJsonPath_<%=cid%>.read(row_<%=cid%>);
 <%
-        	if(javaType == JavaTypesManager.STRING || javaType == JavaTypesManager.OBJECT){
+        	if(javaType == JavaTypesManager.STRING){
 %>
-				<%=firstConnName%>.<%=column.getLabel() %> = value_<%=cid%> == null ? null : value_<%=cid%>.toString();
+				<%=firstConnName%>.<%=column.getLabel() %> = value_<%=cid%> == null ? <%@ include file="./set_default_value.javajet"%> : value_<%=cid%>.toString();
 <%
-			} else if(javaType == JavaTypesManager.DATE) {
+			} else {
 %>
-				<%=firstConnName%>.<%=column.getLabel() %> = ParserUtils.parseTo_Date(value_<%=cid%>.toString(), <%=pattern%>);
+				if(value_<%=cid%> != null && !value_<%=cid%>.toString().isEmpty()) {
 <%
-        	} else {
+				if(javaType == JavaTypesManager.OBJECT) {
 %>
-				<%=firstConnName%>.<%=column.getLabel() %> = ParserUtils.parseTo_<%=typeToGenerate %>(value_<%=cid%>.toString());
+					<%=firstConnName%>.<%=column.getLabel() %> = value_<%=cid%>.toString();
+<%
+				} else if(javaType == JavaTypesManager.DATE) {
+%>
+					<%=firstConnName%>.<%=column.getLabel() %> = ParserUtils.parseTo_Date(value_<%=cid%>.toString(), <%=pattern%>);
+<%
+        		} else {
+%>
+					<%=firstConnName%>.<%=column.getLabel() %> = ParserUtils.parseTo_<%=typeToGenerate %>(value_<%=cid%>.toString());
+<%
+        		}
+%>
+				} else {
+					<%=firstConnName %>.<%=column.getLabel() %> = <%@ include file="./set_default_value.javajet"%>;
+				}
 <%
         	}
 %>
 		} catch (com.jayway.jsonpath.PathNotFoundException e_<%=cid%>) {
-<%
-		if(column.isNullable()) {
-%>
-			<%=firstConnName %>.<%=column.getLabel() %> = <%=isNotSetDefault? null: defaultValue%>;
-<%
-		} else {
-%>
-			<%=firstConnName %>.<%=column.getLabel() %> = <%=isNotSetDefault ? JavaTypesManager.getDefaultValueFromJavaType(typeToGenerate) : defaultValue%>;
-<%
-		}
-%>
+			<%=firstConnName %>.<%=column.getLabel() %> = <%@ include file="./set_default_value.javajet"%>;
 		}
 <%
 	}
