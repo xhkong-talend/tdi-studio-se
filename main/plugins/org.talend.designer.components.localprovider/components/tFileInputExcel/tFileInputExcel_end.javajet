@@ -25,7 +25,7 @@
 					excelReader_<%=cid%>.handleException();
 				}
 			} catch(java.lang.Exception e_<%=cid%>) {
-				if(!(e_<%=cid%>.getCause() instanceof com.talend.excel.xssf.event.EnoughDataException))
+				if(!(e_<%=cid%>.getCause() instanceof com.talend.excel.xssf.event.EnoughDataException)) {
 				<% if(dieOnError) { %>
 				throw(e_<%=cid%>);
 				<% } else { %>
@@ -34,6 +34,7 @@
 					<%}%>
 				System.err.println(e_<%=cid%>.getMessage());	
 				<% } %>
+				}
 			}
 			<%}%>
 			<%log4jFileUtil.retrievedDataNumberInfo(node);%>
