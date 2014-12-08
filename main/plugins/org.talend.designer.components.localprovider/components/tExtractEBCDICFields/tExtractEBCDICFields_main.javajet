@@ -59,7 +59,7 @@ if(rejectConns != null && rejectConns.size() > 0) {
 
 IConnection outConn = null;
 String firstConnName = "";
-List< ? extends IConnection> outConns = node.getOutgoingConnections();
+List< ? extends IConnection> outConns = node.getOutgoingSortedConnections();
 if(outConns!=null){
     for (IConnection conn : outConns) {
     	if (conn.getLineStyle().hasConnectionCategory(IConnectionCategory.DATA)) {
