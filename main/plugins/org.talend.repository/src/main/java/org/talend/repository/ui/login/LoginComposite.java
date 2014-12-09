@@ -111,6 +111,8 @@ import org.talend.core.tis.ICoreTisService;
 import org.talend.core.ui.ISVNProviderService;
 import org.talend.core.ui.TalendBrowserLaunchHelper;
 import org.talend.core.ui.branding.IBrandingService;
+import org.talend.core.ui.login.connections.ConnectionFormComposite;
+import org.talend.core.ui.login.connections.ConnectionsDialog;
 import org.talend.core.ui.login.sandbox.CreateSandboxProjectDialog;
 import org.talend.core.ui.workspace.ChooseWorkspaceData;
 import org.talend.repository.ProjectManager;
@@ -123,7 +125,6 @@ import org.talend.repository.ui.actions.importproject.ImportDemoProjectAction;
 import org.talend.repository.ui.actions.importproject.ImportProjectAsAction;
 import org.talend.repository.ui.actions.importproject.ImportProjectsUtilities;
 import org.talend.repository.ui.login.connections.ConnectionUserPerReader;
-import org.talend.repository.ui.login.connections.ConnectionsDialog;
 import org.talend.repository.ui.wizards.newproject.NewProjectWizard;
 import org.talend.utils.json.JSONException;
 
@@ -157,9 +158,9 @@ public class LoginComposite extends Composite {
     /**
      * Colors used for Remote Object background when enabled.
      */
-    public static final Color WHITE_COLOR = new Color(null, 255, 255, 255);
+    public static final Color WHITE_COLOR = ConnectionFormComposite.WHITE_COLOR;
 
-    public static final Color GREY_COLOR = new Color(null, 215, 215, 215);
+    public static final Color GREY_COLOR = ConnectionFormComposite.GREY_COLOR;
 
     public static final Color YELLOW_GREEN_COLOR = new Color(null, 159, 181, 38);// 143, 163, 35
 
