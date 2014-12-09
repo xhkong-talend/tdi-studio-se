@@ -63,12 +63,18 @@ skeleton="../templates/db_output_bulk.skeleton"
     
     String commitEvery = ElementParameterParser.getValue(node, "__COMMIT_EVERY__");
     
-    String identityInsert = ElementParameterParser.getValue(node, "__IDENTITY_INSERT__");
+    boolean  identityInsert= "true".equals(ElementParameterParser.getValue(node, "__IDENTITY_INSERT__"));
 
     boolean isEnableDebug = ("true").equals(ElementParameterParser.getValue(node,"__ENABLE_DEBUG_MODE__"));
     boolean usingStatsLogs=cid.equals("talendLogs_DB") || cid.equals("talendStats_DB") || cid.equals("talendMeter_DB");
     String useBatchSize = ElementParameterParser.getValue(node,"__USE_BATCH_SIZE__");
 	String batchSize=ElementParameterParser.getValue(node,"__BATCH_SIZE__");
+	boolean isUseParallelize ="true".equalsIgnoreCase(ElementParameterParser.getValue(node, "__PARALLELIZE__"));
+	boolean  isSpecifyIdentityKey = "true".equals(ElementParameterParser.getValue(node, "__SPECIFY_IDENTITY_FIELD__"));
+	if(isUseParallelize || identityInsert || (!"DROP_CREATE".equals(tableAction) && !"CREATE".equals(tableAction) && !"DROP_IF_EXISTS_AND_CREATE".equals(tableAction))){
+		isSpecifyIdentityKey = false;
+	}
+    String identityKey = ElementParameterParser.getValue(node, "__IDENTITY_FIELD__");
 %>
 int nb_line_<%=cid%> = 0;
 int nb_line_update_<%=cid%> = 0;
@@ -266,6 +272,9 @@ if(usingStatsLogs){ %>
         <% 
         for(Column column : stmtStructure) {
             if(!column.isReplaced() && !column.isAddCol() && column.isInsertable()) {
+            	if(isSpecifyIdentityKey && (column.getName().equals(identityKey))&& !column.isDynamic()) {
+                   	continue;
+               	}
                 String typeToGenerate = JavaTypesManager.getTypeToGenerate(column.getColumn().getTalendType(), column.getColumn().isNullable());
                 %>
                 <%=typeToGenerate%> <%=column.getName()%>;                
@@ -279,6 +288,9 @@ if(usingStatsLogs){ %>
         int count = 0;
         for(Column column : stmtStructure) {
             if(!column.isReplaced() && !column.isAddCol() && column.isInsertable()) {
+            	if(isSpecifyIdentityKey && (column.getName().equals(identityKey))&& !column.isDynamic()) {
+                   	continue;
+               	}
                 if(count != 0) {
                     %>
                     ,
@@ -296,6 +308,9 @@ if(usingStatsLogs){ %>
             <% 
             for(Column column : stmtStructure) {
                 if(!column.isReplaced() && !column.isAddCol() && column.isInsertable()) {
+                	if(isSpecifyIdentityKey && (column.getName().equals(identityKey))&& !column.isDynamic()) {
+                   		continue;
+               		}
                     %>
                     this.<%=column.getName()%> = <%=column.getName()%>;              
                     <%   
@@ -336,7 +351,7 @@ if(usingStatsLogs){ %>
  	boolean isShareIdentity_<%=cid%> = globalMap.get("shareIdentitySetting_<%=connection%>") != null && (Boolean)globalMap.get("shareIdentitySetting_<%=connection%>") == true;
  <%
  	}
-    if(("true").equals(identityInsert) ) {
+    if(identityInsert ) {
         %>
         java.sql.Statement stmt_<%=cid %> = conn_<%=cid%>.createStatement();
         <%

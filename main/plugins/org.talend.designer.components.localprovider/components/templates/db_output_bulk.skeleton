@@ -538,7 +538,7 @@ public class CLASS {
             List<Column> stmtStructure = createColumnList(columnList, useFieldOptions, fieldOptions, addCols);
             if(isSpecifyIdentityKey) {
                 for(Column column : stmtStructure) {
-                    if(column.getColumnName().equals(identityKey)) {
+                    if(column.name.equals(identityKey)) {
                         column.setAutoIncrement(true);
                         column.setStartValue(startValue);
                         column.setStep(step);
@@ -690,7 +690,16 @@ public class CLASS {
             }
             String suffix = null;
             String separate = null;
-            if(column.isInsertable() && !column.isDynamic()) {
+        	boolean  isParallelize = "true".equals(ElementParameterParser.getValue(node, "__PARALLELIZE__"));
+        	boolean  identityInsert= "true".equals(ElementParameterParser.getValue(node, "__IDENTITY_INSERT__"));
+        	String tableAction = ElementParameterParser.getValue(node, "__TABLE_ACTION__");
+        	String dataAction = ElementParameterParser.getValue(node, "__DATA_ACTION__");
+        	boolean  isSpecifyIdentityKey = "true".equals(ElementParameterParser.getValue(node, "__SPECIFY_IDENTITY_FIELD__"));
+        	if(isParallelize || identityInsert || (!"DROP_CREATE".equals(tableAction) && !"CREATE".equals(tableAction) && !"DROP_IF_EXISTS_AND_CREATE".equals(tableAction))){
+        		isSpecifyIdentityKey = false;
+        	}
+            String identityKey = ElementParameterParser.getValue(node, "__IDENTITY_FIELD__");
+            if(!(isSpecifyIdentityKey && (column.getName().equals(identityKey))) && column.isInsertable() && !column.isDynamic()) {
                 if(firstInsertColumn.toString().equals("true")) {
                     suffix = "";
                     firstInsertColumn = new StringBuilder("false");

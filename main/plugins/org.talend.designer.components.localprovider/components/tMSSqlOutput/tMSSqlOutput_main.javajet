@@ -52,7 +52,7 @@ skeleton="../templates/db_output_bulk.skeleton"
      
     String batchSize =ElementParameterParser.getValue(node, "__BATCH_SIZE__");
     
-    String identityInsert = ElementParameterParser.getValue(node, "__IDENTITY_INSERT__");
+    boolean  identityInsert= "true".equals(ElementParameterParser.getValue(node, "__IDENTITY_INSERT__"));
     
     String incomingConnName = null;
     
@@ -113,6 +113,12 @@ skeleton="../templates/db_output_bulk.skeleton"
 	 	}  
 
     }
+    boolean isUseParallelize ="true".equalsIgnoreCase(ElementParameterParser.getValue(node, "__PARALLELIZE__"));
+	boolean  isSpecifyIdentityKey = "true".equals(ElementParameterParser.getValue(node, "__SPECIFY_IDENTITY_FIELD__"));
+	if(isUseParallelize || identityInsert || (!"DROP_CREATE".equals(tableAction) && !"CREATE".equals(tableAction) && !"DROP_IF_EXISTS_AND_CREATE".equals(tableAction))){
+		isSpecifyIdentityKey = false;
+	}
+    String identityKey = ElementParameterParser.getValue(node, "__IDENTITY_FIELD__");
     
     class SingleInsertQueryOperation{
         public String generateType(String typeToGenerate){
@@ -478,7 +484,7 @@ if((cid.equals("talendLogs_DB") || cid.equals("talendStats_DB") || cid.equals("t
 	}
 
     if(incomingConnName != null && columnList != null){
-    	if(("true").equals(identityInsert) && useExistingConnection ) {
+    	if(identityInsert && useExistingConnection ) {
         %>
 		if ( isShareIdentity_<%=cid%> ) {
         	stmt_<%=cid %>.execute("SET IDENTITY_INSERT ["+ tableName_<%=cid%> +"] ON");
@@ -501,6 +507,9 @@ if((cid.equals("talendLogs_DB") || cid.equals("talendStats_DB") || cid.equals("t
             for(Column column : colStruct) {
                 if(column.isInsertable()) {
                     String typeToGenerate = JavaTypesManager.getTypeToGenerate(column.getColumn().getTalendType(), column.getColumn().isNullable());
+                    if(isSpecifyIdentityKey && (column.getName().equals(identityKey)) && column.isInsertable() && !column.isDynamic()) {
+                    	continue;
+                    }
                     %>
                     <%=getManager(dbmsId, cid).generateSetStmt(typeToGenerate,String.valueOf(ignoreDateOutofRange), column, counter, incomingConnName, cid, NORMAL_TYPE,null)%>
                     <%
@@ -603,13 +612,23 @@ if((cid.equals("talendLogs_DB") || cid.equals("talendStats_DB") || cid.equals("t
 		            }
 		        }
 		        if(!isDynamic) {
-		     %>
+		        	if(isSpecifyIdentityKey){
+		     		%>
+		     	int counter<%=cid%> = rowCount<%=cid%> * <%=insertableCount-1%> + 1;
+		     	
+		     	 	<%
+		     	 	}else{
+					%>
 		     	int counter<%=cid%> = rowCount<%=cid%> * <%=insertableCount%> + 1;
 		     	
-		     	 <%
+		     	 	<%
+		     	 	}
 				}   
 		                for(Column column : colStruct) {
 		                    if(column.isInsertable()) {
+		                    	if(isSpecifyIdentityKey && (column.getName().equals(identityKey)) && !column.isDynamic()) {
+	                    			continue;
+	                   			}
 		                        String typeToGenerate = JavaTypesManager.getTypeToGenerate(column.getColumn().getTalendType(), column.getColumn().isNullable());
 		                        siOperation.generateSetStmt(typeToGenerate,column,incomingConnName,cid,ignoreDateOutofRange,dbmsId);
 		                        %>
@@ -618,7 +637,7 @@ if((cid.equals("talendLogs_DB") || cid.equals("talendStats_DB") || cid.equals("t
 		                    }
 		                }
 						if(isDynamic) {
-				Column dynamicColumn = getColumn(talendDynCol);
+							Column dynamicColumn = getColumn(talendDynCol);
 							String typeToGenerate = JavaTypesManager.getTypeToGenerate(dynamicColumn.getColumn().getTalendType(), dynamicColumn.getColumn().isNullable());
 							if("Dynamic".equals(typeToGenerate)) {
 							%>
@@ -634,6 +653,9 @@ if((cid.equals("talendLogs_DB") || cid.equals("talendStats_DB") || cid.equals("t
 		                int count =0;
 		                for(Column column : colStruct) {
 		                    if(column.isInsertable()) {
+			                    if(isSpecifyIdentityKey && (column.getName().equals(identityKey)) && !column.isDynamic()) {
+	                    			continue;
+	                   			}
 		                        if(count != 0) {
 		                            %>
 		                            ,
@@ -1011,6 +1033,9 @@ if((cid.equals("talendLogs_DB") || cid.equals("talendStats_DB") || cid.equals("t
                 for(Column columnInsert : colStruct) {
                     if(columnInsert.isInsertable()) {
                         String typeToGenerate = JavaTypesManager.getTypeToGenerate(columnInsert.getColumn().getTalendType(), columnInsert.getColumn().isNullable());
+                        if(isSpecifyIdentityKey && (columnInsert.getName().equals(identityKey)) && columnInsert.isInsertable() && !columnInsert.isDynamic()) {
+                    		continue;
+                    	}
                         %>
                         <%=getManager(dbmsId, cid).generateSetStmt(typeToGenerate, String.valueOf(ignoreDateOutofRange), columnInsert, counterInsert, incomingConnName, cid, INSERT_TYPE,null)%>
                         <%
@@ -1208,6 +1233,9 @@ if((cid.equals("talendLogs_DB") || cid.equals("talendStats_DB") || cid.equals("t
                 for(Column column : colStruct) {
                     if(column.isInsertable()) {
                         String typeToGenerate = JavaTypesManager.getTypeToGenerate(column.getColumn().getTalendType(), column.getColumn().isNullable());
+                        if(isSpecifyIdentityKey && (column.getName().equals(identityKey)) && column.isInsertable() && !column.isDynamic()) {
+                    		continue;
+                    	}
                         %>
                         <%=getManager(dbmsId, cid).generateSetStmt(typeToGenerate, String.valueOf(ignoreDateOutofRange), column, counter, incomingConnName, cid, INSERT_TYPE,null)%>
                         <%
@@ -1432,6 +1460,9 @@ if((cid.equals("talendLogs_DB") || cid.equals("talendStats_DB") || cid.equals("t
             for(Column columnInsert : colStruct) {
                 if(columnInsert.isInsertable()) {
                     String typeToGenerate = JavaTypesManager.getTypeToGenerate(columnInsert.getColumn().getTalendType(), columnInsert.getColumn().isNullable());
+                    if(isSpecifyIdentityKey && (columnInsert.getName().equals(identityKey)) && columnInsert.isInsertable() && !columnInsert.isDynamic()) {
+                    	continue;
+                   }
                     %>
                     <%=getManager(dbmsId, cid).generateSetStmt(typeToGenerate, String.valueOf(ignoreDateOutofRange), columnInsert, counterInsert, incomingConnName, cid, INSERT_TYPE,null)%>
                     <%
@@ -1674,7 +1705,7 @@ if((cid.equals("talendLogs_DB") || cid.equals("talendStats_DB") || cid.equals("t
     		}
     	}
     	
-		if(("true").equals(identityInsert) && useExistingConnection ) {
+		if(identityInsert && useExistingConnection ) {
         %>
 		if (isShareIdentity_<%=cid%> ) {
         	 stmt_<%=cid %>.execute("SET IDENTITY_INSERT ["+ tableName_<%=cid%> +"] OFF");
