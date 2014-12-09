@@ -111,6 +111,7 @@ import org.talend.core.tis.ICoreTisService;
 import org.talend.core.ui.ISVNProviderService;
 import org.talend.core.ui.TalendBrowserLaunchHelper;
 import org.talend.core.ui.branding.IBrandingService;
+import org.talend.core.ui.login.sandbox.CreateSandboxProjectDialog;
 import org.talend.core.ui.workspace.ChooseWorkspaceData;
 import org.talend.repository.ProjectManager;
 import org.talend.repository.i18n.Messages;
@@ -123,7 +124,6 @@ import org.talend.repository.ui.actions.importproject.ImportProjectAsAction;
 import org.talend.repository.ui.actions.importproject.ImportProjectsUtilities;
 import org.talend.repository.ui.login.connections.ConnectionUserPerReader;
 import org.talend.repository.ui.login.connections.ConnectionsDialog;
-import org.talend.repository.ui.login.sandboxProject.CreateSandboxProjectDialog;
 import org.talend.repository.ui.wizards.newproject.NewProjectWizard;
 import org.talend.utils.json.JSONException;
 
@@ -1887,7 +1887,7 @@ public class LoginComposite extends Composite {
         if (getConnection() != null) {
             setRepositoryContextInContext(); // must set the current connection, if existed
         }
-        CreateSandboxProjectDialog sandboxDialog = new CreateSandboxProjectDialog(getShell(), getConnection());
+        CreateSandboxProjectDialog sandboxDialog = new CreateSandboxProjectDialog(getShell());
 
         if (sandboxDialog.open() == Window.OK) {
             ConnectionUserPerReader instance = ConnectionUserPerReader.getInstance();
