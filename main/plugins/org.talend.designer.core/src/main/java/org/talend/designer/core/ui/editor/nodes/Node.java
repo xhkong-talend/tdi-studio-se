@@ -1817,6 +1817,8 @@ public class Node extends Element implements IGraphicalNode {
                     refreshMRSub = true;
                     if (needCleared()) {
                         refreshNodeContainer();
+                    } else if (id.equals(EParameterName.ACTIVATE.getName())) {
+                        activeMRProBar();
                     }
                 } else {
                     // Fix for TDI-30185:statistics should not be cleard on preoperty change
@@ -4812,6 +4814,20 @@ public class Node extends Element implements IGraphicalNode {
             }
         }
 
+    }
+
+    private void activeMRProBar() {
+        if (!this.isMapReduce()) {
+            return;
+        }
+        if (GlobalServiceRegister.getDefault().isServiceRegistered(IMRProcessService.class)) {
+            IMRProcessService mrService = (IMRProcessService) GlobalServiceRegister.getDefault().getService(
+                    IMRProcessService.class);
+            if (mrService != null) {
+                mrService.setMRData(process);
+            }
+        }
+        refreshNodeContainer();
     }
 
 }

@@ -83,6 +83,8 @@ public class JobletContainerFigure extends Figure {
 
     private IFigure parentMRFigure;
 
+    private boolean dispose = false;
+
     /**
      * DOC hwang JobletContainerFigure constructor comment.
      *
@@ -206,7 +208,7 @@ public class JobletContainerFigure extends Figure {
         if (this.jobletContainer.getNode().isJoblet()) {
             refreshForJoblet();
         } else if (this.jobletContainer.getNode().isMapReduce()) {
-            refreshMRFigures(null);
+            refreshMRFigures();
             if (!this.jobletContainer.getNode().isMapReduceStart()) {
                 if (rectFig.isVisible()) {
                     rectFig.setVisible(false);
@@ -214,6 +216,9 @@ public class JobletContainerFigure extends Figure {
                 if (outlineFigure.isVisible()) {
                     outlineFigure.setVisible(false);
                 }
+
+                removeFromParentMRFigure();
+                mrFigures.clear();
                 return;
             }
 
@@ -380,7 +385,7 @@ public class JobletContainerFigure extends Figure {
         outlineFigure.setForegroundColor(ColorUtils.getCacheColor(new RGB(220, 120, 120)));
         outlineFigure.setSize(rectangle.width, preferedSize.height);
 
-        refreshMRFigures(null);
+        refreshMRFigures();
 
         Iterator<Entry<String, SimpleHtmlFigure>> ite = mrFigures.entrySet().iterator();
         int i = 0;
@@ -482,12 +487,16 @@ public class JobletContainerFigure extends Figure {
     }
 
     public void dispose() {
-        if (this.parentMRFigure != null) {
-            this.parentMRFigure.getChildren().clear();
-        }
+        // if (this.parentMRFigure != null) {
+        // this.parentMRFigure.getChildren().clear();
+        // }
+        removeFromParentMRFigure();
+        this.mrFigures.clear();
+        dispose = true;
     }
 
     /**
+     * 
      * hwang Comment method "updateData".
      */
     public void updateData() {
@@ -500,6 +509,9 @@ public class JobletContainerFigure extends Figure {
         this.getChildren().remove(rectFig);
         outlineFigure.getChildren().clear();
         rectFig.getChildren().clear();
+        if (dispose) {
+            return;
+        }
 
         if (showTitle) {
             outlineFigure.add(titleFigure);
@@ -512,16 +524,11 @@ public class JobletContainerFigure extends Figure {
             add(outlineFigure, null, 0);
             add(rectFig, null, 1);
         }
-        refreshMRFigures(parentMRFigure);
+        refreshMRFigures();
 
         if (jobletContainer.getSubjobContainer() != null && !jobletContainer.getSubjobContainer().isCollapsed()) {
             if (this.jobletContainer.getNode().isMapReduceStart()) {
-                Iterator<Entry<String, SimpleHtmlFigure>> ite = mrFigures.entrySet().iterator();
-                while (ite.hasNext()) {
-                    Entry<String, SimpleHtmlFigure> entry = ite.next();
-                    SimpleHtmlFigure value = entry.getValue();
-                    parentMRFigure.add(value);
-                }
+                addToParentMRFigure();
             }
         }
 
@@ -585,6 +592,9 @@ public class JobletContainerFigure extends Figure {
             return;
         }
         if (node.getMrGroupId() == null) {
+            return;
+        }
+        if (dispose) {
             return;
         }
         Integer mrCount = node.getMrJobInGroupCount();
@@ -748,7 +758,7 @@ public class JobletContainerFigure extends Figure {
         }
     }
 
-    private void refreshMRFigures(IFigure parentMRFigure) {
+    private void refreshMRFigures() {
         if (!this.jobletContainer.getNode().isMapReduce()) {
             return;
         }
@@ -756,25 +766,52 @@ public class JobletContainerFigure extends Figure {
             if (mrFigures.isEmpty()) {
                 initMRFigures();
             } else if (mrFigures.size() / 2 != this.jobletContainer.getNode().getMrJobInGroupCount()) {
-                this.parentMRFigure.getChildren().clear();
+                removeFromParentMRFigure();
                 mrFigures.clear();
                 initMRFigures();
             }
 
         }
         if (!this.jobletContainer.getNode().isMapReduceStart() && !mrFigures.isEmpty()) {
-            Iterator<Entry<String, SimpleHtmlFigure>> ite = mrFigures.entrySet().iterator();
-            while (ite.hasNext()) {
-                Entry<String, SimpleHtmlFigure> entry = ite.next();
-                SimpleHtmlFigure value = entry.getValue();
-                if (parentMRFigure != null && parentMRFigure.getChildren().contains(value)) {
-                    parentMRFigure.remove(value);
-                } else {
-                    getChildren().remove(value);
-                }
-            }
+            removeFromParentMRFigure();
             mrFigures.clear();
         }
+    }
+
+    private void removeFromParentMRFigure() {
+        if (this.parentMRFigure == null) {
+            return;
+        }
+        Iterator<Entry<String, SimpleHtmlFigure>> ite = mrFigures.entrySet().iterator();
+        while (ite.hasNext()) {
+            Entry<String, SimpleHtmlFigure> entry = ite.next();
+            // String key = entry.getKey();
+            SimpleHtmlFigure value = entry.getValue();
+            if (this.parentMRFigure.getChildren().contains(value)) {
+                this.parentMRFigure.remove(value);
+            }
+        }
+    }
+
+    private void addToParentMRFigure() {
+        if (this.parentMRFigure == null) {
+            return;
+        }
+        if (!this.jobletContainer.getNode().isMapReduceStart()) {
+            return;
+        }
+        if (dispose) {
+            return;
+        }
+        Iterator<Entry<String, SimpleHtmlFigure>> ite = mrFigures.entrySet().iterator();
+        while (ite.hasNext()) {
+            Entry<String, SimpleHtmlFigure> entry = ite.next();
+            SimpleHtmlFigure value = entry.getValue();
+            if (!this.parentMRFigure.getChildren().contains(value)) {
+                this.parentMRFigure.add(value);
+            }
+        }
+
     }
 
 }
