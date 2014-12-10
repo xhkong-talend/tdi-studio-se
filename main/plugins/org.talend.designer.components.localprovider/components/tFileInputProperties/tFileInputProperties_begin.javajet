@@ -32,6 +32,7 @@ if(!isGenerateCode){
 }
 %>
 	java.io.File file_<%=cid%> = new java.io.File(<%=filename%>);
+	int nb_line_<%=cid%> = 0;
 <%
 if(("PROPERTIES_FORMAT").equals(fileFormat)){
 %>

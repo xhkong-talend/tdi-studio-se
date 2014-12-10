@@ -28,7 +28,7 @@
         return "";//output conn only onsubjob_ok
     }   	
 %>
-	tos_count_<%=cid %>++;
+	nb_line_<%=cid%>++;
 <%
 	if(("PROPERTIES_FORMAT").equals(fileFormat)){
 %>
@@ -52,4 +52,4 @@
 		}
 	}
 %>
-globalMap.put("<%=cid %>_NB_LINE", tos_count_<%=cid %>);
+globalMap.put("<%=cid %>_NB_LINE", nb_line_<%=cid%>);
