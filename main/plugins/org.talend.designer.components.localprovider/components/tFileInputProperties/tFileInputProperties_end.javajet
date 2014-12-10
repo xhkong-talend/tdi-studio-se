@@ -8,6 +8,7 @@
         org.talend.designer.codegen.config.CodeGeneratorArgument
 	" 
 %>
+<%@ include file="../templates/Log4j/Log4jFileUtil.javajet"%>
 <%
     CodeGeneratorArgument codeGenArgument = (CodeGeneratorArgument) argument;
     INode node = (INode)codeGenArgument.getArgument();
@@ -27,9 +28,7 @@
     if(!isGenerateCode){
         return "";//output conn only onsubjob_ok
     }   	
-%>
-	nb_line_<%=cid%>++;
-<%
+
 	if(("PROPERTIES_FORMAT").equals(fileFormat)){
 %>
 		}
@@ -53,3 +52,6 @@
 	}
 %>
 globalMap.put("<%=cid %>_NB_LINE", nb_line_<%=cid%>);
+<%
+log4jFileUtil.retrievedDataNumberInfo();
+%>

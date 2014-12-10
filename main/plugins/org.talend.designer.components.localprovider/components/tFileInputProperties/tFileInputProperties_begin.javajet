@@ -8,6 +8,7 @@
         org.talend.designer.codegen.config.CodeGeneratorArgument
 	" 
 %>
+<%@ include file="../templates/Log4j/Log4jFileUtil.javajet"%>
 <% 
 CodeGeneratorArgument codeGenArgument = (CodeGeneratorArgument) argument;
 INode node = (INode)codeGenArgument.getArgument();
@@ -34,6 +35,8 @@ if(!isGenerateCode){
 	java.io.File file_<%=cid%> = new java.io.File(<%=filename%>);
 	int nb_line_<%=cid%> = 0;
 <%
+log4jFileUtil.startRetriveDataInfo();
+
 if(("PROPERTIES_FORMAT").equals(fileFormat)){
 %>
 	java.util.Properties properties_<%=cid%> = new java.util.Properties();
@@ -42,7 +45,10 @@ if(("PROPERTIES_FORMAT").equals(fileFormat)){
 		properties_<%=cid%>.load(fis_<%=cid%>);
 		java.util.Enumeration enumeration_<%=cid%> = properties_<%=cid%>.propertyNames();
 		while (enumeration_<%=cid%>.hasMoreElements()) {
+			nb_line_<%=cid%>++;
 <%
+		log4jFileUtil.debugRetriveData(node);
+		
 		if(outConnName!=null){
 %>
 			<%=outConnName %>.key = (String)enumeration_<%=cid%>.nextElement();
@@ -63,7 +69,10 @@ if(("PROPERTIES_FORMAT").equals(fileFormat)){
 %>
 		for(org.ini4j.Profile.Section section_<%=cid%> : ini_<%=cid%>.values()){
 	    	for(String key_<%=cid%> : section_<%=cid%>.keySet()){
+	    		nb_line_<%=cid%>++;
 <%
+		log4jFileUtil.debugRetriveData(node);
+		
 		if(outConnName!=null){
 %>
 				<%=outConnName %>.key = key_<%=cid%>;
@@ -74,7 +83,10 @@ if(("PROPERTIES_FORMAT").equals(fileFormat)){
 	}else if(("RETRIVE_SECTIONS").equals(retriveMode)){
 %>
 		for(String names_<%=cid%> : ini_<%=cid%>.keySet()){
+			nb_line_<%=cid%>++;
 <%
+		log4jFileUtil.debugRetriveData(node);
+		
 		if(outConnName!=null){
 %>
 		    <%=outConnName %>.section = names_<%=cid%>;
@@ -85,7 +97,10 @@ if(("PROPERTIES_FORMAT").equals(fileFormat)){
 	    org.ini4j.Profile.Section section_<%=cid%> = ini_<%=cid%>.get(<%=sectionName%>);
 	    if(section_<%=cid%>!=null){
 	    for(String key_<%=cid%> : section_<%=cid%>.keySet()){
+	    	nb_line_<%=cid%>++;
 <%
+		log4jFileUtil.debugRetriveData(node);
+		
 		if(outConnName!=null){
 %>
 			<%=outConnName %>.key = key_<%=cid%>;
