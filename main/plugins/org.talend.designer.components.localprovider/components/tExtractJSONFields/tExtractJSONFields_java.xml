@@ -165,6 +165,7 @@
             <IMPORT NAME="json-smart-2.1.0.jar" MODULE="json-smart-2.1.0.jar" REQUIRED_IF="READBYXPATH == 'false'" />
             <IMPORT NAME="asm-1.0.2.jar" MODULE="asm-1.0.2.jar" REQUIRED_IF="READBYXPATH == 'false'" />
             <IMPORT NAME="slf4j-api-1.7.5.jar" MODULE="slf4j-api-1.7.5.jar" UrlPath="platform:/plugin/org.talend.libraries.slf4j/lib/slf4j-api-1.7.5.jar" REQUIRED_IF="READBYXPATH == 'false'" />
+            <IMPORT NAME="slf4j-log4j12-1.7.5.jar" MODULE="slf4j-log4j12-1.7.5.jar" UrlPath="platform:/plugin/org.talend.libraries.slf4j/lib/slf4j-log4j12-1.7.5.jar" REQUIRED_IF="READBYXPATH == 'false'" />
     </IMPORTS>
   </CODEGENERATION>
 
