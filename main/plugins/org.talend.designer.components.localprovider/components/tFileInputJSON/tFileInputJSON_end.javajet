@@ -10,7 +10,7 @@
 CodeGeneratorArgument codeGenArgument = (CodeGeneratorArgument) argument;
 INode node = (INode)codeGenArgument.getArgument();
 boolean isLog4jEnabled = ("true").equals(ElementParameterParser.getValue(node.getProcess(), "__LOG4J_ACTIVATE__"));
-boolean readByXPath = "true".equals(ElementParameterParser.getValue(node, "__READBYXPATH__"));
+String readBy = ElementParameterParser.getValue(node, "__READ_BY__");
 
 String cid = node.getUniqueName();
 %>
@@ -18,7 +18,7 @@ String cid = node.getUniqueName();
 			log.debug("<%=cid%> - Retrieving the record " + nb_line_<%=cid %> + ".");
 		<%}%>
 <%
-        if(readByXPath){
+        if("XPATH".equals(readBy)){
 %>
             }
 <%

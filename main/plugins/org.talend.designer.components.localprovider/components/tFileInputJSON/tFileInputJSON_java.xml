@@ -35,9 +35,23 @@
 			<DEFAULT />
 		</PARAMETER>
 
+		<!-- 
 		<PARAMETER NAME="READBYXPATH" FIELD="CHECK" NUM_ROW="25"
 			REQUIRED="true">
 			<DEFAULT>true</DEFAULT>
+		</PARAMETER>
+		 -->
+		
+		<PARAMETER
+			NAME="READ_BY"
+			FIELD="CLOSED_LIST"
+			NUM_ROW="25"
+			>
+			<ITEMS DEFAULT="XPATH">
+				<ITEM NAME="XPATH" VALUE="XPATH" />
+				<ITEM NAME="JSONPATH" VALUE="JSONPATH" />
+				<ITEM NAME="JSONPATH_WITHOUTPUT_LOOP" VALUE="JSONPATH_WITHOUTPUT_LOOP" />
+			</ITEMS>
 		</PARAMETER>
 
 		<PARAMETER NAME="USEURL" FIELD="CHECK" NUM_ROW="30"
@@ -56,19 +70,31 @@
 		</PARAMETER>
 
 		<PARAMETER NAME="LOOP_QUERY" FIELD="TEXT" NUM_ROW="45"
-			SHOW_IF="READBYXPATH=='true'" REPOSITORY_VALUE="XPATH_QUERY">
+			SHOW_IF="READ_BY=='XPATH'" REPOSITORY_VALUE="XPATH_QUERY">
 			<DEFAULT>"/bills/bill/line"</DEFAULT>
+		</PARAMETER>
+		
+		<PARAMETER NAME="JSON_LOOP_QUERY" FIELD="TEXT" NUM_ROW="45"
+			SHOW_IF="READ_BY=='JSONPATH'">
+			<DEFAULT>"/bills/bill/line[*]"</DEFAULT>
 		</PARAMETER>
 
 		<PARAMETER NAME="MAPPING" FIELD="TABLE" REQUIRED="true"
-			SHOW_IF="READBYXPATH=='false'" NUM_ROW="50" NB_LINES="5">
+			SHOW_IF="READ_BY=='JSONPATH_WITHOUTPUT_LOOP'" NUM_ROW="50" NB_LINES="5">
 			<ITEMS BASED_ON_SCHEMA="true">
 				<ITEM NAME="QUERY" REPOSITORY_ITEM="JSON_QUERY" />
 			</ITEMS>
 		</PARAMETER>
+		
+		<PARAMETER NAME="MAPPING_JSONPATH" FIELD="TABLE" REQUIRED="true"
+			SHOW_IF="READ_BY=='JSONPATH'" NUM_ROW="50" NB_LINES="5">
+			<ITEMS BASED_ON_SCHEMA="true">
+				<ITEM NAME="QUERY" />
+			</ITEMS>
+		</PARAMETER>
 
 		<PARAMETER NAME="MAPPINGXPATH" FIELD="TABLE" REQUIRED="true"
-			NUM_ROW="55" NB_LINES="5" SHOW_IF="READBYXPATH=='true'" REPOSITORY_VALUE="JSON_MAPPING">
+			NUM_ROW="55" NB_LINES="5" SHOW_IF="READ_BY=='XPATH'" REPOSITORY_VALUE="JSON_MAPPING">
 			<ITEMS BASED_ON_SCHEMA="true">
 				<ITEM NAME="QUERY" REPOSITORY_ITEM="XML_QUERY" />
 				<ITEM NAME="NODECHECK" FIELD="CHECK" VALUE="false" />
@@ -106,7 +132,7 @@
 			<DEFAULT>"."</DEFAULT>
 		</PARAMETER>
 
-		<PARAMETER NAME="CHECK_DATE" FIELD="CHECK" NUM_ROW="20" SHOW_IF="READBYXPATH=='true'">
+		<PARAMETER NAME="CHECK_DATE" FIELD="CHECK" NUM_ROW="20" SHOW_IF="READ_BY=='XPATH'">
             <DEFAULT>false</DEFAULT>
         </PARAMETER>
 
@@ -118,26 +144,36 @@
 
 	<CODEGENERATION>
 		<IMPORTS>
+			<!-- json path by javascript api -->
 			<IMPORT NAME="json_simple" MODULE="json_simple-1.1.jar" UrlPath="platform:/plugin/org.talend.libraries.jackson/lib/json_simple-1.1.jar"
-				REQUIRED_IF="(READBYXPATH == 'false')" />
-			<IMPORT NAME="jsonpath" MODULE="jsonpath.jar" UrlPath="platform:/plugin/org.talend.libraries.jackson/lib/jsonpath.jar" REQUIRED_IF="(READBYXPATH == 'false')" />
+				REQUIRED_IF="(READ_BY == 'JSONPATH_WITHOUTPUT_LOOP')" />
+			<IMPORT NAME="jsonpath" MODULE="jsonpath.jar" UrlPath="platform:/plugin/org.talend.libraries.jackson/lib/jsonpath.jar" REQUIRED_IF="(READ_BY == 'JSONPATH_WITHOUTPUT_LOOP')" />
+			
+			<!-- xpath -->
 			<IMPORT NAME="Java_DOM4J1.6" MODULE="dom4j-1.6.1.jar" UrlPath="platform:/plugin/org.talend.libraries.dom4j-jaxen/lib/dom4j-1.6.1.jar"
-				REQUIRED_IF="(READBYXPATH == 'true')" />
+				REQUIRED_IF="(READ_BY == 'XPATH')" />
 			<IMPORT NAME="Java_JAXEN1.1" MODULE="jaxen-1.1.1.jar" UrlPath="platform:/plugin/org.talend.libraries.dom4j-jaxen/lib/jaxen-1.1.1.jar"
-				REQUIRED_IF="(READBYXPATH == 'true')" />
+				REQUIRED_IF="(READ_BY == 'XPATH')" />
 			<IMPORT NAME="json-lib" MODULE="json-lib-2.4-jdk15.jar" UrlPath="platform:/plugin/org.talend.libraries.jackson/lib/json-lib-2.4-jdk15.jar"
-				REQUIRED_IF="(READBYXPATH == 'true')" />
+				REQUIRED_IF="(READ_BY == 'XPATH')" />
 			<IMPORT NAME="commons_lang" MODULE="commons-lang-2.6.jar" UrlPath="platform:/plugin/org.talend.libraries.apache.common/lib/commons-lang-2.6.jar"
-				REQUIRED_IF="(READBYXPATH == 'true')" />
+				REQUIRED_IF="(READ_BY == 'XPATH')" />
 			<IMPORT NAME="commons_logging" MODULE="commons-logging-1.1.1.jar" UrlPath="platform:/base/plugins/org.apache.commons.logging_1.1.1.v201101211721.jar"
-				REQUIRED_IF="(READBYXPATH == 'true')" />
-			<IMPORT NAME="ezmorph" MODULE="ezmorph-1.0.6.jar" UrlPath="platform:/plugin/org.talend.libraries.jackson/lib/ezmorph-1.0.6.jar" REQUIRED_IF="(READBYXPATH == 'true')" />
-			<IMPORT NAME="xom" MODULE="xom-1.2.7.jar" REQUIRED_IF="(READBYXPATH == 'true')" />
+				REQUIRED_IF="(READ_BY == 'XPATH')" />
+			<IMPORT NAME="ezmorph" MODULE="ezmorph-1.0.6.jar" UrlPath="platform:/plugin/org.talend.libraries.jackson/lib/ezmorph-1.0.6.jar" REQUIRED_IF="(READ_BY == 'XPATH')" />
+			<IMPORT NAME="xom" MODULE="xom-1.2.7.jar" REQUIRED_IF="(READ_BY == 'XPATH')" />
 			<IMPORT NAME="commons_beanutils" MODULE="commons-beanutils-1.8.3.jar" UrlPath="platform:/plugin/org.talend.libraries.apache.common/lib/commons-beanutils-1.8.3.jar"
-				REQUIRED_IF="(READBYXPATH == 'true')" />
+				REQUIRED_IF="(READ_BY == 'XPATH')" />
 			<IMPORT NAME="commons_collections" MODULE="commons-collections-3.2.1.jar" UrlPath="platform:/plugin/org.talend.libraries.apache.common/lib/commons-collections-3.2.1.jar"
-				REQUIRED_IF="(READBYXPATH == 'true')" />
-			<IMPORT NAME="staxon" MODULE="staxon-1.2.jar" REQUIRED_IF="(READBYXPATH == 'true')" />
+				REQUIRED_IF="(READ_BY == 'XPATH')" />
+			<IMPORT NAME="staxon" MODULE="staxon-1.2.jar" REQUIRED_IF="(READ_BY == 'XPATH')" />
+			
+			<!-- json path -->
+			<IMPORT NAME="json-path-1.2.0.jar" MODULE="json-path-1.2.0.jar" REQUIRED_IF="(READ_BY == 'JSONPATH')" />
+            <IMPORT NAME="json-smart-2.1.0.jar" MODULE="json-smart-2.1.0.jar" REQUIRED_IF="(READ_BY == 'JSONPATH')" />
+            <IMPORT NAME="asm-1.0.2.jar" MODULE="asm-1.0.2.jar" REQUIRED_IF="(READ_BY == 'JSONPATH')" />
+            <IMPORT NAME="slf4j-api-1.7.5.jar" MODULE="slf4j-api-1.7.5.jar" UrlPath="platform:/plugin/org.talend.libraries.slf4j/lib/slf4j-api-1.7.5.jar" REQUIRED_IF="(READ_BY == 'JSONPATH')" />
+            <IMPORT NAME="slf4j-log4j12-1.7.5.jar" MODULE="slf4j-log4j12-1.7.5.jar" UrlPath="platform:/plugin/org.talend.libraries.slf4j/lib/slf4j-log4j12-1.7.5.jar" REQUIRED_IF="(READ_BY == 'JSONPATH')" />
 		</IMPORTS>
 	</CODEGENERATION>
 
