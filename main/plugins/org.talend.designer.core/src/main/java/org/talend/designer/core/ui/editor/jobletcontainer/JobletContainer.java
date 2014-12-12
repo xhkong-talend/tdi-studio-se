@@ -542,7 +542,7 @@ public class JobletContainer extends NodeContainer {
             if (isCollapsed()) {
                 ((Connection) conn).reconnect(conn.getSource(), this.node, conn.getLineStyle());
             } else {
-                for (NodeContainer nodeContainer : this.nodeContainers) {
+                out: for (NodeContainer nodeContainer : this.nodeContainers) {
                     Node connNode = nodeContainer.getNode();
                     IElementParameter elePa = this.node.getElementParameter(connNode.getJoblet_unique_name());
 
@@ -579,6 +579,11 @@ public class JobletContainer extends NodeContainer {
                             break;
                         } else if (getFlowInput(inputs).size() == 1 && !isTri
                                 && new JobletUtil().isJobletInput(connNode, this.getProcess())) {
+                            for (IConnection flowConn : getFlowInput(inputs)) {
+                                if (!flowConn.getUniqueName().equals(conn.getUniqueName())) {
+                                    continue out;
+                                }
+                            }
                             JobletConnectionReconnectCommand reConnectCommand = new JobletConnectionReconnectCommand(conn);
                             reConnectCommand.setNewTarget(connNode);
                             reConnectCommand.execute();
@@ -687,6 +692,7 @@ public class JobletContainer extends NodeContainer {
 
     public boolean canCollapse() {
         List<String> connList = new ArrayList<String>();
+        List<String> triConnList = new ArrayList<String>();
         List<String> metaList = new ArrayList<String>();
         if (node.getIncomingConnections().size() > 1) {
             for (IConnection conn : node.getIncomingConnections()) {
@@ -707,6 +713,16 @@ public class JobletContainer extends NodeContainer {
                     if (isTri) {
                         IElementParameter elechild = elePa.getChildParameters().get("COMPONENT_LIST");
                         if (elechild != null) {
+                            if (elechild.getValue() == null || ((String) elechild.getValue()).length() <= 0) {
+                                return false;
+                            } else {
+                                if (triConnList.contains(elechild.getValue())) {
+                                    return false;
+                                } else {
+                                    triConnList.add((String) elechild.getValue());
+                                }
+                            }
+
                             if (elechild.getValue() != null && (elechild.getValue() instanceof String)) {
                                 metaList.remove(elechild.getValue());
                             }
