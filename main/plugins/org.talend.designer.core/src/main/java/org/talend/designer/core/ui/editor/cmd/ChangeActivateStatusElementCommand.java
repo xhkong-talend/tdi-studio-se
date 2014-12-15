@@ -21,11 +21,13 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.eclipse.gef.commands.Command;
+import org.talend.core.GlobalServiceRegister;
 import org.talend.core.model.metadata.IMetadataColumn;
 import org.talend.core.model.metadata.IMetadataTable;
 import org.talend.core.model.process.IConnection;
 import org.talend.core.model.process.IConnectionCategory;
 import org.talend.core.model.process.INode;
+import org.talend.core.service.IMRProcessService;
 import org.talend.designer.core.i18n.Messages;
 import org.talend.designer.core.model.components.EParameterName;
 import org.talend.designer.core.ui.editor.connections.Connection;
@@ -88,6 +90,22 @@ public class ChangeActivateStatusElementCommand extends Command {
         // tabbedPropertySheetPage.refresh();
         // }
         // }
+    }
+
+    private void refreshMRStatus() {
+        if (GlobalServiceRegister.getDefault().isServiceRegistered(IMRProcessService.class)) {
+            IMRProcessService mrService = (IMRProcessService) GlobalServiceRegister.getDefault().getService(
+                    IMRProcessService.class);
+            if (mrService != null) {
+                List<INode> mrNodeList = new ArrayList<INode>();
+                for (Node node : nodeList) {
+                    if (node.isMapReduceStart() && !mrNodeList.contains(node)) {
+                        mrNodeList.add(node);
+                    }
+                }
+                mrService.refreshMRStatus(mrNodeList);
+            }
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -161,6 +179,7 @@ public class ChangeActivateStatusElementCommand extends Command {
         process.checkProcess();
 
         refreshPropertyView();
+        refreshMRStatus();
     }
 
     private boolean isSameSchemaInputOutput(Node node) {
@@ -250,6 +269,7 @@ public class ChangeActivateStatusElementCommand extends Command {
         process.checkStartNodes();
         process.checkProcess();
         refreshPropertyView();
+        refreshMRStatus();
     }
 
     @Override
@@ -366,7 +386,7 @@ public class ChangeActivateStatusElementCommand extends Command {
                 if (!((Node) outConn.getTarget()).isActivate()) {
                     middleNodeMap.put(outConn, null);
                     if (isSameSchemaInputOutput((Node) outConn.getTarget())) {
-                        middleNodeMap.putAll(getAllOutMiddleNodes((Node) outConn.getTarget()));
+                        middleNodeMap.putAll(getAllOutMiddleNodes(outConn.getTarget()));
                     }
                 } else {
                     middleNodeMap.put(outConn, (Node) outConn.getTarget());
@@ -384,7 +404,7 @@ public class ChangeActivateStatusElementCommand extends Command {
                     middleNodeMap.put(inConn, null);
 
                     if (isSameSchemaInputOutput((Node) inConn.getSource())) {
-                        middleNodeMap.putAll(getAllInMiddleNodes((Node) inConn.getSource()));
+                        middleNodeMap.putAll(getAllInMiddleNodes(inConn.getSource()));
                     }
                 } else {
                     middleNodeMap.put(inConn, (Node) inConn.getSource());

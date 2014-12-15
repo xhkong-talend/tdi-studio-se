@@ -12,7 +12,13 @@
 // ============================================================================
 package org.talend.designer.core.ui.editor.cmd;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.eclipse.gef.commands.Command;
+import org.talend.core.GlobalServiceRegister;
+import org.talend.core.model.process.INode;
+import org.talend.core.service.IMRProcessService;
 import org.talend.designer.core.i18n.Messages;
 import org.talend.designer.core.ui.editor.nodes.Node;
 import org.talend.designer.core.ui.editor.process.Process;
@@ -81,6 +87,24 @@ public class ChangeActivateStatusSubjobCommand extends Command {
         // }
     }
 
+    private void refreshMRStatus() {
+        Process process = (Process) node.getProcess();
+        if (GlobalServiceRegister.getDefault().isServiceRegistered(IMRProcessService.class)) {
+            IMRProcessService mrService = (IMRProcessService) GlobalServiceRegister.getDefault().getService(
+                    IMRProcessService.class);
+            if (mrService != null) {
+                List<INode> mrNodeList = new ArrayList<INode>();
+                for (INode node : process.getGraphicalNodes()) {
+                    if ((((Node) node).isMapReduceStart()) && !mrNodeList.contains(node)) {
+                        mrNodeList.add(node);
+                    }
+                }
+                mrService.refreshMRStatus(mrNodeList);
+            }
+        }
+    }
+
+    @Override
     public void execute() {
         Process process = (Process) node.getProcess();
         process.setActivateSubjob(node, value, oneComponent);
@@ -88,8 +112,10 @@ public class ChangeActivateStatusSubjobCommand extends Command {
         process.checkStartNodes();
         process.checkProcess();
         refreshPropertyView();
+        refreshMRStatus();
     }
 
+    @Override
     public void undo() {
         Process process = (Process) node.getProcess();
         process.setActivateSubjob(node, !value, oneComponent);
@@ -97,8 +123,10 @@ public class ChangeActivateStatusSubjobCommand extends Command {
         process.checkStartNodes();
         process.checkProcess();
         refreshPropertyView();
+        refreshMRStatus();
     }
 
+    @Override
     public void redo() {
         this.execute();
     }
