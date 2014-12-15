@@ -198,9 +198,6 @@ for(Object row_<%=cid%> : resultset_<%=cid%>) {
         throw(e_<%=cid%>);
 <%
     	} else {
-			if(isLog4jEnabled){%>
-				log.error("<%=cid%> - " + e_<%=cid%>.getMessage());
-			<%}
             if(!("").equals(rejectConnName)&&!rejectConnName.equals(firstConnName)&&rejectColumnList != null && rejectColumnList.size() > 0) {
 %>
                 <%=rejectConnName %> = new <%=rejectConnName %>Struct();
@@ -215,6 +212,9 @@ for(Object row_<%=cid%> : resultset_<%=cid%>) {
                 <%=firstConnName %> = null;
 <%
             } else if(("").equals(rejectConnName)){
+            	if(isLog4jEnabled){%>
+					log.error("<%=cid%> - " + e_<%=cid%>.getMessage());
+				<%}
 %>
                 System.err.println(e_<%=cid%>.getMessage());
                 <%=firstConnName %> = null;

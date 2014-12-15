@@ -313,6 +313,8 @@ boolean checkDate = (checkDateStr!=null&&!("").equals(checkDateStr))?("true").eq
             for (org.dom4j.tree.AbstractNode temp_<%=cid%>: nodeList_<%=cid%>) {
                 nb_line_<%=cid%>++;
 <%
+log4jFileUtil.debugRetriveData(node);
+
 List< ? extends IConnection> conns = node.getOutgoingSortedConnections();
 String firstConnName = "";
 List<IMetadataTable> metadatas = node.getMetadataList();

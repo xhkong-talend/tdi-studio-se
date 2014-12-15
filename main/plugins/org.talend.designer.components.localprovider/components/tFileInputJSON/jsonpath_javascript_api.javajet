@@ -209,6 +209,8 @@ recordMaxSize_<%=cid%>=jsonUtil_<%=cid%>.getData(<%=query%>,invocableEngine_<%=c
 	
 		nb_line_<%=cid%>++;
 <%
+log4jFileUtil.debugRetriveData(node);
+
 if ((metadatas!=null)&&(metadatas.size()>0)) {
 	IMetadataTable metadata = metadatas.get(0);
 	if (metadata!=null) {
