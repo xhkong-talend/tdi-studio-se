@@ -2314,12 +2314,12 @@
         </projecttask>
         <projecttask
               beforeLogon="false"
-              breaks="5.6.0"
+              breaks="5.6.1"
               class="org.talend.repository.model.migration.ChangeReadByParameter4tFileInputJSON"
               id="org.talend.repository.model.migration.ChangeReadByParameter4tFileInputJSON"
               name="ChangeReadByParameter4tFileInputJSON"
               description="change the checkbox parameter to closedlist parameter for tFileInputJSON"
-              version="5.6.1">
+              version="5.6.2">
         </projecttask>
    </extension>
 
