@@ -14,6 +14,7 @@ imports="
 	java.util.Map
 	java.util.HashMap
 	org.talend.core.model.process.IProcess
+	org.talend.core.model.utils.NodeUtil
 	"
 skeleton="../templates/db_output_bulk.skeleton"
 %>
@@ -44,10 +45,9 @@ skeleton="../templates/db_output_bulk.skeleton"
     String useBatchSize = ElementParameterParser.getValue(node, "__USE_BATCH_SIZE__");
     String batchSize =ElementParameterParser.getValue(node, "__BATCH_SIZE__");
     String dbVersion = ElementParameterParser.getValue(node, "__DB_VERSION__");    
-    boolean isUseBatchByDBVersion = !"ORACLE_8".equalsIgnoreCase(dbVersion);
     boolean useExistingConnection = "true".equals(ElementParameterParser.getValue(node,"__USE_EXISTING_CONNECTION__"));
+    String connection = ElementParameterParser.getValue(node,"__CONNECTION__");
     if(useExistingConnection) {
-		String connection = ElementParameterParser.getValue(node,"__CONNECTION__");
 	    List<? extends INode> nodes = node.getProcess().getGeneratingNodes();
 	    for(INode targetNode : nodes){
 	    	if (targetNode.getUniqueName().equals(connection)) {
@@ -81,6 +81,11 @@ skeleton="../templates/db_output_bulk.skeleton"
         IConnection rejectConn = rejectConns.get(0);
         rejectConnName = rejectConn.getName();
     }
+    
+    boolean isUseBatchByDBVersion = (!useExistingConnection && !"ORACLE_8".equalsIgnoreCase(dbVersion)) || (useExistingConnection && !"ORACLE_8".equalsIgnoreCase(NodeUtil.getNodeByUniqueName(node.getProcess(), connection).getUniqueName()));
+	
+    boolean useBatch = rejectConnName == null && isUseBatchByDBVersion && (("INSERT").equals(dataAction) || ("UPDATE").equals(dataAction) || ("DELETE").equals(dataAction)) && ("true").equals(useBatchSize);
+    
     List<IMetadataColumn> rejectColumnList = null;
     IMetadataTable metadataTable = node.getMetadataFromConnector("REJECT");
     if(metadataTable != null) {
@@ -351,12 +356,10 @@ skeleton="../templates/db_output_bulk.skeleton"
 	    	}
     	}
     	
-    	if (("true").equals(useBatchSize)) {
-		    if(!("").equals(batchSize)&&!("0").equals(batchSize)) {
-			%>
-				batchSize_<%=cid%> = buffersSize_<%=tAsyncIn_cid%>;
-			<%
-		    }
+    	if (useBatch) {
+		%>
+			batchSize_<%=cid%> = buffersSize_<%=tAsyncIn_cid%>;
+		<%
     	}
 	}
 	
@@ -446,13 +449,13 @@ skeleton="../templates/db_output_bulk.skeleton"
             }            
     		%>
     		<%
-    		if (rejectConnName == null && isUseBatchByDBVersion && !useExistingConnection) { // modification one
+    		if (useBatch) {
     		%>
         		pstmt_<%=cid %>.addBatch();
         		nb_line_<%=cid%>++;    		 
     		  	<%
     		  	dbLog.data().addingToBatch(dbLog.var("nb_line"), dbLog.str(dataAction));
-    		  	if (("true").equals(useBatchSize) && !("").equals(batchSize) && !("0").equals(batchSize)) {
+    		  	if (!("*").equals(batchSize)) {
    		  		%>
 					batchSizeCounter_<%=cid%>++;
     		  	<%
@@ -588,13 +591,13 @@ skeleton="../templates/db_output_bulk.skeleton"
             }    
     		%>
     		<%
-    		if(rejectConnName == null && isUseBatchByDBVersion && !useExistingConnection) {
+    		if(useBatch) {
     		%>
         		pstmt_<%=cid %>.addBatch();
         		nb_line_<%=cid%>++;
     			<%
 				dbLog.data().addingToBatch(dbLog.var("nb_line"), dbLog.str(dataAction));
-    			if (("true").equals(useBatchSize) && !("").equals(batchSize) && !("0").equals(batchSize)) {
+    			if (!("*").equals(batchSize)) {
     			%>
     				batchSizeCounter_<%=cid%>++;
     			<%
@@ -1101,13 +1104,13 @@ skeleton="../templates/db_output_bulk.skeleton"
                 globalMap.put("<%=cid %>_QUERY", query_<%=cid%>.toString().trim());
             <%
             }            
-    		if (rejectConnName == null && isUseBatchByDBVersion && !useExistingConnection) {
+    		if (useBatch) {
         	%>
         		pstmt_<%=cid %>.addBatch();
         		nb_line_<%=cid%>++;
     			<%
 				dbLog.data().addingToBatch(dbLog.var("nb_line"), dbLog.str(dataAction));
-    			if (("true").equals(useBatchSize) && !("").equals(batchSize) && !("0").equals(batchSize)) {
+    			if (!("*").equals(batchSize)) {
 	    		%>
         		  	batchSizeCounter_<%=cid%>++;
     			<%
@@ -1181,51 +1184,49 @@ skeleton="../templates/db_output_bulk.skeleton"
         <%
         }	
     	//////////batch execute by batch size///////
-    	if ("true".equals(useBatchSize)) {
-    		if(!("").equals(batchSize) && !("0").equals(batchSize)) {
-                if ( (rejectConnName==null && isUseBatchByDBVersion && !useExistingConnection) && (("INSERT").equals(dataAction) || ("UPDATE").equals(dataAction) || ("DELETE").equals(dataAction))) {
-                %>                                                
-    				if ( batchSize_<%=cid%> <= batchSizeCounter_<%=cid%>) {                
-                    	try {
-    						<%dbLog.batch().executeTry(dbLog.str(dataAction));%>
-    						pstmt_<%=cid %>.executeBatch();
-    						<%dbLog.batch().executeDone(dbLog.str(dataAction));%>
-                    	}catch (java.sql.BatchUpdateException e_<%=cid%>){
-                        	<%
-                        	if(("true").equals(dieOnError)) {
-                        	%>
-                        		throw(e_<%=cid%>);
-                        	<%
-                        	}else {
-                        		dbLog.logPrintedException("e_"+cid+".getMessage()");
-                        		%>
-                        		System.err.println(e_<%=cid%>.getMessage());
-                        	<%
-                        	}
-                        	%>
-                		}
-    					tmp_batchUpdateCount_<%=cid%> = pstmt_<%=cid %>.getUpdateCount();                	
-        	    		<%
-        	    		if (("INSERT").equals(dataAction)) {
-    	    			%>
-        	    			insertedCount_<%=cid%>
-            	    	<%
-            	    	}else if (("UPDATE").equals(dataAction)) {
-            	    	%>
-            	    		updatedCount_<%=cid%>
-            	    	<%
-            	    	}else if (("DELETE").equals(dataAction)) {
-            	    	%>
-            	    	    deletedCount_<%=cid%>
-            	    	<%
-            	    	}
-            	    	%>      
-        	    		+= (tmp_batchUpdateCount_<%=cid%>!=-1?tmp_batchUpdateCount_<%=cid%>:0);                   	    	
-        	    		batchSizeCounter_<%=cid%> = 0;             	                	                	
-    				}
-        		<%	
+    	if (useBatch && (("INSERT").equals(dataAction) || ("UPDATE").equals(dataAction) || ("DELETE").equals(dataAction))) {
+    		if (!("*").equals(batchSize)) {
+        	%>                                                
+    			if ( batchSize_<%=cid%> <= batchSizeCounter_<%=cid%>) {                
+                	try {
+    					<%dbLog.batch().executeTry(dbLog.str(dataAction));%>
+    					pstmt_<%=cid %>.executeBatch();
+    					<%dbLog.batch().executeDone(dbLog.str(dataAction));%>
+                	}catch (java.sql.BatchUpdateException e_<%=cid%>){
+                    	<%
+                    	if(("true").equals(dieOnError)) {
+                    	%>
+                    		throw(e_<%=cid%>);
+                    	<%
+                    	}else {
+                    		dbLog.logPrintedException("e_"+cid+".getMessage()");
+                    		%>
+                    		System.err.println(e_<%=cid%>.getMessage());
+                    	<%
+                    	}
+                    	%>
+            		}
+    				tmp_batchUpdateCount_<%=cid%> = pstmt_<%=cid %>.getUpdateCount();                	
+    	    		<%
+    	    		if (("INSERT").equals(dataAction)) {
+        			%>
+    	    			insertedCount_<%=cid%>
+        	    	<%
+        	    	}else if (("UPDATE").equals(dataAction)) {
+        	    	%>
+        	    		updatedCount_<%=cid%>
+        	    	<%
+        	    	}else if (("DELETE").equals(dataAction)) {
+        	    	%>
+        	    	    deletedCount_<%=cid%>
+        	    	<%
+        	    	}
+        	    	%>      
+    	    		+= (tmp_batchUpdateCount_<%=cid%>!=-1?tmp_batchUpdateCount_<%=cid%>:0);                   	    	
+    	    		batchSizeCounter_<%=cid%> = 0;             	                	                	
     			}
-    		}
+			<%
+			}	
     	}
     	
     	
@@ -1237,7 +1238,7 @@ skeleton="../templates/db_output_bulk.skeleton"
                 if(commitEvery_<%=cid%> <= commitCounter_<%=cid%>) {
                 
                     <%
-                    if ((rejectConnName==null && isUseBatchByDBVersion && !useExistingConnection) && (("INSERT").equals(dataAction) || ("UPDATE").equals(dataAction) || ("DELETE").equals(dataAction)) ) {
+                    if (useBatch && (("INSERT").equals(dataAction) || ("UPDATE").equals(dataAction) || ("DELETE").equals(dataAction))) {
                     %>
     	                try {
     						<%dbLog.batch().executeTry(dbLog.str(dataAction));%>

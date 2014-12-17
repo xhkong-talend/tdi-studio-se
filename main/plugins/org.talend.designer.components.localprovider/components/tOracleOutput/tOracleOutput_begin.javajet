@@ -13,6 +13,7 @@ imports="
 		java.util.Map
 		java.util.HashMap
 		org.talend.core.model.process.IProcess
+		org.talend.core.model.utils.NodeUtil
 	" 
 skeleton="../templates/db_output_bulk.skeleton"
 %>
@@ -47,6 +48,19 @@ skeleton="../templates/db_output_bulk.skeleton"
     boolean useSpatialOptions = ("true").equals(ElementParameterParser.getValue(node,"__USE_SPATIAL_OPTIONS__"));
     boolean createSpatialIndex = ("true").equals(ElementParameterParser.getValue(node,"__SPATIAL_INDEX__"));
     boolean createGeometryColumns = ("true").equals(ElementParameterParser.getValue(node,"__GEOMETRY_COLUMNS__"));
+    boolean useExistingConnection = "true".equals(ElementParameterParser.getValue(node,"__USE_EXISTING_CONNECTION__"));
+	String connection = ElementParameterParser.getValue(node,"__CONNECTION__");
+	
+	String rejectConnName = null;
+    List<? extends IConnection> rejectConns = node.getOutgoingConnections("REJECT");
+    if(rejectConns != null && rejectConns.size() > 0) {
+        IConnection rejectConn = rejectConns.get(0);
+        rejectConnName = rejectConn.getName();
+    }
+
+	boolean isUseBatchByDBVersion = (!useExistingConnection && !"ORACLE_8".equalsIgnoreCase(dbVersion)) || (useExistingConnection && !"ORACLE_8".equalsIgnoreCase(NodeUtil.getNodeByUniqueName(node.getProcess(), connection).getUniqueName()));
+	
+    boolean useBatch = rejectConnName == null && isUseBatchByDBVersion && (("INSERT").equals(dataAction) || ("UPDATE").equals(dataAction) || ("DELETE").equals(dataAction)) && ("true").equals(useBatchSize);  
     
     if (useSpatialOptions) {
     	int targetSRID = -1;
@@ -171,9 +185,7 @@ skeleton="../templates/db_output_bulk.skeleton"
     String dbschema_<%=cid%> = null;
     String tableName_<%=cid%> = null;
     <%
-    boolean useExistingConnection = "true".equals(ElementParameterParser.getValue(node,"__USE_EXISTING_CONNECTION__"));
     if(useExistingConnection) {
-    	String connection = ElementParameterParser.getValue(node,"__CONNECTION__");
     	String conn = "conn_" + connection;
     	String schema = "dbschema_" + connection;
     	%>
@@ -314,13 +326,11 @@ skeleton="../templates/db_output_bulk.skeleton"
     
     dbLog.commit().logAutoCommit("conn_"+cid+".getAutoCommit()");
     
-    if (("true").equals(useBatchSize)) {
-        if(!("").equals(batchSize)&&!("0").equals(batchSize)) {
-    	%>
-    		int batchSize_<%=cid%> = <%=batchSize%>;
-       		int batchSizeCounter_<%=cid%>=0;
-    	<%   
-       	}
+    if (useBatch) {
+	%>
+		int batchSize_<%=cid%> = <%="*".equals(batchSize)?0:batchSize%>;
+   		int batchSizeCounter_<%=cid%>=0;
+	<%   
     }
     
     if(!isDynamic) {
