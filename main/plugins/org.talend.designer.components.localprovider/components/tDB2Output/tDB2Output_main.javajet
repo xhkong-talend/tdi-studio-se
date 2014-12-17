@@ -275,7 +275,7 @@ skeleton="../templates/db_output_bulk.skeleton"
                     <%
                     if(isEnableDebug) {
                         %>
-                        query_<%=cid%> = <%=getManager(dbmsId, cid).retrieveSQL(typeToGenerate, column, incomingConnName, cid, "query_" , counter, "insertSQLSplits_")%>;
+                        <%=getManager(dbmsId, cid).retrieveSQL(typeToGenerate, column, incomingConnName, cid, "query_" , counter, "insertSQLSplits_")%>;
                         <%
                     }                    
                     counter++;                        
@@ -366,7 +366,7 @@ skeleton="../templates/db_output_bulk.skeleton"
                     <%
                     if(isEnableDebug) {
                         %>
-                        query_<%=cid%> = <%=getManager(dbmsId, cid).retrieveSQL(typeToGenerate, column, incomingConnName, cid, "query_" , counterCol, "updateSQLSplits_")%>;
+                        <%=getManager(dbmsId, cid).retrieveSQL(typeToGenerate, column, incomingConnName, cid, "query_" , counterCol, "updateSQLSplits_")%>;
                         <%
                     }                    
                     counterCol++;                   
@@ -404,11 +404,11 @@ skeleton="../templates/db_output_bulk.skeleton"
 					if(isEnableDebug) {
 						if(isDynamic){
 						%>
-							query_<%=cid%> = <%=getManager(dbmsId, cid, node).retrieveSQL(talendDynCol.getLabel(),typeToGenerate, column, incomingConnName, cid, "query_" , counterCol, "updateSQLSplits_", "(("+incomingConnName+"."+column.getName()+"==null)?1:0)")%>;
+							<%=getManager(dbmsId, cid, node).retrieveSQL(talendDynCol.getLabel(),typeToGenerate, column, incomingConnName, cid, "query_" , counterCol, "updateSQLSplits_", "(("+incomingConnName+"."+column.getName()+"==null)?1:0)")%>;
 						<%
 						}else{
 						%>
-							query_<%=cid%> = <%=getManager(dbmsId, cid, node).retrieveSQL(typeToGenerate, column, incomingConnName, cid, "query_" , counterCol, "updateSQLSplits_", "(("+incomingConnName+"."+column.getName()+"==null)?1:0)")%>;
+							<%=getManager(dbmsId, cid, node).retrieveSQL(typeToGenerate, column, incomingConnName, cid, "query_" , counterCol, "updateSQLSplits_", "(("+incomingConnName+"."+column.getName()+"==null)?1:0)")%>;
 						<%
 						}
 					}
@@ -422,11 +422,11 @@ skeleton="../templates/db_output_bulk.skeleton"
 			
                         if(isDynamic){
 			    %>
-				   query_<%=cid%> = <%=getManager(dbmsId, cid, node).retrieveSQL(talendDynCol.getLabel(),typeToGenerate, column, incomingConnName, cid, "query_" , counterCol, "updateSQLSplits_")%>;
+				   <%=getManager(dbmsId, cid, node).retrieveSQL(talendDynCol.getLabel(),typeToGenerate, column, incomingConnName, cid, "query_" , counterCol, "updateSQLSplits_")%>;
 			    <%
 			    }else{
 			    %>
-				   query_<%=cid%> = <%=getManager(dbmsId, cid, node).retrieveSQL(typeToGenerate, column, incomingConnName, cid, "query_" , counterCol, "updateSQLSplits_")%>;
+				   <%=getManager(dbmsId, cid, node).retrieveSQL(typeToGenerate, column, incomingConnName, cid, "query_" , counterCol, "updateSQLSplits_")%>;
 			    <%
 			    }
                     }                    
@@ -533,7 +533,7 @@ skeleton="../templates/db_output_bulk.skeleton"
                         <%
                         if(isEnableDebug) {
                             %>
-                            query_<%=cid%> = <%=getManager(dbmsId, cid).retrieveSQL(typeToGenerate, column, incomingConnName, cid, "query_" , counterCol, "updateSQLSplits_")%>;
+                            <%=getManager(dbmsId, cid).retrieveSQL(typeToGenerate, column, incomingConnName, cid, "query_" , counterCol, "updateSQLSplits_")%>;
                             <%
                         }                        
                         counterCol++;
@@ -571,11 +571,11 @@ skeleton="../templates/db_output_bulk.skeleton"
 		                     if(isEnableDebug) {
 					if(isDynamic){
 							%>
-								query_<%=cid%> = <%=getManager(dbmsId, cid, node).retrieveSQL(talendDynCol.getLabel(),typeToGenerate, column, incomingConnName, cid, "query_" , counterCol, "updateSQLSplits_", "(("+incomingConnName+"."+column.getName()+"==null)?1:0)")%>;
+								<%=getManager(dbmsId, cid, node).retrieveSQL(talendDynCol.getLabel(),typeToGenerate, column, incomingConnName, cid, "query_" , counterCol, "updateSQLSplits_", "(("+incomingConnName+"."+column.getName()+"==null)?1:0)")%>;
 							<%
 							}else{
 							%>
-								query_<%=cid%> = <%=getManager(dbmsId, cid, node).retrieveSQL(typeToGenerate, column, incomingConnName, cid, "query_" , counterCol, "updateSQLSplits_", "(("+incomingConnName+"."+column.getName()+"==null)?1:0)")%>;
+								<%=getManager(dbmsId, cid, node).retrieveSQL(typeToGenerate, column, incomingConnName, cid, "query_" , counterCol, "updateSQLSplits_", "(("+incomingConnName+"."+column.getName()+"==null)?1:0)")%>;
 							<%
 							}
 
@@ -589,11 +589,11 @@ skeleton="../templates/db_output_bulk.skeleton"
                         if(isEnableDebug) {
                            if(isDynamic){
 				   		%>
-							query_<%=cid%> = <%=getManager(dbmsId, cid, node).retrieveSQL(talendDynCol.getLabel(),typeToGenerate, column, incomingConnName, cid, "query_" , counterCol, "updateSQLSplits_")%>;
+							<%=getManager(dbmsId, cid, node).retrieveSQL(talendDynCol.getLabel(),typeToGenerate, column, incomingConnName, cid, "query_" , counterCol, "updateSQLSplits_")%>;
 				    	<%
 				    	}else{
 				    	%>
-							query_<%=cid%> = <%=getManager(dbmsId, cid, node).retrieveSQL(typeToGenerate, column, incomingConnName, cid, "query_" , counterCol, "updateSQLSplits_")%>;
+							<%=getManager(dbmsId, cid, node).retrieveSQL(typeToGenerate, column, incomingConnName, cid, "query_" , counterCol, "updateSQLSplits_")%>;
 				    	<%
 				    	}
                         }                        
@@ -655,7 +655,7 @@ skeleton="../templates/db_output_bulk.skeleton"
                         <%
                         if(isEnableDebug) {
                             %>
-                            query_<%=cid%> = <%=getManager(dbmsId, cid).retrieveSQL(typeToGenerate, columnInsert, incomingConnName, cid, "query_" ,  counterInsert, "insertSQLSplits_")%>;
+                            <%=getManager(dbmsId, cid).retrieveSQL(typeToGenerate, columnInsert, incomingConnName, cid, "query_" ,  counterInsert, "insertSQLSplits_")%>;
                             <%
                         }                        
                         counterInsert++;
@@ -734,7 +734,7 @@ skeleton="../templates/db_output_bulk.skeleton"
                     <%
                     if(isEnableDebug) {
                         %>
-                        query_<%=cid%> = <%=getManager(dbmsId, cid).retrieveSQL(typeToGenerate, columnUpdate, incomingConnName, cid, "query_" , counterColUpdate, "updateSQLSplits_")%>;
+                        <%=getManager(dbmsId, cid).retrieveSQL(typeToGenerate, columnUpdate, incomingConnName, cid, "query_" , counterColUpdate, "updateSQLSplits_")%>;
                         <%
                     }                    
                     counterColUpdate++;
@@ -773,11 +773,11 @@ skeleton="../templates/db_output_bulk.skeleton"
 					if(isEnableDebug) {
 						if(isDynamic){
 						%>
-						query_<%=cid%> = <%=getManager(dbmsId, cid, node).retrieveSQL(talendDynCol.getLabel(),typeToGenerate, columnUpdate, incomingConnName, cid, "query_" , counterColUpdate, "updateSQLSplits_", "(("+incomingConnName+"."+columnUpdate.getName()+"==null)?1:0)")%>;
+						<%=getManager(dbmsId, cid, node).retrieveSQL(talendDynCol.getLabel(),typeToGenerate, columnUpdate, incomingConnName, cid, "query_" , counterColUpdate, "updateSQLSplits_", "(("+incomingConnName+"."+columnUpdate.getName()+"==null)?1:0)")%>;
 						<%
 						}else{
 						%>
-						query_<%=cid%> = <%=getManager(dbmsId, cid, node).retrieveSQL(typeToGenerate, columnUpdate, incomingConnName, cid, "query_" , counterColUpdate, "updateSQLSplits_", "(("+incomingConnName+"."+columnUpdate.getName()+"==null)?1:0)")%>;
+						<%=getManager(dbmsId, cid, node).retrieveSQL(typeToGenerate, columnUpdate, incomingConnName, cid, "query_" , counterColUpdate, "updateSQLSplits_", "(("+incomingConnName+"."+columnUpdate.getName()+"==null)?1:0)")%>;
 						<%
 						}
 					}
@@ -791,11 +791,11 @@ skeleton="../templates/db_output_bulk.skeleton"
                     if(isEnableDebug) {
 					if(isDynamic){
 					%>
-						query_<%=cid%> = <%=getManager(dbmsId, cid, node).retrieveSQL(talendDynCol.getLabel(),typeToGenerate, columnUpdate, incomingConnName, cid, "query_" , counterColUpdate, "updateSQLSplits_")%>;
+						<%=getManager(dbmsId, cid, node).retrieveSQL(talendDynCol.getLabel(),typeToGenerate, columnUpdate, incomingConnName, cid, "query_" , counterColUpdate, "updateSQLSplits_")%>;
 					<%
 					}else{
 					%>
-						query_<%=cid%> = <%=getManager(dbmsId, cid, node).retrieveSQL(typeToGenerate, columnUpdate, incomingConnName, cid, "query_" , counterColUpdate, "updateSQLSplits_")%>;
+						<%=getManager(dbmsId, cid, node).retrieveSQL(typeToGenerate, columnUpdate, incomingConnName, cid, "query_" , counterColUpdate, "updateSQLSplits_")%>;
 					<%
 					}
                     }                    
@@ -816,7 +816,7 @@ skeleton="../templates/db_output_bulk.skeleton"
             	<%
             	if(isEnableDebug) {
             	%>
-				query_<%=cid%> = new StringBuffer("");
+				new StringBuffer("");
         		<%
         		}
         		int counter = 1;
@@ -828,7 +828,7 @@ skeleton="../templates/db_output_bulk.skeleton"
                         <%
                         if(isEnableDebug) {
                             %>
-                            query_<%=cid%> = <%=getManager(dbmsId, cid).retrieveSQL(typeToGenerate, column, incomingConnName, cid, "query_" , counter, "insertSQLSplits_")%>;
+                            <%=getManager(dbmsId, cid).retrieveSQL(typeToGenerate, column, incomingConnName, cid, "query_" , counter, "insertSQLSplits_")%>;
                             <%
                         }                        
                         counter++;
@@ -912,7 +912,7 @@ skeleton="../templates/db_output_bulk.skeleton"
                     <%  
 	                    if(isEnableDebug) {
 	                        %>
-	                        query_<%=cid%> = <%=getManager(dbmsId, cid).retrieveSQL(typeToGenerate, column, incomingConnName, cid, "query_" , keyCounter, "deleteSQLSplits_", "(("+incomingConnName+"."+column.getName()+"==null)?1:0)")%>;
+	                        <%=getManager(dbmsId, cid).retrieveSQL(typeToGenerate, column, incomingConnName, cid, "query_" , keyCounter, "deleteSQLSplits_", "(("+incomingConnName+"."+column.getName()+"==null)?1:0)")%>;
 	                        <%
 	                    	}
                     	 keyCounter++;
@@ -924,7 +924,7 @@ skeleton="../templates/db_output_bulk.skeleton"
                     <%
                     if(isEnableDebug) {
                         %>
-                        query_<%=cid%> = <%=getManager(dbmsId, cid).retrieveSQL(typeToGenerate, column, incomingConnName, cid, "query_" , keyCounter, "deleteSQLSplits_")%>;
+                        <%=getManager(dbmsId, cid).retrieveSQL(typeToGenerate, column, incomingConnName, cid, "query_" , keyCounter, "deleteSQLSplits_")%>;
                         <%
                     }                    
                     keyCounter++;
