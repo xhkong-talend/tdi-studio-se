@@ -55,6 +55,8 @@
 	
 	final boolean isLog4jEnabled = ("true").equals(ElementParameterParser.getValue(node.getProcess(), "__LOG4J_ACTIVATE__"));
 	
+	final boolean keepOrder4Document = "true".equals(ElementParameterParser.getValue(node, "__KEEP_ORDER_FOR_DOCUMENT__"));
+	
 	EList<InputXmlTree> inputTables = xmlMapData.getInputTrees();
 	EList<OutputXmlTree> outputTables = xmlMapData.getOutputTrees();
 	EList<VarTable> varTables = xmlMapData.getVarTables();
@@ -706,9 +708,48 @@ if(valueMap.get("<%=currEleName%>")!=null) {//open if 8080
 				<%=parentName%>.add(<%=currEleName%>);
 <%
 			} else if(loopNodes.size() > 1) {
+				if(!keepOrder4Document) {
 %>
-				<%=parentName%>.elements().add(<%=currEleName%>);
+					<%=parentName%>.elements().add(<%=currEleName%>);
 <%
+				} else {
+%>
+					List allElements_<%=cid %> = <%=parentName%>.elements();
+					if(allElements_<%=cid %>.isEmpty()) {//when the group or loop element appear first time
+						allElements_<%=cid %>.add(<%=currEleName%>);
+					} else {
+						List currentElementList_<%=cid %> =  <%=parentName%>.elements("<%=node.getName()%>");
+						int size_<%=cid %> = currentElementList_<%=cid %>.size();
+						if(size_<%=cid %> > 0){
+							allElements_<%=cid %>.add(allElements_<%=cid %>.indexOf(currentElementList_<%=cid %>.get(size_<%=cid %>-1)) + 1, <%=currEleName%>);
+						} else {//when the group or loop element appear first time
+							int location_<%=cid%> = allElements_<%=cid%>.size();
+<%
+							List<OutputTreeNode> nextSiblings = XMLOrderUtil.getNextSiblings(node);
+							if(nextSiblings.size() > 0) {
+%>
+								boolean findInsertPosition_<%=cid%> = false;
+								List siblingList_<%=cid %> = null;
+<%
+							}
+							
+							for(OutputTreeNode sibling : nextSiblings) {
+%>
+								if(!findInsertPosition_<%=cid%>) {
+									siblingList_<%=cid%> = <%=parentName%>.elements("<%=sibling.getName()%>");
+									if(siblingList_<%=cid %>.size() > 0) {
+										findInsertPosition_<%=cid%> = true;
+										location_<%=cid%> = allElements_<%=cid %>.indexOf(siblingList_<%=cid %>.get(0));
+									}
+								}
+<%
+							}
+%>
+							allElements_<%=cid %>.add(location_<%=cid%>,<%=currEleName%>);
+						}
+					}	
+<%
+				}
 			} else {
 %>
 				<%=parentName%>.elements().add(orderHelper.getInsertLocation(<%=XMLOrderUtil.getCurrPos(node) %>,<%=XMLOrderUtil.getCurrOrder(node) %>),<%=currEleName%>);

@@ -606,6 +606,32 @@ public class CLASS {
 			return currPos;
 		}
 		
+		//work for multi loop document output
+		static java.util.List<OutputTreeNode> getNextSiblings(OutputTreeNode currNode){
+            java.util.List<OutputTreeNode> result = new java.util.ArrayList<OutputTreeNode>();
+            OutputTreeNode parent = (OutputTreeNode)currNode.eContainer();
+            boolean isNextSibling = false;
+            if(parent!=null){
+            	EList<TreeNode> children = parent.getChildren();
+                for(TreeNode child : children) {
+					NodeType nodeType = child.getNodeType();
+					if(nodeType != NodeType.ELEMENT) {
+						continue;
+					}
+					
+					if(isNextSibling) {
+						result.add((OutputTreeNode)child);
+						continue;
+					}
+					
+					if(currNode.equals(child)) {
+						isNextSibling = true;
+					}
+				}
+            }
+            return result;
+        }
+		
 		private static boolean isGroupOrLoopInMain(OutputTreeNode currNode) {
 			return currNode.isMain() && (currNode.isGroup() || currNode.isLoop());
 		}
