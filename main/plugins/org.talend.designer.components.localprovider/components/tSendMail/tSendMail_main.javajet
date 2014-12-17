@@ -5,6 +5,7 @@
     org.talend.designer.codegen.config.CodeGeneratorArgument
 	java.util.Map
 	java.util.List
+	org.talend.core.model.utils.NodeUtil
   "
 %>
 <%@ include file="../templates/Log4j/Log4jFileUtil.javajet"%> 
@@ -15,7 +16,7 @@ String cid = node.getUniqueName();
 String needAuth = ElementParameterParser.getValue(node, "__NEED_AUTH__");
 String authUsername = ElementParameterParser.getValue(node, "__AUTH_USERNAME__");
 String authPassword = ElementParameterParser.getValue(node, "__AUTH_PASSWORD__");
-String message = ElementParameterParser.getValue(node, "__MESSAGE__").replaceAll("\r\n","\\\\n");
+String message = NodeUtil.replaceCRLFInMEMO_SQL(ElementParameterParser.getValue(node, "__MESSAGE__"));
 String importance = ElementParameterParser.getValue(node, "__IMPORTANCE__");
 String priority = "Normal".equals(importance) ? "3" : (("High").equals(importance) ? "1" : "5");
 boolean ifSSL = "true".equals(ElementParameterParser.getValue(node, "__SSL__"));
