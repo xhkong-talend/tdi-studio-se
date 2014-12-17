@@ -6,7 +6,10 @@ imports="
 		org.talend.core.model.metadata.IMetadataTable 
         org.talend.core.model.metadata.MappingTypeRetriever
         org.talend.core.model.metadata.MetadataTalendType    
+        org.talend.core.model.metadata.types.JavaTypesManager
+        org.talend.core.model.process.IConnectionCategory
 		org.talend.core.model.process.IConnection
+		org.talend.core.model.utils.NodeUtil
 		java.util.List
 		java.util.ArrayList
 		java.util.Map
@@ -44,6 +47,15 @@ String batchSize=ElementParameterParser.getValue(node,"__BATCH_SIZE__");
 <%
 getManager(dbmsId, cid, node);
 
+IConnection inputConn = null;
+String incomingConnName = null;
+
+List< ? extends IConnection> conns = node.getIncomingConnections();
+if(conns!=null && conns.size()>0){
+	inputConn = conns.get(0);
+	incomingConnName = inputConn.getName();
+}
+
 boolean isDynamic = false;
 List<IMetadataTable> metadatas = node.getMetadataList();
 if ((metadatas!=null)&&(metadatas.size()>0)) {
@@ -68,6 +80,13 @@ if(columnList != null && columnList.size() > 0) {
             }
         }
     }
+}
+
+List<Column> colStruct = new ArrayList();
+for(Column colStmt:stmtStructure) {
+	if(!colStmt.isReplaced()&&!colStmt.isAddCol()&&!colStmt.isDynamic()) {
+		colStruct.add(colStmt);
+	}
 }
 %>
 
@@ -192,7 +211,7 @@ if(!isDynamic) {
 %>
 int count_<%=cid%>=0;
 <%
-if(columnList != null && columnList.size() > 0) {        
+if(columnList != null && columnList.size() > 0) {
        Manager manager = null;
     %>
     <%@ include file="../templates/_tableActionForOutput.javajet"%>
@@ -242,7 +261,8 @@ if(columnList != null && columnList.size() > 0) {
         <%
     }
 }
-}// end isDynamic
+}// end !isDynamic
+
 if(isDynamic) {
 %>
 	java.sql.PreparedStatement pstmt_<%=cid %> =null;
@@ -254,7 +274,207 @@ if(isDynamic) {
 <%
 	}
 }
+
+if(incomingConnName==null || columnList == null || columnList.isEmpty()) {
+	return stringBuffer.toString();
+}
+
+int schemaOptNum = 100;
+String schemaOptNumStr=ElementParameterParser.getValue(node, "__SCHEMA_OPT_NUM__");
+if(schemaOptNumStr!=null && !"".equals(schemaOptNumStr) && !"\"\"".equals(schemaOptNumStr)){
+	schemaOptNum = Integer.parseInt(schemaOptNumStr);
+}
+
+if(columnList.size() <= schemaOptNum) {//optimize for 65535 method size issue in java
+	return stringBuffer.toString();
+}
+
 %>
+class SetPrepareStatementUtil_<%=cid%> {
+<%
+List<String> types = new ArrayList<String>();
+if(dataAction!=null && dataAction.contains("INSERT")) {
+	types.add("Insert");
+}
+if(dataAction!=null && dataAction.contains("UPDATE")) {
+	types.add("Update");
+}
+for(String type : types) {
+	int counter = 1;
+	for(Column column : colStruct) {
+        if("Insert".equals(type) && !column.isInsertable()) {
+        	continue;
+        }
+        
+        if("Update".equals(type) && !column.isUpdatable()) {
+        	continue;
+        }
+        
+        String typeToGenerate = JavaTypesManager.getTypeToGenerate(column.getColumn().getTalendType(), column.getColumn().isNullable());
+        
+        int actionType = NORMAL_TYPE;
+        String splits = "insertSQLSplits_";
+        
+        if("INSERT_OR_UPDATE".equals(dataAction) || "UPDATE_OR_INSERT".equals(dataAction)) {
+        	if("Insert".equals(type)) {
+        		actionType = INSERT_TYPE;
+        	} else if("Update".equals(type)) {
+        		actionType = UPDATE_TYPE;
+        		splits = "updateSQLSplits_";
+        	}
+        } else if("UPDATE".equals(dataAction)) {
+        	splits = "updateSQLSplits_";
+        }
+        
+    	if((counter-1)%schemaOptNum==0){//begin method
+%>
+			void set<%=type%>_<%=(counter-1)/schemaOptNum%>(
+				final <%=NodeUtil.getPrivateConnClassName(inputConn) %>Struct <%=inputConn.getName() %>,
+				final java.sql.PreparedStatement 
+<%
+				if(actionType == NORMAL_TYPE) {
+%>
+				pstmt_<%=cid%>
+<%
+				} else if(actionType == INSERT_TYPE) {
+%>
+				pstmtInsert_<%=cid%>
+<%
+				} else {
+%>
+				pstmtUpdate_<%=cid%>
+<%
+				}
+				
+				if(isEnableDebug) {
+%>
+				,
+				final StringBuffer query_<%=cid%>
+				,
+				final String[] <%=splits%><%=cid%>
+<%				
+				}
+%>
+			) throws java.sql.SQLException {
+			//}
+<%
+    	}
+%>
+		<%=getManager(dbmsId, cid).generateSetStmt(typeToGenerate, column, counter, incomingConnName, cid, actionType)%>
+<%
+    	if(isEnableDebug) {
+%>
+    	<%=getManager(dbmsId, cid).retrieveSQL(typeToGenerate, column, incomingConnName, cid, "query_" , counter, splits)%>;
+<%
+   		}
+       	
+    	if(counter%schemaOptNum==0) {//close method
+%>
+			//{
+			}
+<%
+		}
+    	
+		counter++;
+	}
+	
+    if((counter-1) >0&&((counter-1)%schemaOptNum)>0){//close method
+%>
+		//{
+		}
+<%
+	}
+}
+%>
+}
+
+SetPrepareStatementUtil_<%=cid%> setPrepareStatementUtil_<%=cid%> = new SetPrepareStatementUtil_<%=cid%>();	
+
+<%
+IConnection rejectConn = null;
+List<? extends IConnection> rejectConns = node.getOutgoingConnections("REJECT");
+if(rejectConns != null && rejectConns.size() > 0) {
+	rejectConn = rejectConns.get(0);
+}
+
+List<? extends IConnection> outgoingConns = node.getOutgoingSortedConnections();
+
+IConnection outputConn = null;
+
+for(IConnection outgoingConn : outgoingConns) {
+	if(rejectConn == null || (rejectConn != null && !outgoingConn.getName().equals(rejectConn.getName()))) {
+	    if(outgoingConn.getLineStyle().hasConnectionCategory(IConnectionCategory.DATA)) {
+	       outputConn = outgoingConn;
+	    }
+	}
+}
+
+List<IConnection> outputConns = new ArrayList<IConnection>();
+
+if(outputConn!=null) {
+	outputConns.add(outputConn);
+}
+
+String dieOnError = ElementParameterParser.getValue(node, "__DIE_ON_ERROR__");
+List<IMetadataColumn> rejectColumnList = null;
+IMetadataTable metadataTable = node.getMetadataFromConnector("REJECT");
+if(metadataTable != null) {
+    rejectColumnList = metadataTable.getListColumns();
+}
+
+if(!"true".equals(dieOnError) && rejectConn != null && rejectColumnList != null && rejectColumnList.size() > 0) {
+	outputConns.add(rejectConn);
+}
+
+if(outputConns.isEmpty()) {
+	return stringBuffer.toString();
+}
+%>
+
+class DataPropagateUtil_<%=cid%> {
+<%
+	for(IConnection outputConnection : outputConns) {
+		String sourceObjectName = incomingConnName;
+		String sourceObjectType = NodeUtil.getPrivateConnClassName(inputConn);
+		
+		String targetObjectName = outputConnection.getName();
+		String targetObjectType = NodeUtil.getPrivateConnClassName(outputConnection);
+		
+		int index = 0;
+		for(IMetadataColumn column : columnList) {
+			if(index%schemaOptNum==0){//begin method
+%>
+			void assign_<%=targetObjectName%>_<%=index/schemaOptNum%>(final <%=sourceObjectType%>Struct <%=sourceObjectName%>,final <%=targetObjectType%>Struct <%=targetObjectName%>) {
+			//}
+<%
+			}
+			
+			//do assign
+%>
+			<%=targetObjectName%>.<%=column.getLabel()%> = <%=sourceObjectName%>.<%=column.getLabel()%>;
+<%
+			
+			if((index+1)%schemaOptNum==0) {//close method
+%>
+			//{
+			}
+<%
+			}
+			
+			index++;
+		}
+		
+		if(index>0&&(index%schemaOptNum)>0){//close method
+%>
+		//{
+		}
+<%
+		}
+	}
+%>
+}
+
+DataPropagateUtil_<%=cid%> dataPropagateUtil_<%=cid%> = new DataPropagateUtil_<%=cid%>();
 
 
 
