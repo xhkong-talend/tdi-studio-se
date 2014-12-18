@@ -928,7 +928,7 @@ skeleton="../templates/db_output_bulk.skeleton"
             	<%
             	if(isEnableDebug) {
             	%>
-				new StringBuffer("");
+				query_<%=cid%> = new StringBuffer("");
         		<%
         		}
         		int counter = 1;
