@@ -683,6 +683,54 @@ if(valueMap.get("<%=currEleName%>")!=null) {//open if 8080
 		}
 	}
 	
+	private void findElementFromParent(OutputTreeNode node, String parentName, String resultVar) {
+		String elementName = node.getName();
+		int index = elementName.indexOf(":");
+		
+		if(index < 1) {
+%>
+			<%=resultVar%>_<%=cid%> = <%=parentName%>.elements("<%=elementName%>");
+<%
+			return;
+		}
+		
+		String namespacePrefixOfCurrentElement = elementName.substring(0,index);
+		String localName = elementName.substring(index+1);
+		TreeNode matchedNamespaceNode = null;
+		
+		for(TreeNode child: node.getChildren()) {
+			if(child.getNodeType()!=NodeType.NAME_SPACE) {
+				continue;
+			}
+			
+			if(namespacePrefixOfCurrentElement.equals(child.getName())) {
+				matchedNamespaceNode = child;
+				break;
+			}
+		}
+		
+		if(matchedNamespaceNode!=null) {
+%>
+			<%=resultVar%>_<%=cid%> = <%=parentName%>.elements(
+				org.dom4j.DocumentHelper.createQName(
+					"<%=localName%>",
+	        		org.dom4j.DocumentHelper.createNamespace(
+	        			"<%=matchedNamespaceNode.getName() %>",TalendString.replaceSpecialCharForXML("<%generateMethodUtil.generateExprCode(((OutputTreeNode)matchedNamespaceNode).getDefaultValue());%>")
+	        		)
+	        	)
+        	);
+<%
+			return;
+		}
+		
+		if(hasParent(node)){
+%>
+			namespace_<%=cid%> = <%=parentName%>.getNamespaceForPrefix("<%=namespacePrefixOfCurrentElement%>");
+			<%=resultVar%>_<%=cid%> = namespace_<%=cid%>!=null ? <%=parentName%>.elements(org.dom4j.DocumentHelper.createQName("<%=localName%>",namespace_<%=cid%>)) : <%=parentName%>.elements("<%=localName%>"); 
+<%
+		}
+	}
+	
 	private void createElement(String currEleName, OutputTreeNode node, String parentName){
 %>
 		org.dom4j.Element <%=currEleName%> = null;
@@ -718,7 +766,8 @@ if(valueMap.get("<%=currEleName%>")!=null) {//open if 8080
 					if(allElements_<%=cid %>.isEmpty()) {//when the group or loop element appear first time
 						allElements_<%=cid %>.add(<%=currEleName%>);
 					} else {
-						List currentElementList_<%=cid %> =  <%=parentName%>.elements("<%=node.getName()%>");
+						org.dom4j.Namespace namespace_<%=cid%> = null;
+						<%findElementFromParent(node,parentName,"List currentElementList");%>
 						int size_<%=cid %> = currentElementList_<%=cid %>.size();
 						if(size_<%=cid %> > 0){
 							allElements_<%=cid %>.add(allElements_<%=cid %>.indexOf(currentElementList_<%=cid %>.get(size_<%=cid %>-1)) + 1, <%=currEleName%>);
@@ -736,7 +785,7 @@ if(valueMap.get("<%=currEleName%>")!=null) {//open if 8080
 							for(OutputTreeNode sibling : nextSiblings) {
 %>
 								if(!findInsertPosition_<%=cid%>) {
-									siblingList_<%=cid%> = <%=parentName%>.elements("<%=sibling.getName()%>");
+									<%findElementFromParent(sibling,parentName,"siblingList");%>
 									if(siblingList_<%=cid %>.size() > 0) {
 										findInsertPosition_<%=cid%> = true;
 										location_<%=cid%> = allElements_<%=cid %>.indexOf(siblingList_<%=cid %>.get(0));
