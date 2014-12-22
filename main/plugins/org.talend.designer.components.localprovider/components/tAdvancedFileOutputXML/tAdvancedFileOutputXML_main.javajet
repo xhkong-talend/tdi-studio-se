@@ -87,6 +87,10 @@ if ((metadatas!=null)&&(metadatas.size()>0)) {
 				
 				final boolean isLog4jEnabled = "true".equals(ElementParameterParser.getValue(node.getProcess(), "__LOG4J_ACTIVATE__"));
 				
+				if(isMerge){
+		            mode = "Dom4j";
+		        }
+				
 				int schemaOptNum=100;
 				boolean isOptimizeCode=false;
 				String schemaOptNumStr=ElementParameterParser.getValue(node, "__SCHEMA_OPT_NUM__");

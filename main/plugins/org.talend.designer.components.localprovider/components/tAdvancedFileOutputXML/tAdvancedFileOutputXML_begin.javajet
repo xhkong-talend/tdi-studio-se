@@ -67,6 +67,10 @@ if ((metadatas != null) && (metadatas.size() > 0)) {
 		(List<Map<String,String>>)ElementParameterParser.getObjectValue(node, "__GROUP__");
 		List<Map<String, String>> loopTable = 
 		(List<Map<String,String>>)ElementParameterParser.getObjectValue(node, "__LOOP__");
+		
+		if(isMerge){
+		    mode = "Dom4j";
+		}
 
 		if (!useStream) {
 		%>
