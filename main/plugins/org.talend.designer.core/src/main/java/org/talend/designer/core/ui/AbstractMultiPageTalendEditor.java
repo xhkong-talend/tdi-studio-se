@@ -971,9 +971,11 @@ public abstract class AbstractMultiPageTalendEditor extends MultiPageEditorPart 
         repFactory.addRepositoryWorkUnitListener(repositoryWorkListener);
 
         if (getActivePage() == 0 || getActivePage() == 1) {
+            refreshPropertyDirtyStatus();
             getEditor(0).doSave(monitor);
         } else if (getActivePage() == 2) {
             boolean isDirty = getEditor(2).isDirty();
+            refreshPropertyDirtyStatus();
             getEditor(2).doSave(monitor);
             try {
                 IProcess2 oldProcess = getProcess();
@@ -1085,6 +1087,17 @@ public abstract class AbstractMultiPageTalendEditor extends MultiPageEditorPart 
                     dc.refresh();
                 }
             }
+        }
+    }
+
+    private void refreshPropertyDirtyStatus() {
+        /*
+         * refresh should be executed before add the listener,or it will has eProxy on the property,it will cause a
+         * editor dirty problem. hywang commet bug 17357
+         */
+        if (processEditorInput != null) {
+            propertyInformation = new ArrayList(processEditorInput.getItem().getProperty().getInformations());
+            propertyIsDirty = false;
         }
     }
 
