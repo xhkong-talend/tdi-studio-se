@@ -27,10 +27,10 @@
 			if (includeParallelComps) {
 %>
 if (isMultiThreaded_<%=cid%>) {
-java.util.List<java.util.concurrent.ConcurrentHashMap<String,Object>> mapsList_<%=cid%> = 
-	(java.util.List<java.util.concurrent.ConcurrentHashMap<String,Object>>)globalMap.get("THREAD_MAPS_"+jobName);
+java.util.List<java.util.Map<String,Object>> mapsList_<%=cid%> = 
+	(java.util.List<java.util.Map<String,Object>>)globalMap.get("THREAD_MAPS_"+jobName);
 	if (mapsList_<%=cid%> != null) {
-		for (java.util.concurrent.ConcurrentHashMap<String,Object> map : mapsList_<%=cid%>) {
+		for (java.util.Map<String,Object> map : mapsList_<%=cid%>) {
 			if (globalMap != map) {		
 				map.put("tHash_Lookup_<%=connectionName%>",tHash_<%=connectionName%>);
 			} //gm

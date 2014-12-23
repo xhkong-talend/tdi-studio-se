@@ -62,12 +62,12 @@ tHash_Lookup_<%=connectionName%>.endPut();
 <%
 			if (includeParallelComps && memoryStorage && !isOneOfReloadLookupMode) {
 %>
-java.util.List<java.util.concurrent.ConcurrentHashMap<String,Object>> mapsList_<%=cid%> = 
-	(java.util.List<java.util.concurrent.ConcurrentHashMap<String,Object>>)globalMap.get("THREAD_MAPS_<%=partitionNode.getUniqueName()%>_"+jobName);
+java.util.List<java.util.Map<String,Object>> mapsList_<%=cid%> = 
+	(java.util.List<java.util.Map<String,Object>>)globalMap.get("THREAD_MAPS_<%=partitionNode.getUniqueName()%>_"+jobName);
 	if (mapsList_<%=cid%> != null) {
 	
 
-			for (java.util.concurrent.ConcurrentHashMap<String,Object> map : mapsList_<%=cid%>) {
+			for (java.util.Map<String,Object> map : mapsList_<%=cid%>) {
 					org.talend.designer.components.lookup.memory.ConcurrentAdvancedMemoryLookup
 			   							<<%=connectionName%>Struct> tmp = (org.talend.designer.components.lookup.memory.ConcurrentAdvancedMemoryLookup
 			   							<<%=connectionName%>Struct>)tHash_Lookup_<%=connectionName%>;
