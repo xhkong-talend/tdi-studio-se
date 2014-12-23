@@ -18,7 +18,7 @@ public class XmlMapExpressionManager {
 
     private final static String EXPRESSION_PATTERN = "(\\[)\\s*(\\w+)\\s*\\.(\\w+\\s*:\\s*(/.+?)+(/@.+?)*)\\s*(\\])|((?!\\[)\\s*\\w+)\\s*\\.\\s*(\\w+(?!\\]))";
 
-    private final String SUBS_PATTERN_FOR_REPLACE_LOCATION = "{0}(\\s*){1}(\\s*)\\.(\\s*){2}(\\s*){3}";
+    private final String SUBS_PATTERN_FOR_REPLACE_LOCATION = "{0}(\\s*\\b){1}(\\s*)\\.(\\s*){2}(\\b\\s*){3}";
 
     private Perl5Matcher matcher = new Perl5Matcher();
 
