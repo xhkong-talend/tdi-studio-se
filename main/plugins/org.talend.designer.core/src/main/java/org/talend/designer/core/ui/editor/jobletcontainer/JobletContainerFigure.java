@@ -603,6 +603,9 @@ public class JobletContainerFigure extends Figure {
         }
 
         Image image = ImageProvider.getImage(ECoreImage.MRGREEBAR);
+        Image map = ImageProvider.getImage(ECoreImage.MRMAP);
+        Image reduce = ImageProvider.getImage(ECoreImage.MRREDUCE);
+
         int progressHeight = image.getBounds().height;
         int progressWidth = image.getBounds().width;
         for (int i = 0; i < mrCount; i++) {
@@ -615,11 +618,10 @@ public class JobletContainerFigure extends Figure {
             progressMap.setLayoutManager(new ToolbarLayout(true));
             progressMap.setVisible(false);
 
-            SimpleHtmlFigure mapTitle = new SimpleHtmlFigure();
-            mapTitle.setText("<font color='#000000'> <b> " + "Map " + "</b></font>");
+            ImageFigure mapTitle = new ImageFigure();
+            mapTitle.setImage(map);
+            mapTitle.setSize(mapTitle.getPreferredSize());
             mapTitle.setOpaque(false);
-            mapTitle.setBackgroundColor(ColorUtils.getCacheColor(mrGroupColor));
-            mapTitle.setForegroundColor(ColorUtils.getCacheColor(mrGroupColor));
 
             RectangleFigure mapGreen = new RectangleFigure();
             mapGreen.setSize(progressWidth, progressHeight);
@@ -648,11 +650,10 @@ public class JobletContainerFigure extends Figure {
             progressReduce.setLayoutManager(new ToolbarLayout(true));
             progressReduce.setVisible(false);
 
-            SimpleHtmlFigure reduceTitle = new SimpleHtmlFigure();
-            reduceTitle.setText("<font color='#000000'> <b> " + "Reduce " + "</b></font>");
+            ImageFigure reduceTitle = new ImageFigure();
+            reduceTitle.setImage(reduce);
+            reduceTitle.setSize(reduceTitle.getPreferredSize());
             reduceTitle.setOpaque(false);
-            reduceTitle.setBackgroundColor(ColorUtils.getCacheColor(mrGroupColor));
-            reduceTitle.setForegroundColor(ColorUtils.getCacheColor(mrGroupColor));
 
             RectangleFigure reduceGreen = new RectangleFigure();
             reduceGreen.setSize(progressWidth, progressHeight);
