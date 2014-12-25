@@ -3,6 +3,8 @@
 		org.talend.core.model.process.INode 
 		org.talend.designer.codegen.config.CodeGeneratorArgument
 		org.talend.core.model.process.ElementParameterParser
+		
+		java.util.List
 	" 
 %>
 
@@ -15,8 +17,26 @@ String serverType=ElementParameterParser.getValue(node, "__SERVER__");
 boolean transacted = "true".equals(ElementParameterParser.getValue(node, "__IS_TRANSACTED__"));
 String connectionComponentName = ElementParameterParser.getValue(node, "__CONNECTION__");
 
-boolean isCommitRollback = (!node.getProcess().getNodesOfType("tMomCommit").isEmpty()
-	|| !node.getProcess().getNodesOfType("tMomRollback").isEmpty());
+List<? extends INode> commitNodes=node.getProcess().getNodesOfType("tMomCommit");
+List<? extends INode> rollBackNodes=node.getProcess().getNodesOfType("tMomRollback");
+
+boolean isCommitRollback = false;
+for(INode cNode:commitNodes){
+	String cNodeName = ElementParameterParser.getValue(cNode,"__CONNECTION__");
+	if(cid.equals(cNodeName)){
+		isCommitRollback = true;
+		break;
+	}
+}
+if(!isCommitRollback){
+	for(INode rNode:rollBackNodes){
+		String rNodeName = ElementParameterParser.getValue(rNode,"__CONNECTION__");
+		if(cid.equals(rNodeName)){
+			isCommitRollback = true;
+			break;
+		}
+	}
+}
 final boolean isLog4jEnabled = ("true").equals(ElementParameterParser.getValue(node.getProcess(), "__LOG4J_ACTIVATE__"));
  
 
@@ -91,21 +111,22 @@ if(("JBoss").equals(serverType) || ("ActiveMQ").equals(serverType)){
 		globalMap.put("qMgr_<%=cid%>",qMgr_<%=cid%>);
 	<%
 	} else {
-		if (!isUseExistConnection && isLog4jEnabled && isCommitRollback) {
+		if (!isUseExistConnection && isLog4jEnabled && !isCommitRollback) {
 		%>
 			log.info("<%=cid%> - Disconnecting connection...");
 		<%
 		}
 		%>
-		System.out.println("Closing connection");
+		System.out.println("Disconnecting queue");
+		remoteQ_<%=cid%>.close();
 		<%
-		if(!isUseExistConnection && isCommitRollback){
+		if(!isUseExistConnection && !isCommitRollback){
 		%>
-			remoteQ_<%=cid%>.close();
+			System.out.println("Disconnecting queue manager");
 			qMgr_<%=cid%>.disconnect();
 		<%
 		}
-		if (!isUseExistConnection && isLog4jEnabled && isCommitRollback) {
+		if (!isUseExistConnection && isLog4jEnabled && !isCommitRollback) {
 		%>
 			log.info("<%=cid%> - Disconnected successfully.");
 		<%

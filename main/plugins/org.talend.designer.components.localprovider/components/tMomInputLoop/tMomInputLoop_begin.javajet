@@ -42,8 +42,26 @@ imports="
 	
 	boolean useMqHeader = "true".equals(ElementParameterParser.getValue(node, "__USE_MQ_HEADER__"));
 
-        boolean isCommitRollback = (!node.getProcess().getNodesOfType("tMomCommit").isEmpty()
-	|| !node.getProcess().getNodesOfType("tMomRollback").isEmpty());
+    List<? extends INode> commitNodes=node.getProcess().getNodesOfType("tMomCommit");
+	List<? extends INode> rollBackNodes=node.getProcess().getNodesOfType("tMomRollback");
+	
+	boolean isCommitRollback = false;
+	for(INode cNode:commitNodes){
+		String cNodeName = ElementParameterParser.getValue(cNode,"__CONNECTION__");
+		if(cid.equals(cNodeName)){
+			isCommitRollback = true;
+			break;
+		}
+	}
+	if(!isCommitRollback){
+		for(INode rNode:rollBackNodes){
+			String rNodeName = ElementParameterParser.getValue(rNode,"__CONNECTION__");
+			if(cid.equals(rNodeName)){
+				isCommitRollback = true;
+				break;
+			}
+		}
+	}
     	
     if (isUseExistConnection) {
 		for (INode pNode : node.getProcess().getNodesOfType("tMomConnection")) {
@@ -482,6 +500,7 @@ imports="
 				String connection = ElementParameterParser.getValue(node, "__CONNECTION__");
 				%>
 				qMgr_<%=cid%> = (com.ibm.mq.MQQueueManager)globalMap.get("qMgr_<%=connection%>");
+				globalMap.put("qMgr_<%=cid%>",qMgr_<%=cid%>);
 			<%
 			}else{
 				String channel=ElementParameterParser.getValue(node, "__CHANNEL__");
@@ -508,6 +527,7 @@ imports="
 				}
 				%>
 				qMgr_<%=cid%>=new com.ibm.mq.MQQueueManager(<%=qm%>,properties<%=cid%>);
+				globalMap.put("qMgr_<%=cid%>",qMgr_<%=cid%>);
 			<%
 			}
 			String queue = ElementParameterParser.getValue(node, "__QUEUE__");
@@ -519,7 +539,7 @@ imports="
 			isCommit = isCommit && !isBrowse;
 			isBrowse = isBrowse && !isRollback && !isCommit;
 			%>
-			com.ibm.mq.MQQueue remoteQ<%=cid%>=null;
+			com.ibm.mq.MQQueue remoteQ_<%=cid%>=null;
 			<%
 			if(needSSLCipher){
 			%>
@@ -561,12 +581,13 @@ imports="
 				com.ibm.mq.MQException.log = null;
 				boolean flag<%=cid%>=true;
 			
-				remoteQ<%=cid%>=qMgr_<%=cid%>.accessQueue(<%=queue%>,openOptions<%=cid%>);
+				remoteQ_<%=cid%>=qMgr_<%=cid%>.accessQueue(<%=queue%>,openOptions<%=cid%>);
+				globalMap.put("remoteQ_<%=cid%>",remoteQ_<%=cid%>);
 	
 			<%
 			if(("false").equals(kListen)) {
 			%>
-				if(Integer.valueOf(remoteQ<%=cid%>.getCurrentDepth()).equals(0))
+				if(Integer.valueOf(remoteQ_<%=cid%>.getCurrentDepth()).equals(0))
 				{
 					flag<%=cid%>= false;
 				} 	
@@ -585,7 +606,7 @@ imports="
 			<%
 			if(("false").equals(kListen)){
 			%>
-				if(Integer.valueOf(remoteQ<%=cid%>.getCurrentDepth()).equals(1))
+				if(Integer.valueOf(remoteQ_<%=cid%>.getCurrentDepth()).equals(1))
 				{
 					flag<%=cid%>= false;
 				} 			
@@ -612,7 +633,7 @@ imports="
 			if(("false").equals(kListen) && ("true").equals(useMsgId) && !"Map".equals(msgBobyType) ){
 			%>		
 				try{
-					remoteQ<%=cid%>.get(inMessage<%=cid%>,gmo<%=cid%>);
+					remoteQ_<%=cid%>.get(inMessage<%=cid%>,gmo<%=cid%>);
 				}catch (com.ibm.mq.MQException me_<%=cid%>) {   
 		            if (me_<%=cid%>.reasonCode == com.ibm.mq.MQException.MQRC_NO_MSG_AVAILABLE) {
 		            	break;   
@@ -623,7 +644,7 @@ imports="
 			<%
 			} else {
 			%>
-				remoteQ<%=cid%>.get(inMessage<%=cid%>,gmo<%=cid%>);
+				remoteQ_<%=cid%>.get(inMessage<%=cid%>,gmo<%=cid%>);
 			<%
 			}
 			%>

@@ -48,8 +48,26 @@ class="MomInput"
 		metadata = metadatas.get(0);
 	}
 
-	boolean isCommitRollback = (!node.getProcess().getNodesOfType("tMomCommit").isEmpty()
-		|| !node.getProcess().getNodesOfType("tMomRollback").isEmpty());
+	List<? extends INode> commitNodes=node.getProcess().getNodesOfType("tMomCommit");
+	List<? extends INode> rollBackNodes=node.getProcess().getNodesOfType("tMomRollback");
+
+	boolean isCommitRollback = false;
+	for(INode cNode:commitNodes){
+		String cNodeName = ElementParameterParser.getValue(cNode,"__CONNECTION__");
+		if(cid.equals(cNodeName)){
+			isCommitRollback = true;
+			break;
+		}
+	}
+	if(!isCommitRollback){
+		for(INode rNode:rollBackNodes){
+			String rNodeName = ElementParameterParser.getValue(rNode,"__CONNECTION__");
+			if(cid.equals(rNodeName)){
+				isCommitRollback = true;
+				break;
+			}
+		}
+	}
 
 	if (isUseExistConnection) {
 		for (INode pNode : node.getProcess().getNodesOfType("tMomConnection")) {
@@ -306,6 +324,7 @@ class="MomInput"
 			String connection = ElementParameterParser.getValue(node, "__CONNECTION__");
 			%>
 			qMgr_<%=cid%> = (com.ibm.mq.MQQueueManager)globalMap.get("qMgr_<%=connection%>");
+			globalMap.put("qMgr_<%=cid%>",qMgr_<%=cid%>);
 		<%
 		}else{
 			String channel=ElementParameterParser.getValue(node, "__CHANNEL__");
@@ -331,6 +350,7 @@ class="MomInput"
 			}
 			%>
 			qMgr_<%=cid%>=new com.ibm.mq.MQQueueManager(<%=qm%>,props_<%=cid%>);
+			globalMap.put("qMgr_<%=cid%>",qMgr_<%=cid%>);
 			<%
 			if(isLog4jEnabled){
 			%>	
@@ -350,6 +370,7 @@ class="MomInput"
 		}
 		%>
 	    com.ibm.mq.MQQueue remoteQ_<%=cid%> = qMgr_<%=cid%>.accessQueue(<%=queue%>, 16);
+	    globalMap.put("remoteQ_<%=cid%>",remoteQ_<%=cid%>);
 	    <%
 		if(isLog4jEnabled){
 		%>	
