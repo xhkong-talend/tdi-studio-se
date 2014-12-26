@@ -372,9 +372,9 @@ public class TalendJetEmitter extends JETEmitter {
                                 + jetCompiler.getSkeleton().getClassName());
                         String methodName = jetCompiler.getSkeleton().getMethodName();
                         Method[] methods = theClass.getDeclaredMethods();
-                        for (int i = 0; i < methods.length; ++i) {
-                            if (methods[i].getName().equals(methodName)) {
-                                jetEmitter.setMethod(methods[i]);
+                        for (Method method2 : methods) {
+                            if (method2.getName().equals(methodName)) {
+                                jetEmitter.setMethod(method2);
                                 break;
                             }
                         }
@@ -462,7 +462,7 @@ public class TalendJetEmitter extends JETEmitter {
         //cmdList.add("-time"); //$NON-NLS-1$
         cmdList.add("-g"); //$NON-NLS-1$
         cmdList.add("-warn:none"); //$NON-NLS-1$
-        cmdList.add("-1.5"); //$NON-NLS-1$
+        cmdList.add("-1.6"); //$NON-NLS-1$
         cmdList.add("-d"); //$NON-NLS-1$
         cmdList.add(getClassOutputPath(project, javaFile));
 
@@ -634,9 +634,9 @@ public class TalendJetEmitter extends JETEmitter {
         // TDI-23079
         try {
             Method[] methods = theClass.getDeclaredMethods();
-            for (int i = 0; i < methods.length; ++i) {
-                if (methods[i].getName().equals(jetbean.getMethodName())) {
-                    return methods[i];
+            for (Method method2 : methods) {
+                if (method2.getName().equals(jetbean.getMethodName())) {
+                    return method2;
                 }
             }
         } catch (Exception e) {
