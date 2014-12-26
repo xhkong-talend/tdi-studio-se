@@ -1092,7 +1092,7 @@ public abstract class AbstractTalendEditor extends GraphicalEditorWithFlyoutPale
         contentLayer.paint(graphics);
         graphics.dispose();
         gc.dispose();
-        process.setScreenshot(ImageUtils.saveImageToData(img));
+        process.getScreenshots().put("process", ImageUtils.saveImageToData(img));
         img.dispose();
 
         // service.getProxyRepositoryFactory().refreshJobPictureFolder(outlinePicturePath);
