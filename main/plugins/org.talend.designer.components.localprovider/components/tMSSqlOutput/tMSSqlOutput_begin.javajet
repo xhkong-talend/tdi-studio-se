@@ -69,12 +69,6 @@ skeleton="../templates/db_output_bulk.skeleton"
     boolean usingStatsLogs=cid.equals("talendLogs_DB") || cid.equals("talendStats_DB") || cid.equals("talendMeter_DB");
     String useBatchSize = ElementParameterParser.getValue(node,"__USE_BATCH_SIZE__");
 	String batchSize=ElementParameterParser.getValue(node,"__BATCH_SIZE__");
-	boolean isUseParallelize ="true".equalsIgnoreCase(ElementParameterParser.getValue(node, "__PARALLELIZE__"));
-	boolean  isSpecifyIdentityKey = "true".equals(ElementParameterParser.getValue(node, "__SPECIFY_IDENTITY_FIELD__"));
-	if(isUseParallelize || identityInsert || (!"DROP_CREATE".equals(tableAction) && !"CREATE".equals(tableAction) && !"DROP_IF_EXISTS_AND_CREATE".equals(tableAction))){
-		isSpecifyIdentityKey = false;
-	}
-    String identityKey = ElementParameterParser.getValue(node, "__IDENTITY_FIELD__");
 %>
 int nb_line_<%=cid%> = 0;
 int nb_line_update_<%=cid%> = 0;
@@ -119,6 +113,13 @@ if(columnList != null && columnList.size() > 0) {
 	}
     isDynamic = isDynamic && !getManager(dbmsId, cid).isDynamicColumnReplaced();
 }
+boolean isUseParallelize ="true".equalsIgnoreCase(ElementParameterParser.getValue(node, "__PARALLELIZE__"));
+boolean  isSpecifyIdentityKey = "true".equals(ElementParameterParser.getValue(node, "__SPECIFY_IDENTITY_FIELD__"));
+if(isDynamic || isUseParallelize || identityInsert || (!"DROP_CREATE".equals(tableAction) && !"CREATE".equals(tableAction) && !"DROP_IF_EXISTS_AND_CREATE".equals(tableAction))){
+	isSpecifyIdentityKey = false;
+}
+String identityKey = ElementParameterParser.getValue(node, "__IDENTITY_FIELD__");
+getManager(dbmsId, cid, node).setIsSpecifyIdentityKey(isSpecifyIdentityKey);
 %>
 
 <%
@@ -272,7 +273,7 @@ if(usingStatsLogs){ %>
         <% 
         for(Column column : stmtStructure) {
             if(!column.isReplaced() && !column.isAddCol() && column.isInsertable()) {
-            	if(isSpecifyIdentityKey && (column.getName().equals(identityKey))&& !column.isDynamic()) {
+            	if(isSpecifyIdentityKey && (column.getName().equals(identityKey))) {
                    	continue;
                	}
                 String typeToGenerate = JavaTypesManager.getTypeToGenerate(column.getColumn().getTalendType(), column.getColumn().isNullable());
@@ -288,7 +289,7 @@ if(usingStatsLogs){ %>
         int count = 0;
         for(Column column : stmtStructure) {
             if(!column.isReplaced() && !column.isAddCol() && column.isInsertable()) {
-            	if(isSpecifyIdentityKey && (column.getName().equals(identityKey))&& !column.isDynamic()) {
+            	if(isSpecifyIdentityKey && (column.getName().equals(identityKey))) {
                    	continue;
                	}
                 if(count != 0) {
@@ -308,7 +309,7 @@ if(usingStatsLogs){ %>
             <% 
             for(Column column : stmtStructure) {
                 if(!column.isReplaced() && !column.isAddCol() && column.isInsertable()) {
-                	if(isSpecifyIdentityKey && (column.getName().equals(identityKey))&& !column.isDynamic()) {
+                	if(isSpecifyIdentityKey && (column.getName().equals(identityKey))) {
                    		continue;
                		}
                     %>

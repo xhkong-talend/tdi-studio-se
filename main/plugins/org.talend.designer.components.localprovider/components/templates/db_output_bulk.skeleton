@@ -651,6 +651,13 @@ public class CLASS {
             }
             return actionSQLMap;
         }
+        
+        private boolean isSpecifyIdentityKey = false;
+        
+        public void setIsSpecifyIdentityKey(boolean isSpecifyIdentityKey) {
+            this.isSpecifyIdentityKey = isSpecifyIdentityKey;
+        }
+        
         private Map<String, StringBuilder> processSQLClause(Column column, Map<String, StringBuilder> actionSQLMap) {
             StringBuilder insertColName = actionSQLMap.get(INSERT_COLUMN_NAME);
             if(insertColName == null) {
@@ -690,13 +697,6 @@ public class CLASS {
             }
             String suffix = null;
             String separate = null;
-        	boolean  isParallelize = "true".equals(ElementParameterParser.getValue(node, "__PARALLELIZE__"));
-        	boolean  identityInsert= "true".equals(ElementParameterParser.getValue(node, "__IDENTITY_INSERT__"));
-        	String tableAction = ElementParameterParser.getValue(node, "__TABLE_ACTION__");
-        	boolean  isSpecifyIdentityKey = "true".equals(ElementParameterParser.getValue(node, "__SPECIFY_IDENTITY_FIELD__"));
-        	if(isParallelize || identityInsert || (!"DROP_CREATE".equals(tableAction) && !"CREATE".equals(tableAction) && !"DROP_IF_EXISTS_AND_CREATE".equals(tableAction))){
-        		isSpecifyIdentityKey = false;
-        	}
             String identityKey = ElementParameterParser.getValue(node, "__IDENTITY_FIELD__");
             if(!(isSpecifyIdentityKey && (column.getName().equals(identityKey))) && column.isInsertable() && !column.isDynamic()) {
                 if(firstInsertColumn.toString().equals("true")) {

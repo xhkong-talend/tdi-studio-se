@@ -115,7 +115,7 @@ skeleton="../templates/db_output_bulk.skeleton"
     }
     boolean isUseParallelize ="true".equalsIgnoreCase(ElementParameterParser.getValue(node, "__PARALLELIZE__"));
 	boolean  isSpecifyIdentityKey = "true".equals(ElementParameterParser.getValue(node, "__SPECIFY_IDENTITY_FIELD__"));
-	if(isUseParallelize || identityInsert || (!"DROP_CREATE".equals(tableAction) && !"CREATE".equals(tableAction) && !"DROP_IF_EXISTS_AND_CREATE".equals(tableAction))){
+	if(isDynamic || isUseParallelize || identityInsert || (!"DROP_CREATE".equals(tableAction) && !"CREATE".equals(tableAction) && !"DROP_IF_EXISTS_AND_CREATE".equals(tableAction))){
 		isSpecifyIdentityKey = false;
 	}
     String identityKey = ElementParameterParser.getValue(node, "__IDENTITY_FIELD__");
@@ -507,7 +507,7 @@ if((cid.equals("talendLogs_DB") || cid.equals("talendStats_DB") || cid.equals("t
             for(Column column : colStruct) {
                 if(column.isInsertable()) {
                     String typeToGenerate = JavaTypesManager.getTypeToGenerate(column.getColumn().getTalendType(), column.getColumn().isNullable());
-                    if(isSpecifyIdentityKey && (column.getName().equals(identityKey)) && column.isInsertable() && !column.isDynamic()) {
+                    if(isSpecifyIdentityKey && (column.getName().equals(identityKey)) && column.isInsertable()) {
                     	continue;
                     }
                     %>
@@ -626,7 +626,7 @@ if((cid.equals("talendLogs_DB") || cid.equals("talendStats_DB") || cid.equals("t
 				}   
 		                for(Column column : colStruct) {
 		                    if(column.isInsertable()) {
-		                    	if(isSpecifyIdentityKey && (column.getName().equals(identityKey)) && !column.isDynamic()) {
+		                    	if(isSpecifyIdentityKey && (column.getName().equals(identityKey))) {
 	                    			continue;
 	                   			}
 		                        String typeToGenerate = JavaTypesManager.getTypeToGenerate(column.getColumn().getTalendType(), column.getColumn().isNullable());
@@ -653,7 +653,7 @@ if((cid.equals("talendLogs_DB") || cid.equals("talendStats_DB") || cid.equals("t
 		                int count =0;
 		                for(Column column : colStruct) {
 		                    if(column.isInsertable()) {
-			                    if(isSpecifyIdentityKey && (column.getName().equals(identityKey)) && !column.isDynamic()) {
+			                    if(isSpecifyIdentityKey && (column.getName().equals(identityKey))) {
 	                    			continue;
 	                   			}
 		                        if(count != 0) {
@@ -1033,7 +1033,7 @@ if((cid.equals("talendLogs_DB") || cid.equals("talendStats_DB") || cid.equals("t
                 for(Column columnInsert : colStruct) {
                     if(columnInsert.isInsertable()) {
                         String typeToGenerate = JavaTypesManager.getTypeToGenerate(columnInsert.getColumn().getTalendType(), columnInsert.getColumn().isNullable());
-                        if(isSpecifyIdentityKey && (columnInsert.getName().equals(identityKey)) && columnInsert.isInsertable() && !columnInsert.isDynamic()) {
+                        if(isSpecifyIdentityKey && (columnInsert.getName().equals(identityKey)) && columnInsert.isInsertable()) {
                     		continue;
                     	}
                         %>
@@ -1233,7 +1233,7 @@ if((cid.equals("talendLogs_DB") || cid.equals("talendStats_DB") || cid.equals("t
                 for(Column column : colStruct) {
                     if(column.isInsertable()) {
                         String typeToGenerate = JavaTypesManager.getTypeToGenerate(column.getColumn().getTalendType(), column.getColumn().isNullable());
-                        if(isSpecifyIdentityKey && (column.getName().equals(identityKey)) && column.isInsertable() && !column.isDynamic()) {
+                        if(isSpecifyIdentityKey && (column.getName().equals(identityKey)) && column.isInsertable()) {
                     		continue;
                     	}
                         %>
