@@ -16,10 +16,6 @@
 
     List<IConnection> connections = (List<IConnection>) node.getIncomingConnections();
     boolean includeParallelComps = false;
-	List<? extends INode> listPartitions= node.getProcess().getNodesOfType("tPartitioner");
-	if (listPartitions!=null && listPartitions.size() > 0 ) {
-		includeParallelComps = true;
-	}
 	if (connections != null && connections.size() > 0) {
         for (IConnection connection : connections) {
         	String connectionName = connection.getName();
