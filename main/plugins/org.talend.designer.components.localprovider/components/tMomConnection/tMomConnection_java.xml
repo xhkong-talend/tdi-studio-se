@@ -81,6 +81,14 @@
         SHOW_IF="(SERVER == 'ACTIVEMQ')">
       <DEFAULT>false</DEFAULT>
     </PARAMETER>
+    
+    <PARAMETER NAME="USE_SHARED_CONNECTION" FIELD="CHECK" NUM_ROW="50" REQUIRED="true" >
+    	<DEFAULT>false</DEFAULT>
+    </PARAMETER>
+
+	<PARAMETER NAME="SHARED_CONNECTION_NAME" FIELD="TEXT" NUM_ROW="50" REQUIRED="true" SHOW_IF="(USE_SHARED_CONNECTION == 'true')">
+		<DEFAULT></DEFAULT>
+    </PARAMETER>
 
   </PARAMETERS>
 
@@ -114,6 +122,9 @@
 	  <IMPORT NAME="WEBSPHERE CONNECTOR" MODULE="websphere-connector-1_5.jar" REQUIRED_IF="(SERVER == 'WEBSPHERE')" />
 	  <IMPORT NAME="TALENDMQRFH2" MODULE="talendMQRFH2.jar" REQUIRED_IF="(SERVER == 'WEBSPHERE')" />
 	  <IMPORT NAME="Java Message Service" MODULE="jms.jar" UrlPath="platform:/plugin/org.talend.libraries.esb.ext/lib/jms.jar" REQUIRED_IF="(SERVER == 'WEBSPHERE')" />
+	  
+	  <IMPORT NAME="SharedConnectionUtil" MODULE="talendMQConnectionUtil-1.0.0.jar"  REQUIRED_IF="(USE_SHARED_CONNECTION == 'true')" />
+	  
     </IMPORTS>
   </CODEGENERATION>
 

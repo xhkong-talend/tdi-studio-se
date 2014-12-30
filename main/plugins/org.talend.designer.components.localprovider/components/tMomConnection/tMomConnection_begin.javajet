@@ -20,6 +20,10 @@ class="MomConnection"
 	String serverType=ElementParameterParser.getValue(node, "__SERVER__");
 	final boolean isLog4jEnabled = ("true").equals(ElementParameterParser.getValue(node.getProcess(), "__LOG4J_ACTIVATE__"));
 	
+	boolean isUseSharedConnection = ("true").equals(ElementParameterParser.getValue(node, "__USE_SHARED_CONNECTION__"));
+	String sharedConnectionName = ElementParameterParser.getValue(node, "__SHARED_CONNECTION_NAME__");
+	
+	
 	if(("ActiveMQ").equals(serverType)){/***ActiveMQ*****/
 		boolean transacted = "true".equals(ElementParameterParser.getValue(node, "__IS_TRANSACTED__"));
 		String acknowledgmentMode = ElementParameterParser.getValue(node, "__ACKNOWLEDGMENT_MODE__");
@@ -68,48 +72,56 @@ class="MomConnection"
 			url_<%=cid %> = "tcp://"+<%=host%>+":"+<%=port%>;
 		<%}%>			
 		
-		System.out.println("Connecting to URL: " + url_<%=cid %>);
-	
-		org.apache.activemq.ActiveMQConnectionFactory factory_<%=cid %> = 
-			new org.apache.activemq.ActiveMQConnectionFactory(url_<%=cid %>);
 		<%
-			
-			/*---------------------------------------2.create Queue Or Topic from connection ---------------------------------*/ 
-		%>	
-					
-		<% if(dbuser == null || ("\"\"").equals(dbuser) || ("").equals(dbuser)) { %>
-				javax.jms.Connection connection_<%=cid %> = factory_<%=cid %>.createConnection();
-		<% } else { %>
-
-			<%
-			String passwordFieldName = "__PASS__";
-			%>
-
-			<%@ include file="@{org.talend.designer.components.localprovider}/components/templates/password.javajet"%>
-			
-			javax.jms.Connection connection_<%=cid %> = factory_<%=cid %>.createConnection(<%=dbuser%>,decryptedPassword_<%=cid%>);
-		<% } %>
-		<%
-		if(isLog4jEnabled){
-		%>	
-			log.info("<%=cid%> - Created connection successfully.");
-			log.info("<%=cid%> - Activating the connection...");
-		<%
-		}
+		String passwordFieldName = "__PASS__";
 		%>
-	
-	    connection_<%=cid %>.start();
-	    <%
+			<%@ include file="@{org.talend.designer.components.localprovider}/components/templates/password.javajet"%>
+		<%
+		if(isUseSharedConnection){
+		%>
+			javax.jms.Connection connection_<%=cid %> = org.talend.mq.SharedActiveMQConnection.getMQConnection(url_<%=cid %>,<%=dbuser%>,decryptedPassword_<%=cid%>,<%=sharedConnectionName%>);
+		<%
+		}else{
+		%>
+			System.out.println("Connecting to URL: " + url_<%=cid %>);
+			org.apache.activemq.ActiveMQConnectionFactory factory_<%=cid %> = 
+				new org.apache.activemq.ActiveMQConnectionFactory(url_<%=cid %>);
+			<%
+				
+				/*---------------------------------------2.create Queue Or Topic from connection ---------------------------------*/ 
+			%>	
+						
+			<% if(dbuser == null || ("\"\"").equals(dbuser) || ("").equals(dbuser)) { %>
+				javax.jms.Connection connection_<%=cid %> = factory_<%=cid %>.createConnection();
+			<% } else { %>
+				javax.jms.Connection connection_<%=cid %> = factory_<%=cid %>.createConnection(<%=dbuser%>,decryptedPassword_<%=cid%>);
+			<% } %>
+			<%
+			if(isLog4jEnabled){
+			%>	
+				log.info("<%=cid%> - Created connection successfully.");
+				log.info("<%=cid%> - Activating the connection...");
+			<%
+			}
+			%>
+		
+		    connection_<%=cid %>.start();
+		    <%
+			if(isLog4jEnabled){
+			%>	
+				log.info("<%=cid%> - Activated successfully.");
+			<%
+			}
+		}
 		if(isLog4jEnabled){
 		%>	
-			log.info("<%=cid%> - Activated successfully.");
 			log.info("<%=cid%> - Creating a session...");
 		<%
 		}
 		%>
-		globalMap.put("connection_<%=cid%>", connection_<%=cid %>);
-	
-		javax.jms.Session session_<%=cid %> = connection_<%=cid %>.createSession(<%=transacted%>, javax.jms.Session.<%=acknowledgmentMode%>);
+		
+	    globalMap.put("connection_<%=cid%>", connection_<%=cid %>);
+	    javax.jms.Session session_<%=cid %> = connection_<%=cid %>.createSession(<%=transacted%>, javax.jms.Session.<%=acknowledgmentMode%>);
 	    globalMap.put("session_<%=cid %>", session_<%=cid %>);
 		<%
 		if(isLog4jEnabled){
@@ -141,8 +153,16 @@ class="MomConnection"
 			properties<%=cid%>.put("password",decryptedPassword_<%=cid%>);
 		<%
 		}
+		if(isUseSharedConnection){
 		%>
-		com.ibm.mq.MQQueueManager qMgr_<%=cid%> = new com.ibm.mq.MQQueueManager(<%=qm%>,properties<%=cid%>);
+			com.ibm.mq.MQQueueManager qMgr_<%=cid%> =  org.talend.mq.SharedWebSphereMQConnection.getMQConnection(<%=qm%>,properties<%=cid%>,<%=sharedConnectionName%>);
+		<%
+		}else{
+		%>
+			com.ibm.mq.MQQueueManager qMgr_<%=cid%> = new com.ibm.mq.MQQueueManager(<%=qm%>,properties<%=cid%>);
+		<%
+		}
+		%>
 		globalMap.put("qMgr_<%=cid%>", qMgr_<%=cid%> );
 	<%
 	}
