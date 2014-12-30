@@ -1,0 +1,299 @@
+<%@ jet
+imports="
+	org.talend.core.model.process.INode
+	org.talend.core.model.process.ElementParameterParser
+	org.talend.designer.codegen.config.CodeGeneratorArgument
+	org.talend.core.model.metadata.IMetadataTable
+	org.talend.core.model.metadata.MetadataTalendType
+	org.talend.core.model.metadata.MappingTypeRetriever
+	java.util.List
+	java.util.ArrayList
+	java.util.Map
+	java.util.HashMap
+"
+skeleton="../templates/db_output_bulk.skeleton"
+%>
+<%@ include file="../templates/Log4j/Log4jDBConnUtil.javajet"%>
+<%
+	CodeGeneratorArgument codeGenArgument = (CodeGeneratorArgument) argument;
+	INode node = (INode)codeGenArgument.getArgument();
+	String cid = node.getUniqueName();
+	
+	String host = ElementParameterParser.getValue(node, "__HOST__");
+	String port = ElementParameterParser.getValue(node, "__PORT__");
+	String dbName = ElementParameterParser.getValue(node, "__DBNAME__");
+	String dbproperties = ElementParameterParser.getValue(node, "__PROPERTIES__");
+	String table = ElementParameterParser.getValue(node, "__TABLE__");
+	String userName = ElementParameterParser.getValue(node, "__USER__");
+	
+	String dbschema = ElementParameterParser.getValue(node, "__SCHEMA_DB__");
+	
+	boolean useExistingConnection = "true".equalsIgnoreCase(ElementParameterParser.getValue(node,"__USE_EXISTING_CONNECTION__"));
+	List<IMetadataColumn> columnList = getColumnList(node);
+%>
+	String dbschema_<%=cid%> = null;
+	<%
+	if(useExistingConnection) {
+		%>
+		dbschema_<%=cid%> = (String)globalMap.get("schema_" + "<%=ElementParameterParser.getValue(node,"__CONNECTION__")%>");
+		<%
+	} else {
+		%>
+		dbschema_<%=cid%> = <%=dbschema%>;
+		<%
+	}
+	%>
+	String tableName_<%=cid%> = null;
+	if(dbschema_<%=cid%> == null || dbschema_<%=cid%>.trim().length() == 0) {
+		tableName_<%=cid%> = <%=table%>;
+	} else {
+		tableName_<%=cid%> = dbschema_<%=cid%> + "." + <%=table%>;
+	}
+
+	java.sql.Connection conn_<%=cid%> = null;
+<%
+	if(useExistingConnection) {
+		String conn = "conn_" + ElementParameterParser.getValue(node,"__CONNECTION__");
+%>
+	 	conn_<%=cid%> = (java.sql.Connection)globalMap.get("<%=conn%>");
+<%
+		log4jCodeGenerateUtil.useExistConnection(node);
+	} else {
+%>
+		String driverClass_<%=cid%> = "org.postgresql.Driver";
+		Class.forName(driverClass_<%=cid%>).newInstance();
+		<%
+		if(dbproperties == null || ("\"\"").equals(dbproperties) || ("").equals(dbproperties)) {
+		%>
+			String url_<%=cid%> = "jdbc:postgresql://" + <%=host%> + ":" + <%=port%> + "/" + <%=dbName%>;
+		<%
+		} else {
+		%>
+			String url_<%=cid%> = "jdbc:postgresql://" + <%=host%> + ":" + <%=port%> + "/" + <%=dbName%> + "?" + <%=dbproperties%>;
+		<%
+		}
+		String passwordFieldName = "__PASS__";
+		%>
+		<%if (ElementParameterParser.canEncrypt(node, passwordFieldName)) {%> 
+		final String decryptedPass_<%=cid%> = routines.system.PasswordEncryptUtil.decryptPassword(<%=ElementParameterParser.getEncryptedValue(node, passwordFieldName)%>);
+		<%} else {%>
+		final String decryptedPass_<%=cid%> = <%= ElementParameterParser.getValue(node, passwordFieldName)%>; 
+		<%}%>
+		String dbUser_<%=cid %> = <%=userName%>;
+		String dbPwd_<%=cid %> = decryptedPass_<%=cid%>;
+		<%
+		log4jCodeGenerateUtil.connect(node);
+	}
+	
+	String tableAction = ElementParameterParser.getValue(node,"__TABLE_ACTION__");
+	String dbmsId = ElementParameterParser.getValue(node,"__MAPPING__");
+	List<Column> stmtStructure = null;
+	Manager manager = null;
+	if(columnList != null && columnList.size() > 0) {
+		stmtStructure = getManager(dbmsId, cid).createColumnList(columnList, false, null, null);
+	}
+	
+	if((columnList != null && columnList.size() > 0) || "CLEAR".equals(tableAction)){
+%>
+		<%@ include file="../templates/_tableActionForBulk.javajet"%>
+<%
+	}
+	
+	boolean	log4jEnabled = ("true").equals(ElementParameterParser.getValue(node.getProcess(), "__LOG4J_ACTIVATE__"));
+	String fieldSeparator = ElementParameterParser.getValue(node,"__FIELDSEPARATOR__");
+	String textEnclosure = ElementParameterParser.getValue(node, "__TEXT_ENCLOSURE__");
+%>
+	StringBuilder command_<%=cid%> = new StringBuilder();
+	char fieldSeparator_<%=cid %> = 
+<%
+	if(fieldSeparator.trim().isEmpty()) {
+%>
+	',';
+<%
+	} else {
+%>
+	String.valueOf(<%=fieldSeparator.trim()%>).charAt(0);
+<%
+	}
+%>
+	char textEnclosure_<%=cid %> = 
+<%
+	if("EMPTY".equals(textEnclosure)) {
+%>
+	'\0';
+	
+<%
+	} else if("DOUBLE_QUOTE".equals(textEnclosure)) {
+%>
+	'"';
+<%
+	} else {
+%>
+	String.valueOf(<%=textEnclosure%>).charAt(0);
+<%
+	}
+%>
+	command_<%=cid%>.append("COPY ").append(tableName_<%=cid%>)
+	
+<%
+	if(columnList != null && columnList.size() > 0) {
+%>
+		.append(" (")
+<%
+		int sizeColumns = columnList.size();
+		for (int i = 0; i < sizeColumns; i++) {
+			IMetadataColumn column = columnList.get(i);
+%>
+			.append("<%=column.getOriginalDbColumnName()%>")
+<%
+			if(i != sizeColumns - 1) {
+%>
+			.append(",")
+<%
+			}
+		}
+%>
+		.append(")")
+<%
+	}
+%>
+	.append(" FROM '");
+<%
+	String bucket = ElementParameterParser.getValue(node,"__BUCKET__");
+    String key = ElementParameterParser.getValue(node,"__KEY__");
+    String access_key = ElementParameterParser.getValue(node, "__ACCESS_KEY__");
+    String passwordFieldKey = "__SECRET_KEY__";
+%>
+	<%if (ElementParameterParser.canEncrypt(node, passwordFieldKey)) {%> 
+	final String decryptedPwd_<%=cid%> = routines.system.PasswordEncryptUtil.decryptPassword(<%=ElementParameterParser.getEncryptedValue(node, passwordFieldKey)%>);
+	<%} else {%>
+	final String decryptedPwd_<%=cid%> = <%= ElementParameterParser.getValue(node, passwordFieldKey)%>; 
+	<%}%>
+	command_<%=cid%>.append("s3://").append(<%=bucket%>).append("/").append(<%=key%>)
+	.append("' ")
+	.append("credentials 'aws_access_key_id=").append(<%=access_key%>).append(";aws_secret_access_key=").append(decryptedPwd_<%=cid%>).append("' ")
+	.append("DELIMITER '").append(fieldSeparator_<%=cid%>).append("' ");
+	
+	if(textEnclosure_<%=cid %>!='\0') {
+		command_<%=cid%>.append("CSV QUOTE '").append(textEnclosure_<%=cid %>).append("' ");
+	}
+	
+<%
+	String encoding = "\"UTF8\"";
+%>
+	command_<%=cid%>.append("ENCODING ").append(<%=encoding%>).append(" ")
+<%
+	final List<Map<String, String>> settings = (List<Map<String,String>>)ElementParameterParser.getObjectValue(node, "__OTHER_CONFIGURATION__");
+	if(settings!=null && !settings.isEmpty()) {
+		for(Map<String, String> parameter : settings) {
+			String parameterKey = parameter.get("OTHER_PARAMETER");
+			String value = parameter.get("DATA_VALUE");
+			if("ESCAPE,EXPLICIT_IDS,IGNOREBLANKLINES,TRIMBLANKS,EMPTYASNULL,BLANKSASNULL".contains(parameterKey)) {
+				if("true".equals(value)) {
+%>
+				.append("<%=parameterKey%> ")
+<%
+				}
+			} else if("REGION".equals(parameterKey)) {
+%>
+			.append("REGION '").append(<%=value%>).append("' ")
+<%
+			} else if("MAXERROR,IGNOREHEADER".contains(parameterKey)) {
+%>
+			.append("<%=parameterKey%> ").append(<%=value%>).append(" ")
+<%
+			}
+ 		}
+	}
+	
+	boolean compressed = "true".equals(ElementParameterParser.getValue(node, "__COMPRESS__"));
+	if(compressed) {
+		String compression = ElementParameterParser.getValue(node, "__COMPRESSION__");
+%>
+		.append("<%=compression%> ")
+<%
+	}
+	
+	String dateFormat = ElementParameterParser.getValue(node, "__DATEFORMAT__");
+	if("NONE".equals(dateFormat)) {
+		//do nothing
+	} else if("PATTERN".equals(dateFormat)) {
+		String pattern = ElementParameterParser.getValue(node, "__DATE_PATTERN__");
+%>
+		.append("DATEFORMAT '").append(<%=pattern%>).append("' ")
+<%
+	} else if("AUTO".equals(dateFormat)) {
+%>
+		.append("DATEFORMAT 'auto' ")
+<%
+	}
+	
+	String timeFormat = ElementParameterParser.getValue(node, "__TIMEFORMAT__");
+	if("NONE".equals(timeFormat)) {
+		//do nothing
+	} else if("PATTERN".equals(timeFormat)) {
+		String pattern = ElementParameterParser.getValue(node, "__TIME_PATTERN__");
+%>
+		.append("TIMEFORMAT '").append(<%=pattern%>).append("' ")
+<%
+	} else if("AUTO".equals(timeFormat)) {
+%>
+		.append("TIMEFORMAT 'auto' ")
+<%
+	} else if("EPOCHSECS".equals(timeFormat)) {
+%>
+		.append("TIMEFORMAT 'epochsecs' ")
+<%
+	} else if("EPOCHMILLISECS".equals(timeFormat)) {
+%>
+		.append("TIMEFORMAT 'epochmillisecs' ")
+<%
+	}
+%>
+	;
+	
+	java.sql.Statement stmt_<%=cid %>=conn_<%=cid %>.createStatement();
+	stmt_<%=cid %>.execute(command_<%=cid%>.toString());
+	<%if(log4jEnabled){%>
+		log.info("<%=cid%> - Finish loading data to table : " + tableName_<%=cid%> + ".");
+	<%}%>
+<%
+	if(!useExistingConnection) {
+		log4jCodeGenerateUtil.close(node);
+	}
+	
+	boolean deleteS3Object = "true".equals(ElementParameterParser.getValue(node, "__DELETE_S3_OBJECT__"));
+	if(!deleteS3Object) {
+		return stringBuffer.toString();
+	}
+	
+	cid = cid + "_S3";
+%>
+	<%@ include file="../tS3Connection/S3Client.javajet" %>
+	try{
+		String key_<%=cid%> = <%=key%>;
+		if(key_<%=cid%>!=null && key_<%=cid%>.trim().length()>0){
+			<%
+			if(isLog4jEnabled){
+			%>	
+				log.info("<%=cid%> - Deleting an object with key:" + <%=key%>);
+			<%
+			}
+			%>
+			conn_<%=cid%>.deleteObject(<%=bucket%>, key_<%=cid%>);
+			<%
+			if(isLog4jEnabled){
+			%>	
+				log.info("<%=cid%> - Delete the object successfully.");
+			<%
+			}
+			%>
+		}else{
+			throw(new RuntimeException("Please set key!"));
+		}
+	} finally {
+		if(conn_<%=cid%> !=null){
+			conn_<%=cid%>.shutdown();
+		}
+	}
+	
