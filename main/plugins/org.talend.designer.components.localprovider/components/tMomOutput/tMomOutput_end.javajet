@@ -107,7 +107,6 @@ if(("JBoss").equals(serverType) || ("ActiveMQ").equals(serverType)){
 }else{//server judgement   /***WebSphere MQ*****/
 	if (transacted) {
 	%>
-		globalMap.put("remoteQ_<%=cid%>",remoteQ_<%=cid%>);
 		globalMap.put("qMgr_<%=cid%>",qMgr_<%=cid%>);
 	<%
 	} else {

@@ -582,7 +582,6 @@ imports="
 				boolean flag<%=cid%>=true;
 			
 				remoteQ_<%=cid%>=qMgr_<%=cid%>.accessQueue(<%=queue%>,openOptions<%=cid%>);
-				globalMap.put("remoteQ_<%=cid%>",remoteQ_<%=cid%>);
 	
 			<%
 			if(("false").equals(kListen)) {

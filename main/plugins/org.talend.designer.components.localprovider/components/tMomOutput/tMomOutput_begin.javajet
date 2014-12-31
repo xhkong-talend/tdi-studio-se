@@ -370,7 +370,6 @@ class="MomInput"
 		}
 		%>
 	    com.ibm.mq.MQQueue remoteQ_<%=cid%> = qMgr_<%=cid%>.accessQueue(<%=queue%>, 16);
-	    globalMap.put("remoteQ_<%=cid%>",remoteQ_<%=cid%>);
 	    <%
 		if(isLog4jEnabled){
 		%>	
