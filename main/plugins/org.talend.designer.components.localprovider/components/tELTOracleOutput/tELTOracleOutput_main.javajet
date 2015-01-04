@@ -507,14 +507,13 @@ pstmt_<%=cid %> = conn_<%=cid%>.prepareStatement(deleteQuery);
 		    boolean isfirstInsertWhere = true;
 		    String keyColumnName=null;
 			for(Map<String, String> keyColumn:insertColumns){
-				if (isfirstInsertWhere) {
-	 			 	isfirstInsertWhere = false;
-				}else {
-					mergeInsertName.append(",");
-					mergeInsertValue.append(",");
-					
-				}
 				if (keyColumn.get("INSERT").equals("true")) {
+					if (isfirstInsertWhere) {
+	 			 		isfirstInsertWhere = false;
+					}else {
+						mergeInsertName.append(",");
+						mergeInsertValue.append(",");
+					}
 					keyColumnName=keyColumn.get("SCHEMA_COLUMN");
 					keyColumnName = new Column(metadata.getColumn(keyColumnName)).getName();
 					mergeInsertName.append(keyColumnName);
