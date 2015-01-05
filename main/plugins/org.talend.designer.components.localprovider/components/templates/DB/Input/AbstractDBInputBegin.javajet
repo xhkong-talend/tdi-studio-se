@@ -51,9 +51,12 @@ imports="
 		    java.sql.Connection conn_<%=cid%> = null;
 <%
 		    String useExistingConn = ElementParameterParser.getValue(node,"__USE_EXISTING_CONNECTION__");
-		    if(("true").equals(useExistingConn)) {		    	
+		    if(("true").equals(useExistingConn)) {
 		        String connection = ElementParameterParser.getValue(node,"__CONNECTION__");
 		        String conn = "conn_" + connection;
+                if(connection.matches("^.*?tAmazonAuroraConnection_\\d+$")){
+                      conn += "_targetDbConn";
+                }
 %>
 		        conn_<%=cid%> = (java.sql.Connection)globalMap.get("<%=conn%>");
 <%
@@ -311,7 +314,7 @@ imports="
 %>
                                   Object geom = rs_<%=cid %>.getObject(<%if(isDynamic){%>column_index_<%=cid%><%}else{%><%=currentColNo%><%}%>);
                                   if (geom != null) {
-                                  	org.postgis.Geometry o = 
+                                  	org.postgis.Geometry o =
                                       org.postgis.PGgeometry.geomFromString(geom.toString());
                                 	StringBuffer sb = new StringBuffer();
                                 	o.outerWKT(sb, false);
@@ -352,4 +355,3 @@ imports="
 		}
 	}
 %>
-
