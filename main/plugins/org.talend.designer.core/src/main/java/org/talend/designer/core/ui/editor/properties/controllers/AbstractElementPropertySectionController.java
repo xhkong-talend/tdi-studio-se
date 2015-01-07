@@ -1656,7 +1656,7 @@ public abstract class AbstractElementPropertySectionController implements Proper
             return ""; //$NON-NLS-1$
         }
 
-        String actualKey = this.getParaNameFromRepositoryName(key, basePropertyParameter); // connKeyMap.get(key);
+        String actualKey = this.getParaNameFromRepositoryName(elem, key, basePropertyParameter);// connKeyMap.get(key);
         if (actualKey != null) {
             return fetchElementParameterValue(elem, context, actualKey);
         } else {
