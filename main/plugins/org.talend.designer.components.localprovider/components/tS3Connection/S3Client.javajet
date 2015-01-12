@@ -8,6 +8,7 @@
 	boolean configClient = "true".equals(ElementParameterParser.getValue(node, "__CONFIG_CLIENT__"));
 	String useExistingConn = ElementParameterParser.getValue(node,"__USE_EXISTING_CONNECTION__");
 	List<Map<String,String>> clientConfiguration = (List<Map<String,String>>)ElementParameterParser.getObjectValue(node,"__CLIENT_CONFIGURATION__");
+	String region = ElementParameterParser.getValue(node,"__REGION__");
 	if(("true").equals(useExistingConn)) {
 		String connection = ElementParameterParser.getValue(node,"__CONNECTION__");
 		String conn = "conn_" + connection;;
@@ -78,6 +79,11 @@
 		}else{
 		%>
 			com.amazonaws.services.s3.AmazonS3Client conn_<%=cid%> = new com.amazonaws.services.s3.AmazonS3Client(credentials_<%=cid%>);
+		<%
+		}
+		if(!"DEFAULT".equalsIgnoreCase(region)){
+		%>
+			conn_<%=cid%>.setRegion(com.amazonaws.regions.RegionUtils.getRegion(<%=region%>));
 		<%
 		}
 		if(isLog4jEnabled){
