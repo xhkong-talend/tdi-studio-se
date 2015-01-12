@@ -246,8 +246,9 @@ public class DropContextAnalyzer {
                     }
                 }
             }
+            boolean useRepositoryMeta = (outputTable.isRepository())
+                    || (outputTable.getId() != null && !"".equals(outputTable.getId()));
             // forbiden dnd if use reposiotry metadat
-            boolean useRepositoryMeta = outputTable.getId() != null && !"".equals(outputTable.getId());
             // Unable to drag a column from the main or lookup tables to the expression filter of an output table that
             // has a repository schema
             // for join table if main table use repository metadata
