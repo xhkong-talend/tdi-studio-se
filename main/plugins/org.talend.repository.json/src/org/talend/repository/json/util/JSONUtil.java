@@ -12,7 +12,6 @@
 // ============================================================================
 package org.talend.repository.json.util;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -21,6 +20,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
 import org.eclipse.core.resources.IProject;
@@ -29,6 +30,17 @@ import org.talend.commons.ui.runtime.exception.ExceptionHandler;
 import org.talend.commons.utils.workbench.resources.ResourceUtils;
 import org.talend.core.model.general.Project;
 import org.talend.repository.ProjectManager;
+
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 
 /**
  * DOC wanghong class global comment. Detailled comment
@@ -126,11 +138,6 @@ public class JSONUtil {
                 + File.separator;
 
         ConvertJSONString convertJSON = new ConvertJSONString();
-        de.odysseus.staxon.json.JsonXMLConfig jsonConfig = new de.odysseus.staxon.json.JsonXMLConfigBuilder().multiplePI(false)
-                .build();
-        de.odysseus.staxon.json.JsonXMLInputFactory jsonXMLInputFactory = new de.odysseus.staxon.json.JsonXMLInputFactory(
-                jsonConfig);
-        javax.xml.stream.XMLOutputFactory xmlOutputFactory = javax.xml.stream.XMLOutputFactory.newInstance();
 
         java.io.ByteArrayOutputStream outStream = new java.io.ByteArrayOutputStream();
         InputStream inStream = null;
@@ -172,11 +179,49 @@ public class JSONUtil {
 
             convertJSON.generate();
             jsonStr = convertJSON.getJsonString4XML();
-            inStream = new ByteArrayInputStream(jsonStr.getBytes());
-            javax.xml.stream.XMLEventReader xmlEventReader = jsonXMLInputFactory.createXMLEventReader(inStream);
-            javax.xml.stream.XMLEventWriter xmLEventWriter = xmlOutputFactory.createXMLEventWriter(outStream);
-            xmLEventWriter.add(xmlEventReader);
-            String xmlStr = outStream.toString();
+
+            ObjectMapper objMapper = new ObjectMapper();
+            Map<String, Object> jsonMap = objMapper.readValue(jsonStr, Map.class);
+            JacksonXmlModule xmlModule = new JacksonXmlModule();
+            xmlModule.setDefaultUseWrapper(false);
+
+            xmlModule.addKeySerializer(Object.class, new JsonSerializer<Object>() {
+
+                private BiMap<String, String> nameMap = HashBiMap.create();
+
+                private int index = 0;
+
+                @Override
+                public void serialize(Object value, JsonGenerator jgen, SerializerProvider privider) throws IOException,
+                        com.fasterxml.jackson.core.JsonProcessingException {
+                    String regexString = "\\b[a-zA-Z]\\w*\\b"; //$NON-NLS-1$
+                    String originalValue = value.toString();
+                    String talendSchema = "RealKey"; //$NON-NLS-1$
+                    ToXmlGenerator xgen = (ToXmlGenerator) jgen;
+                    if (!originalValue.matches(regexString)) {
+                        String finalValue = nameMap.get(originalValue);
+                        if (finalValue == null) {
+                            String replacedValue = originalValue.replaceAll("[\\W]", "_"); //$NON-NLS-1$ //$NON-NLS-2$
+                            finalValue = "Talend_" + replacedValue; //$NON-NLS-1$
+                            if (nameMap.containsValue(finalValue)) {
+                                finalValue = "Talend" + (index++) + "_" + replacedValue; //$NON-NLS-1$ //$NON-NLS-2$
+                            }
+                            nameMap.put(originalValue, finalValue);
+                        }
+                        xgen.writeFieldName(finalValue);
+                        Map<String, String> attributes = new HashMap<String, String>();
+                        attributes.put(talendSchema, originalValue);
+                        xgen.setNextAttributes(attributes);
+                    } else {
+                        jgen.writeFieldName(originalValue);
+                    }
+                }
+            });
+
+            XmlMapper xmlMapper = new XmlMapper(xmlModule);
+            xmlMapper.configure(ToXmlGenerator.Feature.WRITE_XML_DECLARATION, true);
+            xmlMapper.disable(SerializationFeature.WRAP_ROOT_VALUE);
+            String xmlString = xmlMapper.writeValueAsString(jsonMap);
 
             File xmlFolder = new File(temPath);
             if (!xmlFolder.exists()) {
@@ -184,12 +229,10 @@ public class JSONUtil {
             }
             temPath = temPath + TMP_JSON_FILE;
             FileWriter writer = new FileWriter(temPath);
-            writer.write(xmlStr);
+            writer.write(xmlString);
             writer.flush();
             writer.close();
 
-            xmLEventWriter.close();
-            xmlEventReader.close();
             if (isFromUrl) {
                 tempJSONXsdPath = temPath;
             }
