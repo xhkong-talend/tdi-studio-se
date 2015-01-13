@@ -91,10 +91,16 @@ public class FunctionManagerExt extends FunctionManager {
     }
 
     public String[] getFunctionArrays(List<Function> functions) {
-        String[] arrayTalendFunctions2 = new String[functions.size()];
+        List<String> listTalendFunctions = new ArrayList<String>();
         for (int i = 0; i < functions.size(); i++) {
-            arrayTalendFunctions2[i] = getFunctionLable(functions.get(i));
+            String functionLable = getFunctionLable(functions.get(i));
+            if (!listTalendFunctions.contains(functionLable)) {
+                listTalendFunctions.add(functionLable);
+            }
         }
+        String[] arrayTalendFunctions2 = new String[listTalendFunctions.size()];
+        listTalendFunctions.toArray(arrayTalendFunctions2);
+
         Arrays.sort(arrayTalendFunctions2, new Comparator<String>() {
 
             @Override
