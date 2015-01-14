@@ -32,6 +32,7 @@ public class CLASS {
     public static final String ORACLE = "oracle_id";
     public static final String PARACCEL = "paraccel_id";
     public static final String POSTGRESQL = "postgres_id";
+    public static final String REDSHIFT = "redshift_id";
     public static final String POSTGREPLUS = "postgresplus_id";
     public static final String SQLITE = "sqlite_id";
     public static final String SYBASE = "sybase_id";
@@ -2822,6 +2823,144 @@ public class CLASS {
         }        
     }
     
+    public class RedshiftManager extends PostgreManager {
+         public RedshiftManager(String cid) {
+             super(cid);
+         }
+         
+         protected String getDBMSId() {
+             return REDSHIFT;
+         }
+         
+         public String getCreateTableSQL(List<Column> columnList) {
+            MappingTypeRetriever mappingType = MetadataTalendType.getMappingTypeRetriever(getDBMSId());
+            StringBuilder createSQL = new StringBuilder();
+            createSQL.append("CREATE TABLE " + getLProtectedChar() + "\" + tableName_" + cid + " + \"" + getRProtectedChar() + "(");
+            List<String> pkList = new ArrayList<String>();
+            int count = 0;
+            String ending = ",";
+            
+            for (Column column : columnList) {
+                if (column.isReplaced()) {
+                    List<Column> replacedColumns = column.getReplacement();
+                    if (column.isKey()) {
+                        for (Column replacedColumn : replacedColumns) {
+                            pkList.add(getLProtectedChar(replacedColumn.getColumnName()) + replacedColumn.getColumnName() + getRProtectedChar(replacedColumn.getColumnName()));
+                        }
+                    }
+                    int replacedCount = 0;
+                    for (Column replacedColumn : replacedColumns) {
+                        if (count == columnList.size() - 1 && replacedCount == replacedColumns.size() - 1) {
+                            ending = "";
+                        }
+                        createSQL.append(getLProtectedChar(replacedColumn.getColumnName()) + replacedColumn.getColumnName() + getRProtectedChar(replacedColumn.getColumnName()) + " ");
+                        createSQL.append(replacedColumn.getDataType() + ending);
+                        replacedCount++;
+                    }
+                } else {
+                    if (count == columnList.size() - 1) {
+                        ending = "";
+                    }
+                    
+                    if (column.isAddCol()) {
+                        createSQL.append(getLProtectedChar( column.getColumnName() ) + column.getColumnName() + getRProtectedChar( column.getColumnName() ) + " ");
+                        createSQL.append(column.getDataType() + ending);
+                    } else if(column.isDynamic()) {
+                        createSQL.append(" {TALEND_DYNAMIC_COLUMN} ").append(ending);
+                    } else {
+                        if (column.isKey()) {
+                            pkList.add(getLProtectedChar( column.getColumnName() ) + column.getColumnName() + getRProtectedChar( column.getColumnName() ));
+                        }
+                        createSQL.append(getLProtectedChar( column.getColumnName() ) + column.getColumnName() + getRProtectedChar( column.getColumnName() ) + " ");
+                        String dataType = null;
+                        if (column.getColumn().getType() == null || column.getColumn().getType().trim().equals("")) {
+                            dataType = mappingType.getDefaultSelectedDbType(column.getColumn().getTalendType());
+                        } else {
+                            dataType = column.getColumn().getType();
+                        }
+                        Integer length = column.getColumn().getLength() == null ? 0 : column.getColumn().getLength();
+                        createSQL.append(dataType);
+                        Integer precision = column.getColumn().getPrecision() == null ? 0 : column.getColumn().getPrecision();
+                        boolean lengthIgnored = mappingType.isLengthIgnored(getDBMSId(), dataType);
+                        boolean precisionIgnored = mappingType.isPrecisionIgnored(getDBMSId(), dataType);
+                        String prefix = "";
+                        String suffix = "";
+                        String comma = "";
+                        
+                        if (mappingType.isPreBeforeLength(getDBMSId(), dataType)) {
+                            if (!precisionIgnored) {
+                                prefix = "(";
+                                suffix = ") ";
+                                createSQL.append(prefix + precision);
+                            }
+                            if (!lengthIgnored) {
+                                prefix = (prefix.equals("") ? "(" : prefix);
+                                suffix = (suffix.equals("") ? ") " : suffix);
+                                if (precisionIgnored) {
+                                    createSQL.append(prefix);
+                                    comma = "";
+                                } else {
+                                    comma = ",";
+                                }
+                                createSQL.append(comma + length);
+                            }
+                            createSQL.append(suffix);
+                        } else {
+                            if (!lengthIgnored) {
+                                if (column.getColumn().getLength() == null) {                                  
+                                } else { 
+                                    prefix = "(";
+                                    suffix = ") ";
+                                    createSQL.append(prefix + length);                                    
+                                }
+                            }
+                            if (!precisionIgnored) {
+                                prefix = (prefix.equals("") ? "(" : prefix);
+                                suffix = (suffix.equals("") ? ") " : suffix);
+                                if (lengthIgnored) {
+                                    createSQL.append(prefix);
+                                    comma = "";
+                                } else {
+                                    comma = ",";
+                                }
+                                createSQL.append(comma + precision);
+                            }
+                            if (column.getColumn().getLength() == null) {
+                            } else {
+                                createSQL.append(suffix);
+                            }
+                        }
+                            
+                        if(column.isAutoIncrement()) {
+                            // move the autoincrease key column to the first index in the primary defination. Otherwise, it will throw exception
+                            createSQL.append(getAutoIncrement(column.getStartValue(), column.getStep()));
+                        } else {
+                            createSQL.append(setDefaultValue(column.getColumn().getDefault(), dataType));
+                            createSQL.append(setNullable(column.getColumn().isNullable()));
+                        }
+
+                        createSQL.append(ending);
+                    }
+                }
+                count++;
+            }
+            
+            if (pkList.size() > 0) {
+                createSQL.append(",primary key(");
+                int i = 0;
+                for (String pk : pkList) {
+                    createSQL.append(pk);
+                    if (i != pkList.size() - 1) {
+                        createSQL.append(",");
+                    }
+                    i++;
+                }
+                createSQL.append(")");
+            }
+            return createSQL.toString();
+        }
+    }
+    
     public class GreenplumManager extends PostgrePlusManager {
          public GreenplumManager(String cid) {
              super(cid);
@@ -3932,6 +4071,8 @@ public class CLASS {
                 manager = new GreenplumManager(cid);
             } else if(dbmsId.equalsIgnoreCase(POSTGRESQL)) {
                 manager = new PostgreManager(cid);
+            } else if(dbmsId.equalsIgnoreCase(REDSHIFT)) {
+                manager = new RedshiftManager(cid);
             } else if(dbmsId.equalsIgnoreCase(SQLITE)) {
                 manager = new SQLiteManager(cid);
             } else if(dbmsId.equalsIgnoreCase(SYBASE)) {

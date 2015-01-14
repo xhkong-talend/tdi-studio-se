@@ -2312,6 +2312,15 @@
               description="The tPigStoreResult is now linked to a tPigLoad, we need to set the option for old jobs"
               version="5.6.1">
         </projecttask>
+        <projecttask
+              beforeLogon="false"
+              breaks="5.6.1"
+              class="org.talend.repository.model.migration.ChangeMappingParameter4Redshift"
+              id="org.talend.repository.model.migration.ChangeMappingParameter4Redshift"
+              name="ChangeMappingParameter4Redshift"
+              description="change the mapping db id for redshift components"
+              version="5.6.2">
+        </projecttask>
    </extension>
 
    <extension
