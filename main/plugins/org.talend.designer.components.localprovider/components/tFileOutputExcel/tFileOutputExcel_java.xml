@@ -225,10 +225,10 @@
       <IMPORT NAME="dom4j" MODULE="dom4j-1.6.1.jar" UrlPath="platform:/plugin/org.talend.libraries.dom4j-jaxen/lib/dom4j-1.6.1.jar" REQUIRED_IF="(VERSION_2007 == 'true')" />
       <IMPORT NAME="geronimo-stax-api" MODULE="geronimo-stax-api_1.0_spec-1.0.1.jar" UrlPath="platform:/plugin/org.talend.libraries.apache.axis2/lib/geronimo-stax-api_1.0_spec-1.0.1.jar" REQUIRED_IF="(VERSION_2007 == 'true')" />
       <IMPORT NAME="log4j" MODULE="log4j-1.2.15.jar" UrlPath="platform:/base/plugins/org.apache.log4j_1.2.15.v201012070815.jar" REQUIRED_IF="(VERSION_2007 == 'true')" BundleID="" />
-      <IMPORT NAME="poi" MODULE="poi-3.10-FINAL-20140219_modified_talend.jar" UrlPath="platform:/plugin/org.talend.libraries.excel/lib/poi-3.10-FINAL-20140219_modified_talend.jar" REQUIRED_IF="(VERSION_2007 == 'true')" />
-      <IMPORT NAME="poi-ooxml" MODULE="poi-ooxml-3.10-FINAL-20140219_modified_talend.jar" UrlPath="platform:/plugin/org.talend.libraries.excel/lib/poi-ooxml-3.10-FINAL-20140219_modified_talend.jar" REQUIRED_IF="(VERSION_2007 == 'true')" />
-      <IMPORT NAME="poi-ooxml-schemas" MODULE="poi-ooxml-schemas-3.10-FINAL-20140208.jar" UrlPath="platform:/plugin/org.talend.libraries.excel/lib/poi-ooxml-schemas-3.10-FINAL-20140208.jar" REQUIRED_IF="(VERSION_2007 == 'true')" />
-      <IMPORT NAME="poi-scratchpad" MODULE="poi-scratchpad-3.10-FINAL-20140208.jar" UrlPath="platform:/plugin/org.talend.libraries.excel/lib/poi-scratchpad-3.10-FINAL-20140208.jar" REQUIRED_IF="(VERSION_2007 == 'true')" />
+      <IMPORT NAME="poi" MODULE="poi-3.11-20141221_modified_talend.jar" UrlPath="platform:/plugin/org.talend.libraries.excel/lib/poi-3.11-20141221_modified_talend.jar" REQUIRED_IF="(VERSION_2007 == 'true')" />
+      <IMPORT NAME="poi-ooxml" MODULE="poi-ooxml-3.11-20141221_modified_talend.jar" UrlPath="platform:/plugin/org.talend.libraries.excel/lib/poi-ooxml-3.11-20141221_modified_talend.jar" REQUIRED_IF="(VERSION_2007 == 'true')" />
+      <IMPORT NAME="poi-ooxml-schemas" MODULE="poi-ooxml-schemas-3.11-20141221.jar" UrlPath="platform:/plugin/org.talend.libraries.excel/lib/poi-ooxml-schemas-3.11-20141221.jar" REQUIRED_IF="(VERSION_2007 == 'true')" />
+      <IMPORT NAME="poi-scratchpad" MODULE="poi-scratchpad-3.11-20141221.jar" UrlPath="platform:/plugin/org.talend.libraries.excel/lib/poi-scratchpad-3.11-20141221.jar" REQUIRED_IF="(VERSION_2007 == 'true')" />
       <IMPORT NAME="xmlbeans" MODULE="xmlbeans-2.6.0.jar" UrlPath="platform:/plugin/org.talend.libraries.apache.xml/lib/xmlbeans-2.6.0.jar" REQUIRED_IF="(VERSION_2007 == 'true')" />
     </IMPORTS>
   </CODEGENERATION>

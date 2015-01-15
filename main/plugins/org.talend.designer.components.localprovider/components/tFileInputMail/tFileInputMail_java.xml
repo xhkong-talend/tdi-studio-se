@@ -87,8 +87,8 @@
     <IMPORTS>
       <IMPORT NAME="JavaMail" MODULE="mail.jar"  REQUIRED_IF="(MAIL_TYPE == 'MIME')" />
       <IMPORT NAME="JAF" MODULE="activation.jar"  REQUIRED_IF="(MAIL_TYPE == 'MIME')" />
-      <IMPORT NAME="poi" MODULE="poi-3.10-FINAL-20140219_modified_talend.jar" UrlPath="platform:/plugin/org.talend.libraries.excel/lib/poi-3.10-FINAL-20140219_modified_talend.jar" REQUIRED_IF="(MAIL_TYPE == 'MSG')" />
-      <IMPORT NAME="poi-scratchpad" MODULE="poi-scratchpad-3.10-FINAL-20140208.jar" UrlPath="platform:/plugin/org.talend.libraries.excel/lib/poi-scratchpad-3.10-FINAL-20140208.jar" REQUIRED_IF="(MAIL_TYPE == 'MSG')" />
+      <IMPORT NAME="poi" MODULE="poi-3.11-20141221_modified_talend.jar" UrlPath="platform:/plugin/org.talend.libraries.excel/lib/poi-3.11-20141221_modified_talend.jar" REQUIRED_IF="(MAIL_TYPE == 'MSG')" />
+      <IMPORT NAME="poi-scratchpad" MODULE="poi-scratchpad-3.11-20141221.jar" UrlPath="platform:/plugin/org.talend.libraries.excel/lib/poi-scratchpad-3.11-20141221.jar" REQUIRED_IF="(MAIL_TYPE == 'MSG')" />
       <IMPORT NAME="talendMsgMailUtil" MODULE="talendMsgMailUtil-1.0.0.jar"  REQUIRED_IF="(MAIL_TYPE == 'MSG')" />
       <IMPORT NAME="log4j-1.2.17.jar" MODULE="log4j-1.2.17.jar" UrlPath="platform:/plugin/org.talend.libraries.apache/lib/log4j-1.2.17.jar" REQUIRED_IF="(MAIL_TYPE == 'MSG')" />
     </IMPORTS>

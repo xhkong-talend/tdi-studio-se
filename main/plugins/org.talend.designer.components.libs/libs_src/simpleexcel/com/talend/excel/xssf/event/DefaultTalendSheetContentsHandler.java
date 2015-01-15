@@ -15,6 +15,8 @@ package com.talend.excel.xssf.event;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.poi.xssf.usermodel.XSSFComment;
+
 /**
  * created by wwang on 2012-9-27 Detailled comment
  * 
@@ -41,7 +43,7 @@ public class DefaultTalendSheetContentsHandler implements TalendXSSFSheetXMLHand
     }
 
     @Override
-    public void endRow() {
+    public void endRow(int rowNum) {
         cache.writeData(row);
         row = null;
         // when each row end ,reset lastColumnIndex
@@ -52,7 +54,7 @@ public class DefaultTalendSheetContentsHandler implements TalendXSSFSheetXMLHand
     }
 
     @Override
-    public void cell(String cellReference, String formattedValue) {
+    public void cell(String cellReference, String formattedValue,XSSFComment comment) {
         checkHasNullValue(cellReference);
         row.add(formattedValue);
     }
