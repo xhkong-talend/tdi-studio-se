@@ -23,11 +23,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.zip.ZipFile;
 
-import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IProjectDescription;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspace;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -45,7 +45,6 @@ import org.eclipse.ui.wizards.datatransfer.IImportStructureProvider;
 import org.eclipse.ui.wizards.datatransfer.ImportOperation;
 import org.osgi.framework.Bundle;
 import org.talend.commons.exception.PersistenceException;
-import org.talend.commons.utils.io.FilesUtils;
 import org.talend.core.model.properties.Project;
 import org.talend.core.repository.utils.XmiResourceManager;
 import org.talend.repository.ProjectManager;
@@ -85,36 +84,41 @@ public class ImportProjectsUtilities {
         // Rename in ".project" and "talendProject" or "talend.project"
         // TODO SML Optimize
         final IWorkspace workspace = org.eclipse.core.resources.ResourcesPlugin.getWorkspace();
-        IContainer containers = (IProject) workspace.getRoot().findMember(new Path(technicalName));
-        IResource file2 = containers.findMember(IProjectDescription.DESCRIPTION_FILE_NAME);
+        final IProject project = workspace.getRoot().getProject(technicalName);
+
         try {
-            FilesUtils.replaceInFile("<name>.*</name>", file2.getLocation().toOSString(), "<name>" + technicalName + "</name>"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-            // TDI-19269
-            final IProject project = workspace.getRoot().getProject(technicalName);
-            XmiResourceManager xmiManager = new XmiResourceManager();
-            try {
-                final Project loadProject = xmiManager.loadProject(project);
-                loadProject.setTechnicalLabel(technicalName);
-                loadProject.setLabel(newName);
-                loadProject.setLocal(true);
-                loadProject.setId(0);
-                loadProject.setUrl(null);
-                loadProject.setCreationDate(null);
-                loadProject.setDescription("");
-                loadProject.setType(null);
-                // ADD xqliu 2012-03-12 TDQ-4771 clear the list of Folders
-                if (loadProject.getFolders() != null) {
-                    loadProject.getFolders().clear();
-                }
-                // ~ TDQ-4771
-                xmiManager.saveResource(loadProject.eResource());
-                return loadProject;
-            } catch (PersistenceException e) {
-                //
+            IProjectDescription description = project.getDescription();
+            if (description != null && !technicalName.equals(description.getName())) {
+                description.setName(technicalName);
+                ((org.eclipse.core.internal.resources.Project) project).writeDescription(description, IResource.KEEP_HISTORY,
+                        true, false);
             }
-        } catch (IOException e) {
-            throw new InvocationTargetException(e);
+        } catch (CoreException e1) {
+            //
         }
+        // TDI-19269
+        XmiResourceManager xmiManager = new XmiResourceManager();
+        try {
+            final Project loadProject = xmiManager.loadProject(project);
+            loadProject.setTechnicalLabel(technicalName);
+            loadProject.setLabel(newName);
+            loadProject.setLocal(true);
+            loadProject.setId(0);
+            loadProject.setUrl(null);
+            loadProject.setCreationDate(null);
+            loadProject.setDescription("");
+            loadProject.setType(null);
+            // ADD xqliu 2012-03-12 TDQ-4771 clear the list of Folders
+            if (loadProject.getFolders() != null) {
+                loadProject.getFolders().clear();
+            }
+            // ~ TDQ-4771
+            xmiManager.saveResource(loadProject.eResource());
+            return loadProject;
+        } catch (PersistenceException e) {
+            //
+        }
+
         return null;
     }
 
