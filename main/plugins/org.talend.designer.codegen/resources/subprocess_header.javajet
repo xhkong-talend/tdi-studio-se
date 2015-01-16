@@ -168,7 +168,7 @@ public static class <%=conn.getName() %>Struct<%=templateOrigin %> implements ro
 			for (IMetadataColumn column: metadata.getListColumns()) {
    				JavaType javaType = JavaTypesManager.getJavaTypeFromId(column.getTalendType());
    				String typeToGenerate = JavaTypesManager.getTypeToGenerate(column.getTalendType(), column.isNullable());
-   				if("id_Document".equals(javaType.getId())) {
+   				if("id_Document".equals(javaType.getId()) || "id_Dynamic".equals(javaType.getId())) {
    					typeToGenerate = javaType.getNullableClass().getCanonicalName();
    				}
 			    %>
@@ -605,7 +605,7 @@ public static class <%=conn.getName() %>Struct<%=templateOrigin %> implements ro
 					<%
 				} else if(javaType.isObjectBased() || typeToGenerate.equals("Geometry") || typeToGenerate.equals("Dynamic")) {
 			 		hasAtLeastOneObjectType = true;
-			 		if("id_Document".equals(javaType.getId())) {
+			 		if("id_Document".equals(javaType.getId()) || "id_Dynamic".equals(javaType.getId())) {
 			 			typeToGenerate = javaType.getNullableClass().getCanonicalName();
 			 		}
 					%>
@@ -781,7 +781,7 @@ public static class <%=conn.getName() %>Struct<%=templateOrigin %> implements ro
 					<%
 				} else if(typeToGenerate.equals("Object") || typeToGenerate.equals("Geometry") || typeToGenerate.equals("BigDecimal") || typeToGenerate.equals("List") || typeToGenerate.equals("Dynamic") || typeToGenerate.equals("Document")) {
 			 		hasAtLeastOneObjectType = true;
-			 		if("id_Document".equals(javaType.getId())) {
+			 		if("id_Document".equals(javaType.getId()) || "id_Dynamic".equals(javaType.getId())) {
 			 			typeToGenerate = javaType.getNullableClass().getCanonicalName();
 			 		}
 					%>

@@ -546,7 +546,7 @@ if(isDynamic) {
 			String typeToGenerate = JavaTypesManager.getTypeToGenerate(dynamicColumn.getColumn().getTalendType(), dynamicColumn.getColumn().isNullable());
 			if("Dynamic".equals(typeToGenerate)) {
 			%>
-				Dynamic <%=dynamicColumn.getName()%>;
+				routines.system.Dynamic <%=dynamicColumn.getName()%>;
 			<%
 			}
 		    }            
@@ -574,7 +574,7 @@ if(isDynamic) {
 			String typeToGenerate = JavaTypesManager.getTypeToGenerate(dynamicColumn.getColumn().getTalendType(), dynamicColumn.getColumn().isNullable());
 			if("Dynamic".equals(typeToGenerate)) {
 			%>
-				, Dynamic <%=dynamicColumn.getName()%>
+				, routines.system.Dynamic <%=dynamicColumn.getName()%>
 			<%
 			}
 		    }
