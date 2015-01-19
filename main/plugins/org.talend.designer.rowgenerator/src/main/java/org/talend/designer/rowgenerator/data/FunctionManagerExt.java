@@ -291,8 +291,52 @@ public class FunctionManagerExt extends FunctionManager {
     }
 
     public static String getFunctionLable(Function function) {
-        return function.getClassName() == null ? function.getName()
-                : (function.getClassName() + FunctionManager.JAVA_METHOD_SEPARATED) + function.getName();
+        StringBuffer sb = new StringBuffer();
+        sb.append(function.getClassName() == null ? function.getName()
+                : (function.getClassName() + FunctionManager.JAVA_METHOD_SEPARATED) + function.getName());
+        if (!PURE_PERL_NAME.equals(function.getName())) {
+            sb.append(FunctionManager.FUN_PREFIX);
+            int i = 0;
+            for (Object objectParameter : function.getParameters()) {
+                if (objectParameter instanceof StringParameter) {
+                    StringParameter p = (StringParameter) objectParameter;
+                    sb.append(p.getType() + FunctionManager.EMPTY_STRING + p.getName());
+                } else if (objectParameter instanceof IntParameter) {
+                    IntParameter p = (IntParameter) objectParameter;
+                    sb.append(p.getType() + FunctionManager.EMPTY_STRING + p.getName());
+                } else if (objectParameter instanceof DoubleParameter) {
+                    DoubleParameter p = (DoubleParameter) objectParameter;
+                    sb.append(p.getType() + FunctionManager.EMPTY_STRING + p.getName());
+                } else if (objectParameter instanceof ListParameter) {
+                    ListParameter p = (ListParameter) objectParameter;
+                    sb.append(p.getType() + FunctionManager.EMPTY_STRING + p.getName());
+                } else if (objectParameter instanceof ObjectParameter) {
+                    ObjectParameter p = (ObjectParameter) objectParameter;
+                    sb.append(p.getType() + FunctionManager.EMPTY_STRING + p.getName());
+                } else if (objectParameter instanceof BooleanParameter) {
+                    BooleanParameter p = (BooleanParameter) objectParameter;
+                    sb.append(p.getType() + FunctionManager.EMPTY_STRING + p.getName());
+                } else if (objectParameter instanceof LongParameter) {
+                    LongParameter p = (LongParameter) objectParameter;
+                    sb.append(p.getType() + FunctionManager.EMPTY_STRING + p.getName());
+                } else if (objectParameter instanceof DateParameter) {
+                    DateParameter p = (DateParameter) objectParameter;
+                    sb.append(p.getType() + FunctionManager.EMPTY_STRING + p.getName());
+                } else if (objectParameter instanceof CharParameter) {
+                    CharParameter p = (CharParameter) objectParameter;
+                    sb.append(p.getType() + FunctionManager.EMPTY_STRING + p.getName());
+                } else if (objectParameter instanceof ShortParameter) {
+                    ShortParameter p = (ShortParameter) objectParameter;
+                    sb.append(p.getType() + FunctionManager.EMPTY_STRING + p.getName());
+                }
+                i++;
+                if (i != function.getParameters().size()) {
+                    sb.append(FunctionManager.FUN_PARAM_SEPARATED);
+                }
+            }
+            sb.append(FunctionManager.FUN_SUFFIX);
+        }
+        return sb.toString();
     }
 
     private Function getFunnctionByLabel(List<Function> functions, String value) {
