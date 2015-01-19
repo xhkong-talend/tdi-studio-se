@@ -15,6 +15,7 @@ package org.talend.designer.runprocess.ui;
 import java.util.Map;
 
 import org.apache.commons.collections.BidiMap;
+import org.eclipse.gef.commands.Command;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -32,9 +33,16 @@ import org.talend.core.language.ECodeLanguage;
 import org.talend.core.language.LanguageManager;
 import org.talend.core.model.process.EComponentCategory;
 import org.talend.core.model.process.Element;
+import org.talend.core.model.process.IElementParameter;
+import org.talend.core.model.process.IGEFProcess;
+import org.talend.core.model.process.IProcess2;
 import org.talend.core.model.properties.ConnectionItem;
 import org.talend.core.properties.tab.IDynamicProperty;
+import org.talend.core.service.IDesignerCoreUIService;
+import org.talend.core.ui.CoreUIPlugin;
 import org.talend.designer.core.IMultiPageTalendEditor;
+import org.talend.designer.core.model.components.EParameterName;
+import org.talend.designer.core.ui.editor.cmd.PropertyChangeCommand;
 import org.talend.designer.runprocess.RunProcessContext;
 import org.talend.designer.runprocess.RunProcessPlugin;
 import org.talend.designer.runprocess.i18n.Messages;
@@ -155,6 +163,7 @@ public class AdvanceSettingComposite extends ScrolledComposite implements IDynam
 
         if (Log4jPrefsSettingManager.getInstance().isLog4jEnable()) {
             createLog4jOptions(panel);
+            addLog4jListener();
         }
 
         Group execGroup = new Group(panel, SWT.NONE);
@@ -200,20 +209,41 @@ public class AdvanceSettingComposite extends ScrolledComposite implements IDynam
         perfBtn.setSelection(RunProcessPlugin.getDefault().getPreferenceStore()
                 .getBoolean(RunProcessPrefsConstants.ISSTATISTICSRUN));
 
-        if (customLog4j != null) {
-            customLog4j.setSelection(RunProcessPlugin.getDefault().getPreferenceStore()
-                    .getBoolean(RunProcessPrefsConstants.CUSTOMLOG4J));
-        }
-        if (log4jLevel != null) {
-            log4jLevel.setText(RunProcessPlugin.getDefault().getPreferenceStore().getString(RunProcessPrefsConstants.LOG4JLEVEL));
-        }
+        initializeLog4j();
+    }
+
+    private void addLog4jListener() {
+        customLog4j.addSelectionListener(new SelectionAdapter() {
+
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                log4jLevel.setEnabled(customLog4j.getSelection());
+                processContext.setUseCustomLevel(customLog4j.getSelection());
+                processManager.setCustomLog4j(customLog4j.getSelection());
+                if (processContext.getProcess() != null) {
+                    executeCommand(new PropertyChangeCommand(processContext.getProcess(), EParameterName.LOG4J_RUN_ACTIVATE
+                            .getName(), customLog4j.getSelection()));
+                }
+            }
+        });
+        log4jLevel.addSelectionListener(new SelectionAdapter() {
+
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                processContext.setLog4jLevel(log4jLevel.getText());
+                processManager.setLog4jLevel(log4jLevel.getText());
+                if (processContext.getProcess() != null) {
+                    executeCommand(new PropertyChangeCommand(processContext.getProcess(), EParameterName.LOG4J_RUN_LEVEL
+                            .getName(), log4jLevel.getText()));
+                }
+            }
+        });
     }
 
     /**
      * DOC Administrator Comment method "addListeners".
      */
     private void addListeners() {
-        // TODO Auto-generated method stub
         watchBtn.addSelectionListener(new SelectionAdapter() {
 
             @Override
@@ -247,6 +277,17 @@ public class AdvanceSettingComposite extends ScrolledComposite implements IDynam
                 processManager.setClearBeforeExec(clearBeforeExec.getSelection());
             }
         });
+
+    }
+
+    private void initializeLog4j() {
+        if (customLog4j != null && !customLog4j.isDisposed()) {
+            customLog4j.setSelection(RunProcessPlugin.getDefault().getPreferenceStore()
+                    .getBoolean(RunProcessPrefsConstants.CUSTOMLOG4J));
+        }
+        if (log4jLevel != null && !log4jLevel.isDisposed()) {
+            log4jLevel.setText(RunProcessPlugin.getDefault().getPreferenceStore().getString(RunProcessPrefsConstants.LOG4JLEVEL));
+        }
     }
 
     /*
@@ -267,15 +308,6 @@ public class AdvanceSettingComposite extends ScrolledComposite implements IDynam
         this.processContext = processContext;
         watchBtn.setSelection(processContext != null && processContext.isWatchAllowed());
         perfBtn.setSelection(processContext != null && processContext.isMonitorPerf());
-        if (customLog4j != null) {
-            customLog4j.setSelection(processContext != null && processContext.isUseCustomLevel());
-        }
-        if (processContext != null && processContext.getLog4jLevel() != null) {
-            if (log4jLevel != null) {
-                log4jLevel.setText(processContext.getLog4jLevel());
-                log4jLevel.setEnabled(processContext.isUseCustomLevel());
-            }
-        }
         boolean disableAll = false;
         if (processContext != null) {
             disableAll = processContext.getProcess().disableRunJobView();
@@ -295,7 +327,39 @@ public class AdvanceSettingComposite extends ScrolledComposite implements IDynam
         saveJobBeforeRunButton.setSelection(processContext != null && processContext.isSaveBeforeRun());
         clearBeforeExec.setEnabled(processContext != null);
         clearBeforeExec.setSelection(processContext != null && processContext.isClearBeforeExec());
+        if (this.processContext != null && this.processContext.getProcess() != null) {
+            setProcessLog4jContext();
+        }
         setRunnable(processContext != null && !processContext.isRunning() && !disableAll);
+    }
+
+    public void setProcessLog4jContext() {
+        if (customLog4j != null && !customLog4j.isDisposed()) {
+            IElementParameter param = processContext.getProcess()
+                    .getElementParameter(EParameterName.LOG4J_RUN_ACTIVATE.getName());
+            if (param != null && param.getValue() instanceof Boolean && (Boolean) param.getValue()) { // checked
+                customLog4j.setSelection(true);
+                processContext.setUseCustomLevel(true);
+            } else {
+                customLog4j.setSelection(false);
+                processContext.setUseCustomLevel(false);
+            }
+        }
+        if (log4jLevel != null && !log4jLevel.isDisposed()) {
+            if (customLog4j.getSelection()) {
+                IElementParameter param = processContext.getProcess().getElementParameter(
+                        EParameterName.LOG4J_RUN_LEVEL.getName());
+                if (param != null && param.getValue() != null) {
+                    log4jLevel.setText((String) param.getValue());
+                    processContext.setLog4jLevel((String) param.getValue());
+                }
+            } else {
+                log4jLevel.setText(RunProcessPlugin.getDefault().getPreferenceStore()
+                        .getString(RunProcessPrefsConstants.LOG4JLEVEL));
+                processContext.setLog4jLevel(RunProcessPlugin.getDefault().getPreferenceStore()
+                        .getString(RunProcessPrefsConstants.LOG4JLEVEL));
+            }
+        }
     }
 
     /**
@@ -310,6 +374,10 @@ public class AdvanceSettingComposite extends ScrolledComposite implements IDynam
         perfBtn.setEnabled(runnable);
         saveJobBeforeRunButton.setEnabled(runnable);
         watchBtn.setEnabled(runnable);
+        if (customLog4j != null) {
+            customLog4j.setEnabled(runnable);
+            log4jLevel.setEnabled(runnable && customLog4j.getSelection());
+        }
     }
 
     /*
@@ -459,19 +527,7 @@ public class AdvanceSettingComposite extends ScrolledComposite implements IDynam
     private void createLog4jOptions(Composite parent) {
         customLog4j = new Button(parent, SWT.CHECK);
         customLog4j.setText(Messages.getString("ProcessComposite.log4jLevel")); //$NON-NLS-1$
-        customLog4j.addSelectionListener(new SelectionAdapter() {
-
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                if (customLog4j.getSelection()) {
-                    log4jLevel.setEnabled(true);
-                } else {
-                    log4jLevel.setEnabled(false);
-                }
-                processContext.setUseCustomLevel(customLog4j.getSelection());
-                processManager.setCustomLog4j(customLog4j.getSelection());
-            }
-        });
+        customLog4j.setToolTipText(Messages.getString("ProcessComposite.log4jToolTip")); //$NON-NLS-1$
 
         FormData layouDatale = new FormData();
         layouDatale.left = new FormAttachment(0, 10);
@@ -481,23 +537,10 @@ public class AdvanceSettingComposite extends ScrolledComposite implements IDynam
         customLog4j.setLayoutData(layouDatale);
 
         log4jLevel = new Combo(parent, SWT.READ_ONLY);
-        log4jLevel.setText("Log4j Level");
+        log4jLevel.setText(Messages.getString("ProcessComposite.log4jInfo")); //$NON-NLS-1$
         log4jLevel.setBackground(parent.getBackground());
         log4jLevel.setItems(Log4jPrefsSettingManager.getLevel());
         log4jLevel.select(2);
-        log4jLevel.addSelectionListener(new SelectionAdapter() {
-
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                if (log4jLevel.isEnabled()) {
-                    processContext.setLog4jLevel(log4jLevel.getText());
-                    processManager.setLog4jLevel(log4jLevel.getText());
-                } else {
-                    processContext.setLog4jLevel(null);
-                    processManager.setLog4jLevel(null);
-                }
-            }
-        });
 
         FormData layouDatall = new FormData();
         layouDatall.left = new FormAttachment(0, 200);
@@ -506,5 +549,22 @@ public class AdvanceSettingComposite extends ScrolledComposite implements IDynam
         layouDatall.bottom = new FormAttachment(watchBtn, 50);
         log4jLevel.setLayoutData(layouDatall);
         log4jLevel.setEnabled(false);
+    }
+
+    private void executeCommand(Command cmd) {
+        boolean executed = false;
+        if (processContext != null) {
+            IProcess2 process = processContext.getProcess();
+            if (process != null && process instanceof IGEFProcess) {
+                IDesignerCoreUIService designerCoreUIService = CoreUIPlugin.getDefault().getDesignerCoreUIService();
+                if (designerCoreUIService != null) {
+                    executed = designerCoreUIService.executeCommand((IGEFProcess) process, cmd);
+                }
+            }
+        }
+
+        if (!executed) {
+            cmd.execute();
+        }
     }
 }

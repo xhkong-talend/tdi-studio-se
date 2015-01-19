@@ -418,6 +418,27 @@ public class Process extends Element implements IProcess2, IGEFProcess, ILastVer
         addElementParameter(param);
 
         param = new ElementParameter(this);
+        param.setName(EParameterName.LOG4J_RUN_ACTIVATE.getName());
+        param.setCategory(EComponentCategory.MAIN);
+        param.setFieldType(EParameterFieldType.CHECK);
+        param.setDisplayName(EParameterName.LOG4J_RUN_ACTIVATE.getDisplayName());
+        param.setNumRow(99);
+        param.setShow(false);
+        param.setValue(false);
+        param.setDefaultValue(param.getValue());
+        addElementParameter(param);
+
+        param = new ElementParameter(this);
+        param.setName(EParameterName.LOG4J_RUN_LEVEL.getName());
+        param.setCategory(EComponentCategory.MAIN);
+        param.setFieldType(EParameterFieldType.CLOSED_LIST);
+        param.setDisplayName(EParameterName.LOG4J_RUN_LEVEL.getDisplayName());
+        param.setNumRow(99);
+        param.setShow(false);
+        param.setDefaultValue(param.getValue());
+        addElementParameter(param);
+
+        param = new ElementParameter(this);
         param.setName(EParameterName.JOB_RUN_VM_ARGUMENTS.getName());
         param.setCategory(EComponentCategory.MAIN);
         param.setFieldType(EParameterFieldType.TEXT);

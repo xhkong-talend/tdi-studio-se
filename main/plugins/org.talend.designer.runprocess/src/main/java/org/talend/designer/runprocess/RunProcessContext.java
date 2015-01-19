@@ -69,6 +69,7 @@ import org.talend.designer.runprocess.trace.TraceConnectionsManager;
 import org.talend.designer.runprocess.ui.ProcessContextComposite;
 import org.talend.designer.runprocess.ui.actions.ClearPerformanceAction;
 import org.talend.designer.runprocess.ui.actions.ClearTraceAction;
+import org.talend.repository.ui.utils.Log4jPrefsSettingManager;
 import org.talend.runprocess.data.PerformanceData;
 import org.talend.utils.network.FreePortFinder;
 
@@ -105,6 +106,8 @@ public class RunProcessContext {
     private static final String LOG4J_ENABLE = "--applyLog4jToChildren";
 
     private static final String LOG4J_LEVEL_ARG = "--log4jLevel=";
+
+    private static final String LOG4J_DEFAULT_LEVEL = "info";
 
     public static final String NEXTBREAKPOINT = "RunProcessContext.NextBreakpoint";
 
@@ -522,15 +525,7 @@ public class RunProcessContext {
                             }
 
                             final String watchParam = RunProcessContext.this.isWatchAllowed() ? WATCH_PARAM : null;
-                            String level = RunProcessContext.this.getLog4jLevel();
-                            if (!isUseCustomLevel()) {
-                                level = null;
-                            } else {
-                                if (level != null) {
-                                    level = LOG4J_LEVEL_ARG + (level.equals("") ? "info" : level.toLowerCase());
-                                }
-                            }
-                            final String log4jLevel = level;
+                            final String log4jRuntimeLevel = getLog4jRuntimeLevel();
                             processor.setContext(context);
                             ((IEclipseProcessor) processor).setTargetExecutionConfig(getSelectedTargetExecutionConfig());
 
@@ -557,7 +552,7 @@ public class RunProcessContext {
                                                 // before launching
                                                 if (!JobErrorsChecker.hasErrors(shell)) {
                                                     ps = processor.run(getStatisticsPort(), getTracesPort(), watchParam,
-                                                            log4jLevel, progressMonitor, processMessageManager);
+                                                            log4jRuntimeLevel, progressMonitor, processMessageManager);
                                                 }
 
                                                 if (ps != null && !progressMonitor.isCanceled()) {
@@ -1612,6 +1607,24 @@ public class RunProcessContext {
             perMonitor = null;
         }
         perMonitorList.clear();
+    }
+
+    private String getLog4jRuntimeLevel() {
+        boolean log4jActivate = Log4jPrefsSettingManager.getInstance().isLog4jEnable();
+        String level = "";
+        if (log4jActivate) {
+            level = getLog4jLevel();
+            if (!isUseCustomLevel()) {
+                level = null;
+            } else {
+                if (level != null) {
+                    level = LOG4J_LEVEL_ARG + (level.equals("") ? LOG4J_DEFAULT_LEVEL : level.toLowerCase());
+                }
+            }
+        } else {
+            level = null;
+        }
+        return level;
     }
 
     /**
