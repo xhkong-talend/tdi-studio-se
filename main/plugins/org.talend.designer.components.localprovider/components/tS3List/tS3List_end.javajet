@@ -19,31 +19,12 @@ imports="
 	if(listAll || buckets.size()>0){
 %>
 
-		            }
-					if(!objects_<%=cid%>.isTruncated()){
-						break;
-					}
-		            objects_<%=cid%> = conn_<%=cid%>.listNextBatchOfObjects(objects_<%=cid%>);
-		    	}
-<%
-		    if(!listAll){
-%>
-				}catch(com.amazonaws.AmazonClientException e_<%=cid%>){
-<%
-					if (("true").equals(dieOnError)) {
-%>
-						throw(e_<%=cid%>);
-<%
-					} else {
-%>
-						System.err.println(e_<%=cid%>.getMessage());
-<%
-					}
-%>
+	            }
+				if(!objects_<%=cid%>.isTruncated()){
+					break;
 				}
-<%
-			}
-%>
+	            objects_<%=cid%> = conn_<%=cid%>.listNextBatchOfObjects(objects_<%=cid%>);
+	    	}
 		}
 <%
 	}

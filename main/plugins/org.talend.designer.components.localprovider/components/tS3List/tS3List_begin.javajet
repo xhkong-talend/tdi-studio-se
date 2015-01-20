@@ -27,7 +27,14 @@ if(listAll){
 	java.util.List<com.amazonaws.services.s3.model.Bucket> buckets_<%=cid%> = conn_<%=cid%>.listBuckets();
 	for (com.amazonaws.services.s3.model.Bucket bucket_<%=cid%> : buckets_<%=cid%>) {
 		String currentBucketName_<%=cid%> = bucket_<%=cid%>.getName();
-		com.amazonaws.services.s3.model.ObjectListing objects_<%=cid%> = conn_<%=cid%>.listObjects(currentBucketName_<%=cid%>,<%=objects_prefix!=null && objects_prefix.trim().length()>0 ?objects_prefix:null%>);
+		com.amazonaws.services.s3.model.ObjectListing objects_<%=cid%> = null;
+		try{
+			objects_<%=cid%> = conn_<%=cid%>.listObjects(currentBucketName_<%=cid%>,<%=objects_prefix!=null && objects_prefix.trim().length()>0 ?objects_prefix:null%>);
+		}catch(com.amazonaws.AmazonClientException e_<%=cid%>){
+			System.err.println("WARNING: [<%=cid%>] failed to list objects from bucket "+currentBucketName_<%=cid%>);
+			System.err.println("WARNING: [<%=cid%>] "+e_<%=cid%>.getMessage());
+			continue;
+		}
 <%
 } else if(buckets.size()>0){
 %>
@@ -58,8 +65,14 @@ if(listAll){
 			currentBucketName_<%=cid%> = entry_<%=cid%>.getKey();
 			currentPrefix_<%=cid%> = entry_<%=cid%>.getValue();
 		}
+		com.amazonaws.services.s3.model.ObjectListing objects_<%=cid%> = null;
 		try{
-		com.amazonaws.services.s3.model.ObjectListing objects_<%=cid%> = conn_<%=cid%>.listObjects(currentBucketName_<%=cid%>,currentPrefix_<%=cid%>);
+			objects_<%=cid%> = conn_<%=cid%>.listObjects(currentBucketName_<%=cid%>,currentPrefix_<%=cid%>);
+		}catch(com.amazonaws.AmazonClientException e_<%=cid%>){
+			System.err.println("WARNING: [<%=cid%>] failed to list objects from bucket "+currentBucketName_<%=cid%>);
+			System.err.println("WARNING: [<%=cid%>] "+e_<%=cid%>.getMessage());
+			continue;
+		}
 <%
 }
 if(listAll || buckets.size()>0){
