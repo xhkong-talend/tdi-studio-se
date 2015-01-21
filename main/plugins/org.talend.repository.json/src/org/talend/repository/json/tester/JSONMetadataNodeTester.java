@@ -14,7 +14,7 @@ package org.talend.repository.json.tester;
 
 import org.talend.core.model.repository.ERepositoryObjectType;
 import org.talend.repository.json.node.JSONRepositoryNodeType;
-import org.talend.repository.metadata.tester.CoMetadataNodeTester;
+import org.talend.repository.view.di.metadata.tester.CoMetadataNodeTester;
 
 /**
  * DOC wanghong class global comment. Detailled comment
@@ -23,6 +23,7 @@ public class JSONMetadataNodeTester extends CoMetadataNodeTester {
 
     private static final String IS_JSON_CONNECTION = "isJSONConnection"; //$NON-NLS-1$
 
+    @Override
     protected ERepositoryObjectType findType(String property) {
         if (property != null) {
             if (IS_JSON_CONNECTION.equals(property)) {

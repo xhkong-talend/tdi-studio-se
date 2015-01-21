@@ -15,5 +15,7 @@ Require-Bundle: org.eclipse.core.runtime,
  org.talend.metadata.managment.ui,
  org.eclipse.ui.navigator,
  org.talend.repository.metadata,
- org.talend.repository.items.importexport
+ org.talend.repository.items.importexport,
+ org.talend.repository.view.di
 Bundle-Vendor: .Talend SA.
+

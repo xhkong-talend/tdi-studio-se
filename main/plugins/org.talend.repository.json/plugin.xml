@@ -127,7 +127,7 @@
             </and>
          </possibleChildren>
          <actionProvider
-               class="org.talend.repository.metadata.action.MetedataNodeActionProvier"
+               class="org.talend.repository.view.di.metadata.action.MetedataNodeActionProvier"
                id="org.talend.repository.json.action.provider.id">
             <enablement>
                <and>

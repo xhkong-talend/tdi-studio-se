@@ -19,6 +19,10 @@ Require-Bundle: org.eclipse.core.runtime,
  org.talend.repository.items.importexport.ui
 Bundle-ActivationPolicy: lazy
 Export-Package: org.talend.repository.view.di,
+ org.talend.repository.view.di.metadata.action,
+ org.talend.repository.view.di.metadata.content,
+ org.talend.repository.view.di.metadata.content.rules,
+ org.talend.repository.view.di.metadata.tester,
  org.talend.repository.view.di.viewer.action,
  org.talend.repository.view.di.viewer.content,
  org.talend.repository.view.di.viewer.content.code,

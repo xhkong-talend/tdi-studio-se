@@ -13,7 +13,7 @@
 package org.talend.repository.ftp.ui.viewer.tester;
 
 import org.talend.core.model.repository.ERepositoryObjectType;
-import org.talend.repository.metadata.tester.CoMetadataNodeTester;
+import org.talend.repository.view.di.metadata.tester.CoMetadataNodeTester;
 
 /**
  * DOC ggu class global comment. Detailled comment

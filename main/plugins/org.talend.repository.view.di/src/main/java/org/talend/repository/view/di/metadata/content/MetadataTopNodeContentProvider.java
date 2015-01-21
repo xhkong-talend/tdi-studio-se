@@ -10,30 +10,25 @@
 // 9 rue Pages 92150 Suresnes, France
 //
 // ============================================================================
-package org.talend.repository.ftp.ui.viewer.content;
+package org.talend.repository.view.di.metadata.content;
 
 import org.talend.core.model.repository.ERepositoryObjectType;
 import org.talend.core.repository.model.ProjectRepositoryNode;
 import org.talend.repository.model.RepositoryNode;
-import org.talend.repository.view.di.metadata.content.AbstractMetadataContentProvider;
+import org.talend.repository.viewer.content.EmptyTopNodeContentProvider;
 
-/**
- * 
- * DOC ggu class global comment. Detailled comment
- */
-public class FtpContentProvider extends AbstractMetadataContentProvider {
+public class MetadataTopNodeContentProvider extends EmptyTopNodeContentProvider {
 
     /*
      * (non-Javadoc)
      * 
      * @see
-     * org.talend.repository.viewer.content.ProjectRepoAbstractContentProvider#getTopLevelNodeFromProjectRepositoryNode
+     * org.talend.repository.viewer.content.ProjectRepoChildrenNodeContentProvider#getTopLevelNodeFromProjectRepositoryNode
      * (org.talend.repository.model.ProjectRepositoryNode)
      */
     @Override
-    protected RepositoryNode getTopLevelNodeFromProjectRepositoryNode(ProjectRepositoryNode projectNode) {
-
-        return projectNode.getRootRepositoryNode(ERepositoryObjectType.METADATA_FILE_FTP);
+    protected RepositoryNode getTopLevelNodeFromProjectRepositoryNode(ProjectRepositoryNode projectRepositoryNode) {
+        return projectRepositoryNode.getRootRepositoryNode(ERepositoryObjectType.METADATA);
     }
 
 }
