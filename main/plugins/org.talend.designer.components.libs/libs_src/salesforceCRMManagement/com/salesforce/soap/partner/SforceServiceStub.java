@@ -1561,6 +1561,8 @@ public class SforceServiceStub extends org.apache.axis2.client.Stub implements
 		_serviceClient = new org.apache.axis2.client.ServiceClient(
 				configurationContext, _service);
 
+		_serviceClient.getOptions().setProperty(org.apache.axis2.transport.http.HTTPConstants.CHUNKED, "false");
+		
 		_serviceClient.getOptions().setTo(
 				new org.apache.axis2.addressing.EndpointReference(
 						targetEndpoint));

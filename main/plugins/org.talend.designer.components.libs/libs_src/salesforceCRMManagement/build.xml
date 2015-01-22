@@ -2,9 +2,10 @@
 <project name="org.talend.designer.components.libs" default="process" basedir=".">
 
 	<property name="component.plugin.home" value="../../../org.talend.designer.components.localprovider/components" />
-    <property name="axis2.dir" value="../../../org.talend.libraries.apache.axis2/lib" />
-    <property name="targetplugin.dir" value="/home/bchen/Develope/yoxos/targets/target-530/plugins" />
-    <property name="http.dir" value="../../../org.talend.libraries.apache.http/lib" />
+    <property name="axis2.dir" value="../../../../../../tcommon-studio-se/main/plugins/org.talend.libraries.apache.axis2/lib" />
+    <property name="http.dir" value="../../../../../../tcommon-studio-se/main/plugins/org.talend.libraries.apache.http/lib" />
+	<property name="json.dir" value="../../../../../../tcommon-studio-se/main/plugins/org.talend.libraries.jackson/lib" />
+	<property name="salesforce.dir" value="../../../org.talend.libraries.salesforce/lib" />
 	
 	<!-- #################################################### -->
 
@@ -12,7 +13,7 @@
 	<property name="jar.name" value="salesforceCRMManagement.jar" />
 	<property name="component.name" value="tSalesforceInput" />
 	<property name="author.name" value="wyang" />
-	<property name="lib.dir" value="../../../org.talend.libraries.salesforce/lib" />
+	<property name="lib.dir" value="${salesforce.dir}" />
 	
 	<!-- modification 2: compile classpath -->
 	<path id="compile.classpath">
@@ -21,10 +22,6 @@
 		<pathelement location="${axis2.dir}/axis2-kernel-1.6.2.jar" />
 		<pathelement location="${axis2.dir}/axis2-transport-http-1.6.2.jar" />
 		<pathelement location="${axis2.dir}/axis2-transport-local-1.6.2.jar" />
-		<pathelement location="${targetplugin.dir}/org.apache.commons.codec_1.3.0.v201101211617.jar" />
-        <pathelement location="${http.dir}/commons-httpclient-3.1.jar" />
-		<pathelement location="${targetplugin.dir}/org.apache.commons.logging_1.1.1.v201101211721.jar" />
-		<pathelement location="${http.dir}/httpcore-4.0.jar" />
 		<pathelement location="${axis2.dir}/mail-1.4.jar" />
 		<pathelement location="${axis2.dir}/neethi-3.0.1.jar" />
 		<pathelement location="${axis2.dir}/wsdl4j-1.6.2.jar" />
@@ -33,6 +30,10 @@
 		<pathelement location="${axis2.dir}/geronimo-stax-api_1.0_spec-1.0.1.jar" />
 		<pathelement location="${axis2.dir}/activation-1.1.jar" />
 		<pathelement location="${axis2.dir}/wstx-asl-3.2.9.jar" />
+		<pathelement location="${http.dir}/httpcore-4.0.jar" />
+		<pathelement location="${http.dir}/commons-httpclient-3.1.jar" />
+		<pathelement location="${json.dir}/json_simple-1.1.jar" />
+		<pathelement location="${salesforce.dir}/salesforceOAuth.jar" />
 	</path>
 
 	<!-- #################################################### -->	
