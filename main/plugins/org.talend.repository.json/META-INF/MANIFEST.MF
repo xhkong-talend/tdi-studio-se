@@ -36,5 +36,3 @@ Bundle-ActivationPolicy: lazy
 Export-Package: org.talend.repository.model.json,
  org.talend.repository.model.json.impl,
  org.talend.repository.model.json.util
-Import-Package: org.talend.repository.view.di.metadata.content,
- org.talend.repository.view.di.metadata.tester
