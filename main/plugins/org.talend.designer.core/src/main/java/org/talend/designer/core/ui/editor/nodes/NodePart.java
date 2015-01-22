@@ -46,6 +46,7 @@ import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.talend.commons.exception.CommonExceptionHandler;
+import org.talend.commons.exception.LoginException;
 import org.talend.commons.exception.PersistenceException;
 import org.talend.commons.ui.runtime.exception.MessageBoxExceptionHandler;
 import org.talend.commons.ui.runtime.image.ImageUtils.ICON_SIZE;
@@ -67,6 +68,7 @@ import org.talend.core.model.properties.ProcessItem;
 import org.talend.core.model.properties.Property;
 import org.talend.core.model.repository.ERepositoryObjectType;
 import org.talend.core.repository.model.ProxyRepositoryFactory;
+import org.talend.core.runtime.CoreRuntimePlugin;
 import org.talend.core.service.IComponentsLocalProviderService;
 import org.talend.core.ui.IJobletProviderService;
 import org.talend.core.ui.images.CoreImageProvider;
@@ -90,6 +92,7 @@ import org.talend.designer.core.ui.views.CodeView;
 import org.talend.designer.core.ui.views.properties.ComponentSettingsView;
 import org.talend.designer.runprocess.ItemCacheManager;
 import org.talend.repository.ProjectManager;
+import org.talend.repository.RepositoryWorkUnit;
 
 /**
  * Graphical part of the node of Gef. <br/>
@@ -157,7 +160,8 @@ public class NodePart extends AbstractGraphicalEditPart implements PropertyChang
                     ComponentSettingsView compSettings = viewer;
                     compSettings.setElement((Node) getModel());
                     if (((Node) getModel()).getComponent() instanceof DummyComponent) {
-                        MessageDialog.openWarning(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(), Messages.getString("NodePart_warning"), //$NON-NLS-1$
+                        MessageDialog.openWarning(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(),
+                                Messages.getString("NodePart_warning"), //$NON-NLS-1$
                                 Messages.getString("NodePart_componentNotLoaded")); //$NON-NLS-1$
                         return;
                     }
@@ -171,7 +175,8 @@ public class NodePart extends AbstractGraphicalEditPart implements PropertyChang
                         ComponentSettingsView compSettings = viewer;
                         compSettings.setElement((Node) getModel());
                         if (((Node) getModel()).getComponent() instanceof DummyComponent) {
-                            MessageDialog.openWarning(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(), Messages.getString("NodePart_warning"), //$NON-NLS-1$
+                            MessageDialog.openWarning(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(),
+                                    Messages.getString("NodePart_warning"), //$NON-NLS-1$
                                     Messages.getString("NodePart_componentNotLoaded")); //$NON-NLS-1$
                             return;
                         }
@@ -529,8 +534,8 @@ public class NodePart extends AbstractGraphicalEditPart implements PropertyChang
                 if (PluginChecker.isJobLetPluginLoaded()) {
                     AbstractProcessProvider jobletProcessProvider = AbstractProcessProvider
                             .findProcessProviderFromPID(IComponent.JOBLET_PID);
-                    IJobletProviderService service = (IJobletProviderService) GlobalServiceRegister.getDefault().getService(
-                            IJobletProviderService.class);
+                    final IJobletProviderService service = (IJobletProviderService) GlobalServiceRegister.getDefault()
+                            .getService(IJobletProviderService.class);
                     boolean isAvoidShowJobletAfterDoubleClick = false;
                     if (GlobalServiceRegister.getDefault().isServiceRegistered(IComponentsLocalProviderService.class)) {
                         IComponentsLocalProviderService componentService = (IComponentsLocalProviderService) GlobalServiceRegister
@@ -542,10 +547,18 @@ public class NodePart extends AbstractGraphicalEditPart implements PropertyChang
                     if (service != null && service.isJobletComponent(node) && !isAvoidShowJobletAfterDoubleClick) {
                         isJoblet = true;
                         String version = (String) node.getPropertyValue(EParameterName.PROCESS_TYPE_VERSION.getName());
-                        Item jobletItem = jobletProcessProvider.getJobletItem(node, version);
-                        if (jobletItem != null) {
-                            service.openJobletItem((JobletProcessItem) jobletItem);
-                        }
+                        final Item jobletItem = jobletProcessProvider.getJobletItem(node, version);
+                        RepositoryWorkUnit<Object> repositoryWorkUnit = new RepositoryWorkUnit<Object>("", this) {
+
+                            @Override
+                            protected void run() throws LoginException, PersistenceException {
+                                if (jobletItem != null) {
+                                    service.openJobletItem((JobletProcessItem) jobletItem);
+                                }
+                            }
+                        };
+                        repositoryWorkUnit.setAvoidUnloadResources(true);
+                        CoreRuntimePlugin.getInstance().getProxyRepositoryFactory().executeRepositoryWorkUnit(repositoryWorkUnit);
                     }
                 }
 
@@ -569,35 +582,40 @@ public class NodePart extends AbstractGraphicalEditPart implements PropertyChang
                         isSelectUseDynamic = (Boolean) useDynamicJobValue;
                     }
                     if (processName != null && !"".equals(processName) && !isAvoidShowJobAfterDoubleClick && !isSelectUseDynamic) { //$NON-NLS-1$
+                        ItemCacheManager.clearCache();
+                        ProcessItem processItem = ItemCacheManager.getProcessItem(processName, version);
+                        Property updatedProperty = null;
                         try {
-                            ItemCacheManager.clearCache();
-                            ProcessItem processItem = ItemCacheManager.getProcessItem(processName, version);
-
-                            Property updatedProperty = null;
-                            try {
-                                updatedProperty = ProxyRepositoryFactory
-                                        .getInstance()
-                                        .getLastVersion(new Project(ProjectManager.getInstance().getProject(processItem)),
-                                                processName).getProperty();
-                            } catch (PersistenceException e) {
-                                CommonExceptionHandler.process(e);
-                            }
-                            // update the property of the node repository object
-                            // node.getObject().setProperty(updatedProperty);
-
-                            processItem = (ProcessItem) updatedProperty.getItem();
-
-                            if (processItem != null) {
-                                ERepositoryObjectType repObjType = ERepositoryObjectType.getItemType(processItem);
-                                IJobEditorHandler editorInputFactory = JobEditorHandlerManager.getInstance()
-                                        .extractEditorInputFactory(repObjType.getType());
-                                editorInputFactory.openJobEditor(editorInputFactory.createJobEditorInput(processItem, true));
-                            }
-                        } catch (PartInitException e) {
-                            MessageBoxExceptionHandler.process(e);
+                            updatedProperty = ProxyRepositoryFactory
+                                    .getInstance()
+                                    .getLastVersion(new Project(ProjectManager.getInstance().getProject(processItem)),
+                                            processName).getProperty();
                         } catch (PersistenceException e) {
-                            MessageBoxExceptionHandler.process(e);
+                            CommonExceptionHandler.process(e);
                         }
+                        // update the property of the node repository object
+                        // node.getObject().setProperty(updatedProperty);
+
+                        processItem = (ProcessItem) updatedProperty.getItem();
+                        final ProcessItem item = processItem;
+                        RepositoryWorkUnit<Object> repositoryWorkUnit = new RepositoryWorkUnit<Object>("", this) {
+
+                            @Override
+                            protected void run() throws LoginException, PersistenceException {
+                                try {
+                                    if (item != null) {
+                                        ERepositoryObjectType repObjType = ERepositoryObjectType.getItemType(item);
+                                        IJobEditorHandler editorInputFactory = JobEditorHandlerManager.getInstance()
+                                                .extractEditorInputFactory(repObjType.getType());
+                                        editorInputFactory.openJobEditor(editorInputFactory.createJobEditorInput(item, true));
+                                    }
+                                } catch (PartInitException e) {
+                                    MessageBoxExceptionHandler.process(e);
+                                }
+                            }
+                        };
+                        repositoryWorkUnit.setAvoidUnloadResources(true);
+                        CoreRuntimePlugin.getInstance().getProxyRepositoryFactory().executeRepositoryWorkUnit(repositoryWorkUnit);
                     } else {
                         try {
                             // modified for feature 2454.
